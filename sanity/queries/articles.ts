@@ -1,5 +1,28 @@
 import { defineQuery } from "next-sanity";
 
+const ARTICLE_CARD_PROJECTION = `
+  _id,
+  title,
+  "slug": slug.current,
+  excerpt,
+  author,
+  sport,
+  "league": coalesce(league, "general"),
+  contentType,
+  "tags": coalesce(tags, []),
+  "isPremium": coalesce(isPremium, false),
+  publishedAt,
+  "featured": coalesce(featured, false),
+  readingTime,
+  featuredImage {
+    asset,
+    crop,
+    hotspot,
+    alt,
+    caption
+  }
+`;
+
 export const ARTICLES_QUERY = defineQuery(`
   *[
     _type == "article" &&
@@ -7,22 +30,7 @@ export const ARTICLES_QUERY = defineQuery(`
     publishedAt <= now()
   ]
   | order(publishedAt desc) {
-    _id,
-    title,
-    "slug": slug.current,
-    excerpt,
-    author,
-    sport,
-    contentType,
-    publishedAt,
-    featured,
-    featuredImage {
-      asset,
-      crop,
-      hotspot,
-      alt,
-      caption
-    }
+    ${ARTICLE_CARD_PROJECTION}
   }
 `);
 
@@ -34,22 +42,7 @@ export const FEATURED_ARTICLE_QUERY = defineQuery(`
     publishedAt <= now()
   ]
   | order(publishedAt desc)[0] {
-    _id,
-    title,
-    "slug": slug.current,
-    excerpt,
-    author,
-    sport,
-    contentType,
-    publishedAt,
-    featured,
-    featuredImage {
-      asset,
-      crop,
-      hotspot,
-      alt,
-      caption
-    }
+    ${ARTICLE_CARD_PROJECTION}
   }
 `);
 
@@ -59,22 +52,7 @@ export const ARTICLE_BY_SLUG_QUERY = defineQuery(`
     slug.current == $slug &&
     publishedAt <= now()
   ][0] {
-    _id,
-    title,
-    "slug": slug.current,
-    excerpt,
-    author,
-    sport,
-    contentType,
-    publishedAt,
-    featured,
-    featuredImage {
-      asset,
-      crop,
-      hotspot,
-      alt,
-      caption
-    },
+    ${ARTICLE_CARD_PROJECTION},
     body,
     seoTitle,
     seoDescription

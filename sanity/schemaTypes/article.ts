@@ -19,23 +19,35 @@ const contentTypes = [
   { title: "Game Preview", value: "game-preview" },
   { title: "Betting Education", value: "betting-education" },
   { title: "News", value: "news" },
+  { title: "Weekly Recap", value: "weekly-recap" },
+  { title: "Announcement", value: "announcement" },
   { title: "KofSports Update", value: "kofsports-update" },
+];
+
+const leagues = [
+  { title: "None / General", value: "general" },
+  { title: "NFL", value: "nfl" },
+  { title: "MLB", value: "mlb" },
+  { title: "NBA", value: "nba" },
+  { title: "NHL", value: "nhl" },
+  { title: "College Football", value: "cfb" },
+  { title: "College Basketball", value: "cbb" },
 ];
 
 export const articleType = defineType({
   name: "article",
-  title: "Articles",
+  title: "Content",
   type: "document",
 
   groups: [
     {
       name: "content",
-      title: "Article",
+      title: "Content",
       default: true,
     },
     {
-      name: "settings",
-      title: "Settings",
+      name: "distribution",
+      title: "Publishing",
     },
     {
       name: "seo",
@@ -59,7 +71,7 @@ export const articleType = defineType({
       type: "slug",
       group: "content",
       description:
-        "Click Generate to create the article URL from the title.",
+        "Click Generate to create the page URL from the title.",
       options: {
         source: "title",
         maxLength: 96,
@@ -74,7 +86,7 @@ export const articleType = defineType({
       rows: 4,
       group: "content",
       description:
-        "A brief summary displayed on article cards and search results.",
+        "A brief summary displayed on cards, previews, and search results.",
       validation: (rule) =>
         rule.required().min(40).max(240),
     }),
@@ -108,7 +120,7 @@ export const articleType = defineType({
 
     defineField({
       name: "body",
-      title: "Article Body",
+      title: "Body",
       type: "array",
       group: "content",
       of: [
@@ -169,17 +181,17 @@ export const articleType = defineType({
             hotspot: true,
           },
           fields: [
-            {
+            defineField({
               name: "alt",
               title: "Alternative Text",
               type: "string",
               validation: (rule) => rule.required(),
-            },
-            {
+            }),
+            defineField({
               name: "caption",
               title: "Caption",
               type: "string",
-            },
+            }),
           ],
         }),
       ],
@@ -190,21 +202,8 @@ export const articleType = defineType({
       name: "author",
       title: "Author",
       type: "string",
-      group: "settings",
+      group: "distribution",
       initialValue: "Kof",
-      validation: (rule) => rule.required(),
-    }),
-
-    defineField({
-      name: "sport",
-      title: "Sport",
-      type: "string",
-      group: "settings",
-      options: {
-        list: sports,
-        layout: "dropdown",
-      },
-      initialValue: "general",
       validation: (rule) => rule.required(),
     }),
 
@@ -212,7 +211,7 @@ export const articleType = defineType({
       name: "contentType",
       title: "Content Type",
       type: "string",
-      group: "settings",
+      group: "distribution",
       options: {
         list: contentTypes,
         layout: "dropdown",
@@ -222,22 +221,91 @@ export const articleType = defineType({
     }),
 
     defineField({
+      name: "sport",
+      title: "Sport",
+      type: "string",
+      group: "distribution",
+      options: {
+        list: sports,
+        layout: "dropdown",
+      },
+      initialValue: "general",
+      validation: (rule) => rule.required(),
+    }),
+
+    defineField({
+      name: "league",
+      title: "League",
+      type: "string",
+      group: "distribution",
+      description:
+        "Optional league classification used for filtering and navigation.",
+      options: {
+        list: leagues,
+        layout: "dropdown",
+      },
+      initialValue: "general",
+    }),
+
+    defineField({
+      name: "tags",
+      title: "Tags",
+      type: "array",
+      group: "distribution",
+      description:
+        "Examples: best bets, player props, futures, betting strategy.",
+      of: [
+        defineArrayMember({
+          type: "string",
+        }),
+      ],
+      options: {
+        layout: "tags",
+      },
+      validation: (rule) =>
+        rule.unique().max(10),
+    }),
+
+    defineField({
+      name: "isPremium",
+      title: "Premium Content",
+      type: "boolean",
+      group: "distribution",
+      description:
+        "Premium content will eventually require an active VIP membership.",
+      initialValue: false,
+    }),
+
+    defineField({
       name: "publishedAt",
       title: "Publication Date",
       type: "datetime",
-      group: "settings",
+      group: "distribution",
+      description:
+        "Future dates can later be used for scheduled publishing.",
       initialValue: () => new Date().toISOString(),
       validation: (rule) => rule.required(),
     }),
 
     defineField({
       name: "featured",
-      title: "Feature This Article",
+      title: "Feature This Content",
       type: "boolean",
-      group: "settings",
+      group: "distribution",
       description:
-        "Featured articles may appear in the prominent position on the Free Picks page.",
+        "Featured content may appear prominently on the homepage or Free Picks page.",
       initialValue: false,
+    }),
+
+    defineField({
+      name: "readingTime",
+      title: "Estimated Reading Time",
+      type: "number",
+      group: "distribution",
+      description:
+        "Estimated reading time in minutes.",
+      validation: (rule) =>
+        rule.integer().min(1).max(60),
     }),
 
     defineField({
@@ -246,7 +314,7 @@ export const articleType = defineType({
       type: "string",
       group: "seo",
       description:
-        "Optional search-engine title. The article title will be used when blank.",
+        "Optional search title. The content title will be used when blank.",
       validation: (rule) => rule.max(65),
     }),
 
@@ -257,7 +325,7 @@ export const articleType = defineType({
       rows: 3,
       group: "seo",
       description:
-        "Optional search-engine description. The excerpt will be used when blank.",
+        "Optional search description. The excerpt will be used when blank.",
       validation: (rule) => rule.max(165),
     }),
   ],
@@ -280,12 +348,23 @@ export const articleType = defineType({
       title: "title",
       author: "author",
       sport: "sport",
+      contentType: "contentType",
+      isPremium: "isPremium",
       media: "featuredImage",
     },
 
-    prepare({ title, author, sport, media }) {
+    prepare({
+      title,
+      author,
+      sport,
+      contentType,
+      isPremium,
+      media,
+    }) {
       const subtitle = [
+        isPremium ? "VIP" : "FREE",
         sport?.toUpperCase(),
+        contentType?.replaceAll("-", " ").toUpperCase(),
         author ? `By ${author}` : null,
       ]
         .filter(Boolean)
