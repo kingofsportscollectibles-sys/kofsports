@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
 import { Inter, Oswald } from "next/font/google";
-import { SiteFooter } from "@/components/layout/site-footer";
-import { SiteHeader } from "@/components/layout/site-header";
 import "./globals.css";
 
 const inter = Inter({
@@ -20,16 +18,7 @@ export const metadata: Metadata = {
     template: "%s | KofSports",
   },
   description:
-    "Sports betting picks, analytics, and transparent results from KofSports. Established in 2015.",
-  keywords: [
-    "sports betting picks",
-    "sports handicapping",
-    "NFL picks",
-    "MLB picks",
-    "NBA picks",
-    "NHL picks",
-    "college football picks",
-  ],
+    "Transparent sports betting picks, analysis, historical results, and VIP selections from KofSports.",
 };
 
 export default function RootLayout({
@@ -39,14 +28,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${oswald.variable}`}>
-        <div className="flex min-h-screen flex-col">
-          <SiteHeader />
-
-          <main className="flex-1">{children}</main>
-
-          <SiteFooter />
-        </div>
+      <body
+        className={`${inter.variable} ${oswald.variable} min-h-screen bg-black text-white antialiased`}
+      >
+        {children}
       </body>
     </html>
   );

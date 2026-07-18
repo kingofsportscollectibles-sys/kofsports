@@ -32,7 +32,7 @@ export function SiteFooter() {
                 href="mailto:kof@kofsports.com"
                 className="text-brand hover:text-brand-light"
               >
-                kof@kofsports.com
+                kofsports1@gmail.com 
               </a>
             </p>
           </div>
