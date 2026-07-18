@@ -1,10 +1,16 @@
 import type { PortableTextBlock } from "@portabletext/types";
-import {
-  createImageUrlBuilder,
-  type SanityImageSource,
-} from "@sanity/image-url";
+import type { SanityImageSource } from "@sanity/image-url";
 
 export type ArticleSport =
+  | "general"
+  | "nfl"
+  | "mlb"
+  | "nba"
+  | "nhl"
+  | "cfb"
+  | "cbb";
+
+export type ArticleLeague =
   | "general"
   | "nfl"
   | "mlb"
@@ -18,6 +24,8 @@ export type ArticleContentType =
   | "game-preview"
   | "betting-education"
   | "news"
+  | "weekly-recap"
+  | "announcement"
   | "kofsports-update";
 
 export type ArticleImage = SanityImageSource & {
@@ -32,9 +40,13 @@ export type ArticleCard = {
   excerpt: string;
   author: string;
   sport: ArticleSport;
+  league: ArticleLeague;
   contentType: ArticleContentType;
+  tags: string[];
+  isPremium: boolean;
   publishedAt: string;
   featured: boolean;
+  readingTime?: number;
   featuredImage: ArticleImage | null;
 };
 
