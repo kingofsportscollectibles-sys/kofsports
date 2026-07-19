@@ -47,7 +47,7 @@ export function SiteHeader() {
             href="/plans"
             className="rounded-md bg-brand px-4 py-2.5 text-sm font-extrabold text-black transition hover:bg-brand-light"
           >
-            Join VIP
+            Upgrade to Premium
           </Link>
         </div>
 

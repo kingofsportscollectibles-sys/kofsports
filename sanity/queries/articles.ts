@@ -46,6 +46,44 @@ export const FEATURED_ARTICLE_QUERY = defineQuery(`
   }
 `);
 
+export const LATEST_ARTICLES_QUERY = defineQuery(`
+  *[
+    _type == "article" &&
+    defined(slug.current) &&
+    publishedAt <= now() &&
+    coalesce(isPremium, false) == false
+  ]
+  | order(publishedAt desc)[0...$limit] {
+    ${ARTICLE_CARD_PROJECTION}
+  }
+`);
+
+export const ARTICLES_BY_SPORT_QUERY = defineQuery(`
+  *[
+    _type == "article" &&
+    defined(slug.current) &&
+    publishedAt <= now() &&
+    sport == $sport &&
+    coalesce(isPremium, false) == false
+  ]
+  | order(publishedAt desc)[0...$limit] {
+    ${ARTICLE_CARD_PROJECTION}
+  }
+`);
+
+export const ARTICLES_BY_CONTENT_TYPE_QUERY = defineQuery(`
+  *[
+    _type == "article" &&
+    defined(slug.current) &&
+    publishedAt <= now() &&
+    contentType == $contentType &&
+    coalesce(isPremium, false) == false
+  ]
+  | order(publishedAt desc)[0...$limit] {
+    ${ARTICLE_CARD_PROJECTION}
+  }
+`);
+
 export const ARTICLE_BY_SLUG_QUERY = defineQuery(`
   *[
     _type == "article" &&

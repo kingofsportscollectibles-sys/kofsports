@@ -102,7 +102,7 @@ export default function Home() {
                 href="/plans"
                 className="rounded-md bg-brand px-7 py-4 text-center text-sm font-extrabold uppercase tracking-wide text-black transition hover:bg-brand-light"
               >
-                Join VIP
+                Upgrade to Premium
               </Link>
 
               <Link
