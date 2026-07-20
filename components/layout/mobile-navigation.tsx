@@ -5,7 +5,7 @@ import { useState } from "react";
 
 const navigation = [
   { name: "Free Picks", href: "/free-picks" },
-  { name: "VIP Picks", href: "/vip" },
+  { name: "Premium Picks", href: "/premium-picks" },
   { name: "Results", href: "/results" },
   { name: "Plans", href: "/plans" },
   { name: "About", href: "/about" },

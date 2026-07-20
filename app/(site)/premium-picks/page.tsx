@@ -274,17 +274,31 @@ export default async function PremiumPicksPage() {
   let profile: Profile | null = null;
 
   if (user) {
-    const { data: profileData } = await supabase
-      .from("profiles")
-      .select("membership, role")
-      .eq("id", user.id)
-      .maybeSingle();
+    const { data: profileData, error: profileError } = await supabase
+  .from("profiles")
+  .select("membership, role")
+  .eq("id", user.id)
+  .maybeSingle();
 
-    profile = profileData as Profile | null;
+console.log("Logged in user:", user.id);
+console.log("Profile:", profileData);
+
+if (profileError) {
+  console.error("Unable to load profile:", profileError);
+}
+
+profile = profileData as Profile | null;
   }
 
   const hasPremiumAccess =
     profile?.membership === "premium" || profile?.role === "admin";
+
+    console.log({
+  userId: user?.id,
+  membership: profile?.membership,
+  role: profile?.role,
+  hasPremiumAccess,
+});
 
   const { data, error } = await supabase
     .from("vip_picks")

@@ -49,7 +49,7 @@ export default async function MemberLayout({
             </Link>
 
             <Link
-              href="/vip-picks"
+              href="/premium-picks"
               className="rounded-lg px-3 py-2 text-white transition hover:bg-white/10 hover:text-amber-300"
             >
               Premium Picks

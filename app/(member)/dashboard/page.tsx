@@ -59,7 +59,7 @@ export default async function DashboardPage() {
           </p>
 
           <Link
-            href="/vip-picks"
+            href="/premium-picks"
             className="mt-8 inline-flex items-center font-bold text-amber-700 transition hover:text-amber-800"
           >
             View Today's Picks →
