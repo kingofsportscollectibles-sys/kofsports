@@ -1,63 +1,98 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+
+import { CheckoutButton } from "@/components/stripe/checkout-button";
 
 export const metadata: Metadata = {
-  title: "VIP Membership Plans",
+  title: "Premium Membership Plans",
   description:
-    "Compare KofSports VIP membership options and unlock daily sports betting picks and analysis.",
+    "Compare KofSports Premium membership options and unlock sports betting picks, analysis, confidence ratings, and recommended units.",
 };
 
-const plans = [
+type PlanKey = "one_day" | "weekly" | "monthly" | "ninety_day";
+
+type Plan = {
+  name: string;
+  duration: string;
+  price: string;
+  billingLabel: string;
+  description: string;
+  popular: boolean;
+  planKey: PlanKey;
+  buttonLabel: string;
+  features: string[];
+};
+
+const plans: Plan[] = [
   {
-    name: "Day Pass",
+    name: "1-Day Premium Pass",
     duration: "24 hours",
     price: "$10",
-    description: "Get the complete VIP card for the next 24 hours.",
+    billingLabel: "One-time payment",
+    description:
+      "Get complete access to every active Premium Pick for the next 24 hours.",
     popular: false,
+    planKey: "one_day",
+    buttonLabel: "Get 1-Day Access",
     features: [
-      "All active VIP picks",
+      "All active Premium Picks",
       "Complete pick analysis",
-      "Every sport in season",
-      "24-hour account access",
+      "Confidence ratings",
+      "Recommended unit sizing",
+      "No recurring charges",
     ],
   },
   {
-    name: "7-Day Pass",
+    name: "Weekly Premium Pass",
     duration: "7 days",
     price: "$25",
-    description: "A full week of KofSports picks and analysis.",
-    popular: false,
+    billingLabel: "Renews weekly",
+    description:
+      "Stay connected to every KofSports pick and analysis throughout the week.",
+    popular: true,
+    planKey: "weekly",
+    buttonLabel: "Start Weekly Access",
     features: [
-      "Seven days of VIP access",
+      "Full Premium access",
+      "Every official KofSports pick",
       "All sports included",
-      "Full pick archive during access",
-      "Direct questions to Kof",
+      "Detailed betting analysis",
+      "Cancel anytime",
     ],
   },
   {
-    name: "Monthly VIP",
+    name: "Monthly Premium Pass",
     duration: "30 days",
     price: "$75",
-    description: "The best option for consistent access throughout the month.",
-    popular: true,
+    billingLabel: "Renews monthly",
+    description:
+      "A strong value for members who want consistent access throughout the month.",
+    popular: false,
+    planKey: "monthly",
+    buttonLabel: "Start Monthly Access",
     features: [
-      "Thirty days of VIP access",
+      "Full Premium access",
       "Every official KofSports pick",
-      "Full analysis and results",
-      "Direct access to Kof",
+      "Confidence ratings and units",
+      "All sports included",
+      "Cancel anytime",
     ],
   },
   {
-    name: "90-Day VIP",
+    name: "90-Day Premium Pass",
     duration: "90 days",
     price: "$199",
-    description: "Commit for the season and receive the strongest daily value.",
+    billingLabel: "Renews every 90 days",
+    description:
+      "Our best long-term value for members who want uninterrupted access throughout the season.",
     popular: false,
+    planKey: "ninety_day",
+    buttonLabel: "Start 90-Day Access",
     features: [
-      "Ninety days of VIP access",
+      "Full Premium access",
+      "Every official KofSports pick",
+      "Complete analysis and results",
       "All sports included",
-      "Complete results access",
-      "Save compared with monthly pricing",
+      "Best price per day",
     ],
   },
 ];
@@ -68,7 +103,7 @@ export default function PlansPage() {
       <section className="border-b border-white/10 bg-zinc-950">
         <div className="mx-auto max-w-7xl px-5 py-20 text-center lg:px-8">
           <p className="text-sm font-extrabold uppercase tracking-[0.3em] text-brand">
-            KofSports VIP
+            KofSports Premium
           </p>
 
           <h1 className="mt-4 font-display text-5xl font-bold uppercase text-white sm:text-6xl">
@@ -76,8 +111,9 @@ export default function PlansPage() {
           </h1>
 
           <p className="mx-auto mt-6 max-w-3xl text-lg leading-8 text-zinc-400">
-            Every plan includes access to all active sports. No separate
-            football, baseball, basketball, or hockey package is required.
+            Every Premium Pass includes access to all active sports, official
+            selections, confidence ratings, recommended units, and complete
+            betting analysis.
           </p>
         </div>
       </section>
@@ -87,18 +123,18 @@ export default function PlansPage() {
           <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
             {plans.map((plan) => (
               <article
-                key={plan.name}
+                key={plan.planKey}
                 className={
                   plan.popular
-                    ? "relative rounded-2xl border border-brand bg-brand/[0.06] p-7 shadow-[0_0_50px_rgba(158,240,26,0.08)]"
-                    : "relative rounded-2xl border border-white/10 bg-white/[0.025] p-7"
+                    ? "relative flex flex-col rounded-2xl border border-brand bg-brand/[0.06] p-7 shadow-[0_0_50px_rgba(158,240,26,0.08)]"
+                    : "relative flex flex-col rounded-2xl border border-white/10 bg-white/[0.025] p-7"
                 }
               >
-                {plan.popular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-brand px-4 py-1 text-xs font-black uppercase tracking-wider text-black">
+                {plan.popular ? (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-brand px-4 py-1 text-xs font-black uppercase tracking-wider text-black">
                     Most Popular
                   </div>
-                )}
+                ) : null}
 
                 <p className="text-sm font-extrabold uppercase tracking-wider text-brand">
                   {plan.duration}
@@ -112,48 +148,72 @@ export default function PlansPage() {
                   {plan.price}
                 </p>
 
-                <p className="mt-5 min-h-20 leading-7 text-zinc-400">
+                <p className="mt-2 text-sm font-bold uppercase tracking-wide text-zinc-500">
+                  {plan.billingLabel}
+                </p>
+
+                <p className="mt-5 min-h-24 leading-7 text-zinc-400">
                   {plan.description}
                 </p>
 
-                <ul className="mt-7 space-y-4">
+                <ul className="mt-7 flex-1 space-y-4">
                   {plan.features.map((feature) => (
                     <li
                       key={feature}
                       className="flex gap-3 text-sm leading-6 text-zinc-300"
                     >
                       <span className="font-black text-brand">✓</span>
-                      {feature}
+                      <span>{feature}</span>
                     </li>
                   ))}
                 </ul>
 
-                <Link
-                  href="/login"
-                  className={
-                    plan.popular
-                      ? "mt-8 flex justify-center rounded-md bg-brand px-5 py-3.5 text-sm font-extrabold uppercase text-black transition hover:bg-brand-light"
-                      : "mt-8 flex justify-center rounded-md border border-white/20 bg-white/5 px-5 py-3.5 text-sm font-extrabold uppercase text-white transition hover:bg-white/10"
-                  }
-                >
-                  Select Plan
-                </Link>
+                <div className="mt-8">
+                  <CheckoutButton
+                    plan={plan.planKey}
+                    label={plan.buttonLabel}
+                    className={
+                      plan.popular
+                        ? "rounded-md bg-brand px-5 py-3.5 text-sm font-extrabold uppercase text-black transition hover:bg-brand-light"
+                        : "rounded-md border border-white/20 bg-white/5 px-5 py-3.5 text-sm font-extrabold uppercase text-white transition hover:bg-white/10"
+                    }
+                  />
+                </div>
               </article>
             ))}
           </div>
 
-          <div className="mt-12 rounded-xl border border-white/10 bg-zinc-950 p-7">
-            <h2 className="font-display text-2xl font-bold uppercase text-white">
-              Relaunch pricing
-            </h2>
+          <div className="mt-12 grid gap-6 lg:grid-cols-2">
+            <div className="rounded-xl border border-white/10 bg-zinc-950 p-7">
+              <h2 className="font-display text-2xl font-bold uppercase text-white">
+                Immediate access
+              </h2>
 
-            <p className="mt-4 max-w-4xl leading-7 text-zinc-400">
-              These prices are currently being used as the proposed KofSports
-              relaunch structure. Checkout will not be activated until the
-              payment provider, access rules, renewal terms, and refund policy
-              are finalized.
-            </p>
+              <p className="mt-4 leading-7 text-zinc-400">
+                After payment, your KofSports account will be upgraded to
+                Premium and you will be able to access all currently published
+                Premium Picks.
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-white/10 bg-zinc-950 p-7">
+              <h2 className="font-display text-2xl font-bold uppercase text-white">
+                Recurring billing
+              </h2>
+
+              <p className="mt-4 leading-7 text-zinc-400">
+                Weekly, monthly, and 90-day passes automatically renew until
+                canceled. The 1-Day Premium Pass is a one-time purchase and does
+                not renew.
+              </p>
+            </div>
           </div>
+
+          <p className="mx-auto mt-10 max-w-4xl text-center text-sm leading-6 text-zinc-500">
+            KofSports provides sports betting information and entertainment.
+            Results are not guaranteed. Please wager responsibly and never risk
+            more than you can afford to lose.
+          </p>
         </div>
       </section>
     </>
