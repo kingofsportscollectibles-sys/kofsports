@@ -303,6 +303,15 @@ async function handleCheckoutCompleted(
   const profileId =
     session.metadata?.profile_id ?? session.client_reference_id ?? null;
 
+    console.log("=== CHECKOUT COMPLETED ===");
+console.log({
+  sessionId: session.id,
+  mode: session.mode,
+  paymentStatus: session.payment_status,
+  profileId,
+  metadata: session.metadata,
+});
+
   if (!profileId) {
     throw new Error(`Checkout Session ${session.id} has no profile ID.`);
   }
@@ -335,6 +344,8 @@ async function handleCheckoutCompleted(
       purchasedAt.getTime() + 24 * 60 * 60 * 1000,
     ).toISOString();
 
+    console.log("Updating profile to PREMIUM:", profileId);
+
     await updateProfile(profileId, {
       membership: "premium",
       stripe_customer_id: customerId,
@@ -343,6 +354,8 @@ async function handleCheckoutCompleted(
       subscription_status: "one_time_active",
       membership_expires_at: expiresAt,
     });
+
+    console.log("Profile successfully updated.");
 
     await recordTransaction({
       eventId: event.id,
