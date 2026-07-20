@@ -1,5 +1,8 @@
 import Link from "next/link";
+
 import { MobileNavigation } from "@/components/layout/mobile-navigation";
+import { UserMenu } from "@/components/layout/user-menu";
+import { createClient } from "@/lib/supabase/server";
 
 const navigation = [
   { name: "Free Picks", href: "/free-picks" },
@@ -9,7 +12,53 @@ const navigation = [
   { name: "About", href: "/about" },
 ];
 
-export function SiteHeader() {
+export type HeaderUser = {
+  email: string | null;
+  displayName: string;
+  membership: "free" | "premium";
+  role: string;
+  membershipExpiresAt: string | null;
+};
+
+export async function SiteHeader() {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  let headerUser: HeaderUser | null = null;
+
+  if (user) {
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("membership, role, membership_expires_at")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (profileError) {
+      console.error("Unable to load header profile:", profileError);
+    }
+
+    const metadataDisplayName =
+      typeof user.user_metadata?.display_name === "string"
+        ? user.user_metadata.display_name
+        : typeof user.user_metadata?.full_name === "string"
+          ? user.user_metadata.full_name
+          : null;
+
+    const emailDisplayName = user.email?.split("@")[0] ?? "Member";
+
+    headerUser = {
+      email: user.email ?? null,
+      displayName: metadataDisplayName ?? emailDisplayName,
+      membership:
+        profile?.membership === "premium" ? "premium" : "free",
+      role: profile?.role ?? "user",
+      membershipExpiresAt: profile?.membership_expires_at ?? null,
+    };
+  }
+
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-black/90 backdrop-blur">
       <div className="relative mx-auto flex max-w-7xl items-center justify-between px-5 py-4 lg:px-8">
@@ -36,22 +85,28 @@ export function SiteHeader() {
         </nav>
 
         <div className="hidden items-center gap-3 lg:flex">
-          <Link
-            href="/login"
-            className="text-sm font-semibold text-zinc-300 transition hover:text-white"
-          >
-            Log In
-          </Link>
+          {headerUser ? (
+            <UserMenu user={headerUser} />
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="text-sm font-semibold text-zinc-300 transition hover:text-white"
+              >
+                Log In
+              </Link>
 
-          <Link
-            href="/plans"
-            className="rounded-md bg-brand px-4 py-2.5 text-sm font-extrabold text-black transition hover:bg-brand-light"
-          >
-            Upgrade to Premium
-          </Link>
+              <Link
+                href="/plans"
+                className="rounded-md bg-brand px-4 py-2.5 text-sm font-extrabold text-black transition hover:bg-brand-light"
+              >
+                Upgrade to Premium
+              </Link>
+            </>
+          )}
         </div>
 
-        <MobileNavigation />
+        <MobileNavigation user={headerUser} />
       </div>
     </header>
   );
