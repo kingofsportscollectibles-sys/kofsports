@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { fromZonedTime } from "date-fns-tz";
 
 import { createClient } from "@/lib/supabase/server";
 
@@ -86,7 +87,7 @@ function validatePickFields(formData: FormData) {
     };
   }
 
-  const parsedGameTime = new Date(gameTime);
+const parsedGameTime = fromZonedTime(gameTime, "America/New_York");
 
   if (Number.isNaN(parsedGameTime.getTime())) {
     return {
