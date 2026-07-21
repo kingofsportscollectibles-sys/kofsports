@@ -209,15 +209,16 @@ function calculateWinPercentage(wins: number, losses: number) {
   return decisions > 0 ? (wins / decisions) * 100 : 0;
 }
 
-function calculateRoi(netUnits: number, riskedUnits: number) {
-  return riskedUnits > 0 ? (netUnits / riskedUnits) * 100 : 0;
-}
-
 function filterByRange(
   picks: Pick[],
   range: RangeFilter,
   currentDate: Date,
 ) {
+  if (range === "all-time") {
+    return picks.filter(
+      (pick) => getPerformanceDate(pick) !== null,
+    );
+  }
 
   const now = currentDate;
 
@@ -807,8 +808,6 @@ export default async function PublicResultsPage({
     losses,
   );
 
-  const roi = calculateRoi(netUnits, riskedUnits);
-
   const sportGroups = createPerformanceGroups(
     picks,
     "sport",
@@ -891,7 +890,7 @@ export default async function PublicResultsPage({
             })}
           </div>
 
-          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+         <div className="mt-10 grid gap-4 sm:grid-cols-3"></div>
             <div className="rounded-3xl border border-white/10 bg-white/5 p-7">
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-gray-400">
                 {selectedRangeLabel}
@@ -943,18 +942,6 @@ export default async function PublicResultsPage({
             </div>
 
             <div className="rounded-3xl border border-white/10 bg-white/5 p-7">
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-gray-400">
-                ROI
-              </p>
-
-              <p className="mt-4 text-4xl font-black">
-                {formatPercentage(roi)}
-              </p>
-
-              <p className="mt-2 text-sm text-gray-400">
-                {riskedUnits.toFixed(2)} units risked
-              </p>
-            </div>
           </div>
         </div>
       </section>
@@ -1103,7 +1090,7 @@ export default async function PublicResultsPage({
                     />
                   </section>
 
-                  <section className="mt-10 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+                  <section className="mt-10 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                     <div className="rounded-3xl border border-gray-200 p-6 shadow-sm">
                       <p className="text-xs font-bold uppercase tracking-[0.16em] text-gray-400">
                         Current Win Streak
@@ -1166,11 +1153,6 @@ export default async function PublicResultsPage({
                             group.losses,
                           );
 
-                        const groupRoi = calculateRoi(
-                          group.netUnits,
-                          group.riskedUnits,
-                        );
-
                         return (
                           <article
                             key={group.name}
@@ -1219,11 +1201,6 @@ export default async function PublicResultsPage({
 
                               <div>
 
-                                <p className="mt-1 font-black">
-                                  {formatPercentage(
-                                    groupRoi,
-                                  )}
-                                </p>
                               </div>
                             </div>
                           </article>
@@ -1249,11 +1226,6 @@ export default async function PublicResultsPage({
                             group.losses,
                           );
 
-                        const groupRoi = calculateRoi(
-                          group.netUnits,
-                          group.riskedUnits,
-                        );
-
                         return (
                           <article
                             key={group.name}
@@ -1301,15 +1273,7 @@ export default async function PublicResultsPage({
                               </div>
 
                               <div>
-                                <p className="text-xs font-bold uppercase tracking-wide text-gray-400">
-                                  ROI
-                                </p>
-
-                                <p className="mt-1 font-black">
-                                  {formatPercentage(
-                                    groupRoi,
-                                  )}
-                                </p>
+                                
                               </div>
                             </div>
                           </article>
@@ -1334,12 +1298,6 @@ export default async function PublicResultsPage({
                             calculateWinPercentage(
                               group.wins,
                               group.losses,
-                            );
-
-                          const monthlyRoi =
-                            calculateRoi(
-                              group.netUnits,
-                              group.riskedUnits,
                             );
 
                           return (
@@ -1396,15 +1354,6 @@ export default async function PublicResultsPage({
                               </div>
 
                               <div>
-                                <p className="text-xs font-bold uppercase tracking-wide text-gray-400">
-                                  ROI
-                                </p>
-
-                                <p className="mt-1 font-black">
-                                  {formatPercentage(
-                                    monthlyRoi,
-                                  )}
-                                </p>
                               </div>
                             </article>
                           );
