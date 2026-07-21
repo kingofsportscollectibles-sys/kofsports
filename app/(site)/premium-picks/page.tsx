@@ -23,6 +23,7 @@ type PremiumPick = {
   odds: number | null;
   units: number | null;
   confidence: number | null;
+  game_date: string | null;
   game_time: string | null;
   analysis: string | null;
   best_sportsbook: string | null;
@@ -512,6 +513,7 @@ export default async function PremiumPicksPage({
     odds,
     units,
     confidence,
+    game_date,
     game_time,
     analysis,
     best_sportsbook,
@@ -519,6 +521,13 @@ export default async function PremiumPicksPage({
     status,
     profit_loss
   `;
+
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  const thirtyDaysAgoDate = thirtyDaysAgo
+    .toISOString()
+    .split("T")[0];
 
   const [
     { data: activeData, error: activeError },
@@ -539,6 +548,8 @@ export default async function PremiumPicksPage({
       .eq("is_published", true)
       .eq("is_premium", true)
       .in("status", ["won", "lost", "push", "void"])
+      .gte("game_date", thirtyDaysAgoDate)
+      .order("game_date", { ascending: false })
       .order("game_time", { ascending: false })
       .limit(10),
   ]);
@@ -746,8 +757,8 @@ export default async function PremiumPicksPage({
               </h2>
 
               <p className="mt-3 max-w-2xl leading-7 text-gray-600">
-                Recently graded Premium plays remain visible so members can
-                review the original selections and analysis.
+                The 10 most recent graded Premium plays from the last 30
+                days remain visible for members to review.
               </p>
             </div>
 
@@ -762,11 +773,11 @@ export default async function PremiumPicksPage({
           {!recentError && recentPicks.length === 0 && (
             <div className="mt-10 rounded-3xl border border-dashed border-gray-300 bg-white px-6 py-12 text-center">
               <h3 className="text-xl font-black">
-                No Premium results have been graded yet
+                No Premium results in the last 30 days
               </h3>
 
               <p className="mt-3 text-gray-600">
-                Completed Premium plays will appear here after grading.
+                Newly graded Premium plays will appear here automatically.
               </p>
             </div>
           )}
