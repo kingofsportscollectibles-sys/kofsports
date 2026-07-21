@@ -591,9 +591,6 @@ export default async function AdminResultsPage() {
                                 </div>
 
                                 <div>
-                                  <p className="text-xs font-bold uppercase tracking-wide text-gray-400">
-                                    ROI
-                                  </p>
 
                                   <p className="mt-1 font-black text-black">
                                     {formatPercentage(groupRoi)}

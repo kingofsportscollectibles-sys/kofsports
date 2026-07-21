@@ -41,12 +41,6 @@ export default async function MemberLayout({
           </div>
 
           <nav className="flex flex-wrap items-center gap-3 text-sm font-semibold sm:gap-5">
-            <Link
-              href="/dashboard"
-              className="rounded-lg px-3 py-2 text-white transition hover:bg-white/10 hover:text-amber-300"
-            >
-              Dashboard
-            </Link>
 
             <Link
               href="/premium-picks"

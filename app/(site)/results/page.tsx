@@ -794,14 +794,6 @@ export default async function PublicResultsPage({
     .map((pick) => pick.confidence)
     .filter((value): value is number => value !== null);
 
-  const averageOdds =
-    oddsValues.length > 0
-      ? oddsValues.reduce(
-          (total, value) => total + value,
-          0,
-        ) / oddsValues.length
-      : 0;
-
   const averageConfidence =
     confidenceValues.length > 0
       ? confidenceValues.reduce(
@@ -1139,16 +1131,6 @@ export default async function PublicResultsPage({
 
                       <p className="mt-3 text-3xl font-black">
                         {streaks.longestLosingStreak}
-                      </p>
-                    </div>
-
-                    <div className="rounded-3xl border border-gray-200 p-6 shadow-sm">
-                      <p className="text-xs font-bold uppercase tracking-[0.16em] text-gray-400">
-                        Average Odds
-                      </p>
-
-                      <p className="mt-3 text-3xl font-black">
-                        {formatAverageOdds(averageOdds)}
                       </p>
                     </div>
 

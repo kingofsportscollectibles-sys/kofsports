@@ -143,7 +143,7 @@ export function UserMenu({ user }: UserMenuProps) {
 
           <div className="p-2">
             <Link
-              href="/dashboard"
+              href="/account"
               onClick={() => setIsOpen(false)}
               className="block rounded-md px-3 py-2.5 text-sm font-semibold text-zinc-300 transition hover:bg-white/5 hover:text-white"
             >

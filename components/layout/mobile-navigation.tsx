@@ -151,14 +151,6 @@ export function MobileNavigation({ user }: MobileNavigationProps) {
                 <div className="mt-5 border-t border-white/10 pt-5">
                   <div className="grid gap-3">
                     <Link
-                      href="/dashboard"
-                      onClick={closeMenu}
-                      className="rounded-md border border-white/10 bg-white/5 px-4 py-3 text-center text-sm font-extrabold uppercase text-white"
-                    >
-                      Dashboard
-                    </Link>
-
-                    <Link
                       href="/account"
                       onClick={closeMenu}
                       className="rounded-md border border-white/10 bg-white/5 px-4 py-3 text-center text-sm font-extrabold uppercase text-white"

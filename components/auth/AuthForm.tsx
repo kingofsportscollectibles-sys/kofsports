@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 import { createClient } from "@/lib/supabase/client";
 
@@ -31,21 +31,22 @@ export default function AuthForm({ mode }: AuthFormProps) {
 
     try {
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
+        const { error: loginError } =
+          await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
 
-        if (error) {
-          throw error;
+        if (loginError) {
+          throw loginError;
         }
 
-        router.push("/dashboard");
+        router.push("/account");
         router.refresh();
         return;
       }
 
-      const { error } = await supabase.auth.signUp({
+      const { error: signupError } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -53,8 +54,8 @@ export default function AuthForm({ mode }: AuthFormProps) {
         },
       });
 
-      if (error) {
-        throw error;
+      if (signupError) {
+        throw signupError;
       }
 
       setMessage(
@@ -92,7 +93,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
 
             <p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-gray-600">
               {isLogin
-                ? "Log in to access your KofSports member dashboard and premium picks."
+                ? "Log in to access your KofSports account and premium picks."
                 : "Create your account to begin your KofSports premium membership experience."}
             </p>
           </div>

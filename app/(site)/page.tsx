@@ -1,49 +1,5 @@
 import Link from "next/link";
-
-const sportsResults = [
-  {
-    sport: "NFL",
-    wins: "1,096",
-    losses: "805",
-    total: "1,901",
-    winRate: "57.7%",
-  },
-  {
-    sport: "MLB",
-    wins: "2,656",
-    losses: "1,954",
-    total: "4,610",
-    winRate: "57.6%",
-  },
-  {
-    sport: "NHL",
-    wins: "1,010",
-    losses: "785",
-    total: "1,795",
-    winRate: "56.3%",
-  },
-  {
-    sport: "NBA",
-    wins: "1,057",
-    losses: "853",
-    total: "1,910",
-    winRate: "55.3%",
-  },
-  {
-    sport: "CFB",
-    wins: "567",
-    losses: "464",
-    total: "1,031",
-    winRate: "55.0%",
-  },
-  {
-    sport: "CBB",
-    wins: "277",
-    losses: "235",
-    total: "512",
-    winRate: "54.1%",
-  },
-];
+import { getOverallRecord, getSportResults } from "@/lib/results";
 
 const trustPoints = [
   {
@@ -66,7 +22,9 @@ const trustPoints = [
   },
 ];
 
-export default function Home() {
+export default async function Home() {
+  const sportsResults = await getSportResults();
+const overallRecord = getOverallRecord(sportsResults);
   return (
     <>
       <section className="relative overflow-hidden border-b border-white/10">
@@ -127,17 +85,17 @@ export default function Home() {
               <div className="border-b border-white/10 px-6 py-5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.22em] text-zinc-500">
-                      Historical record
-                    </p>
+                   <p className="text-xs font-bold uppercase tracking-[0.22em] text-zinc-500">
+  Official KofSports Record
+</p>
                     <p className="mt-1 font-display text-2xl font-bold uppercase text-white">
                       All Sports
                     </p>
                   </div>
 
                   <div className="rounded-full border border-brand/30 bg-brand/10 px-3 py-1 text-xs font-extrabold text-brand">
-                    2015–2025
-                  </div>
+  Live Updated
+</div>
                 </div>
               </div>
 
@@ -147,7 +105,7 @@ export default function Home() {
                     Total Picks
                   </p>
                   <p className="mt-2 font-display text-5xl font-bold text-white">
-                    11,759
+                    {overallRecord.formattedTotal}
                   </p>
                 </div>
 
@@ -156,7 +114,7 @@ export default function Home() {
                     Win Rate
                   </p>
                   <p className="mt-2 font-display text-5xl font-bold text-brand">
-                    56.7%
+                    {overallRecord.formattedWinRate}
                   </p>
                 </div>
               </div>
@@ -165,19 +123,22 @@ export default function Home() {
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-zinc-500">Overall record</span>
                   <span className="font-bold text-white">
-                    6,663–5,096
+                    {overallRecord.formattedWins}–{overallRecord.formattedLosses}
                   </span>
                 </div>
 
                 <div className="mt-4 h-3 overflow-hidden rounded-full bg-zinc-800">
-                  <div className="h-full w-[56.7%] rounded-full bg-brand" />
+                  <div
+  className="h-full rounded-full bg-brand"
+  style={{ width: `${overallRecord.winRate}%` }}
+/>
                 </div>
 
                 <p className="mt-5 text-sm leading-6 text-zinc-400">
-                  Historical results from the original KofSports platform.
-                  Relaunch results will be independently tracked and timestamped
-                  within the new system.
-                </p>
+  Historical performance from the original KofSports platform has
+  been combined with every official pick published since the relaunch.
+  Records update automatically as picks are settled.
+</p>
               </div>
 
               <div className="bg-brand px-6 py-4 text-center">
@@ -229,15 +190,15 @@ export default function Home() {
                       <td className="px-6 py-5 font-display text-xl font-bold text-white">
                         {result.sport}
                       </td>
-                      <td className="px-6 py-5 text-zinc-300">{result.wins}</td>
+                      <td className="px-6 py-5 text-zinc-300">{result.formattedWins}</td>
                       <td className="px-6 py-5 text-zinc-300">
-                        {result.losses}
+                        {result.formattedLosses}
                       </td>
                       <td className="px-6 py-5 text-zinc-300">
-                        {result.total}
+                        {result.formattedTotal}
                       </td>
                       <td className="px-6 py-5 text-right font-bold text-brand">
-                        {result.winRate}
+                        {result.formattedWinRate}
                       </td>
                     </tr>
                   ))}
@@ -248,11 +209,11 @@ export default function Home() {
                     <td className="px-6 py-5 font-display text-xl font-bold uppercase text-white">
                       Total
                     </td>
-                    <td className="px-6 py-5 font-bold text-white">6,663</td>
-                    <td className="px-6 py-5 font-bold text-white">5,096</td>
-                    <td className="px-6 py-5 font-bold text-white">11,759</td>
+                    <td className="px-6 py-5 font-bold text-white">{overallRecord.formattedWins}</td>
+                    <td className="px-6 py-5 font-bold text-white">{overallRecord.formattedLosses}</td>
+                    <td className="px-6 py-5 font-bold text-white">{overallRecord.formattedTotal}</td>
                     <td className="px-6 py-5 text-right text-lg font-extrabold text-brand">
-                      56.7%
+                      {overallRecord.formattedWinRate}
                     </td>
                   </tr>
                 </tfoot>
