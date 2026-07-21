@@ -1,8 +1,18 @@
 import Link from "next/link";
 
 import { createClient } from "@/lib/supabase/server";
+import PremiumVault from "@/components/premium/PremiumVault";
 
 type PickStatus = "pending" | "won" | "lost" | "push" | "void";
+
+type PremiumPageSearchParams = {
+  vaultSearch?: string;
+  vaultSport?: string;
+  vaultBetType?: string;
+  vaultResult?: string;
+  vaultYear?: string;
+  vaultPage?: string;
+};
 
 type PremiumPick = {
   id: string;
@@ -462,7 +472,12 @@ function RecentResultCard({
   );
 }
 
-export default async function PremiumPicksPage() {
+export default async function PremiumPicksPage({
+  searchParams,
+}: {
+  searchParams: Promise<PremiumPageSearchParams>;
+}) {
+  const resolvedSearchParams = await searchParams;
   const supabase = await createClient();
 
   const {
@@ -769,6 +784,11 @@ export default async function PremiumPicksPage() {
           )}
         </div>
       </section>
+
+      <PremiumVault
+        searchParams={resolvedSearchParams}
+        hasPremiumAccess={hasPremiumAccess}
+      />
     </main>
   );
 }

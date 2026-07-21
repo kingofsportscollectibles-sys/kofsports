@@ -24,6 +24,7 @@ type Pick = {
   odds: number | null;
   units: number | null;
   confidence: number | null;
+  game_date: string | null;
   game_time: string | null;
   status: string | null;
   profit_loss: number | null;
@@ -61,7 +62,7 @@ type ResultStyles = {
   value: string;
 };
 
-const CURRENT_SEASON = 2026;
+const CURRENT_SEASON = new Date().getFullYear();
 
 const rangeOptions: Array<{
   value: RangeFilter;
@@ -186,6 +187,7 @@ function formatChartDate(value: string | Date | null) {
 
 function getPerformanceDate(pick: Pick) {
   const value =
+    pick.game_date ??
     pick.game_time ??
     pick.published_at ??
     pick.updated_at;
@@ -718,6 +720,7 @@ export default async function PublicResultsPage({
         odds,
         units,
         confidence,
+        game_date,
         game_time,
         status,
         profit_loss,
@@ -727,7 +730,7 @@ export default async function PublicResultsPage({
     )
     .eq("is_published", true)
     .in("status", ["won", "lost", "push"])
-    .order("updated_at", { ascending: false });
+    .order("game_date", { ascending: false });
 
   const allPublishedPicks = (data ?? []) as Pick[];
 
@@ -890,7 +893,7 @@ export default async function PublicResultsPage({
             })}
           </div>
 
-         <div className="mt-10 grid gap-4 sm:grid-cols-3"></div>
+         <div className="mt-10 grid gap-4 sm:grid-cols-3">
             <div className="rounded-3xl border border-white/10 bg-white/5 p-7">
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-gray-400">
                 {selectedRangeLabel}
@@ -941,7 +944,6 @@ export default async function PublicResultsPage({
               </p>
             </div>
 
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-7">
           </div>
         </div>
       </section>
@@ -1510,6 +1512,5 @@ export default async function PublicResultsPage({
           )}
         </div>
       </section>
-    </main>
-  );
+    </main>);
 }
