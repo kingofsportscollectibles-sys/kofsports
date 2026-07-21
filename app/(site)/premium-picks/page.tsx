@@ -340,13 +340,7 @@ function UnlockedPremiumCard({ pick }: { pick: PremiumPick }) {
   );
 }
 
-function RecentResultCard({
-  pick,
-  hasPremiumAccess,
-}: {
-  pick: PremiumPick;
-  hasPremiumAccess: boolean;
-}) {
+function RecentResultCard({ pick }: { pick: PremiumPick }) {
   const result = getResultDisplay(pick.status);
   const formattedProfitLoss = formatProfitLoss(pick.profit_loss);
 
@@ -385,16 +379,10 @@ function RecentResultCard({
             </p>
 
             <h3 className="mt-3 text-2xl font-black tracking-tight text-black">
-              {hasPremiumAccess ? (
-                <>
-                  {pick.selection}{" "}
-                  <span className="text-amber-700">
-                    {formatOdds(pick.odds)}
-                  </span>
-                </>
-              ) : (
-                "Premium selection"
-              )}
+              {pick.selection}{" "}
+              <span className="text-amber-700">
+                {formatOdds(pick.odds)}
+              </span>
             </h3>
 
             <p className="mt-2 text-sm font-semibold text-gray-500">
@@ -402,7 +390,7 @@ function RecentResultCard({
             </p>
           </div>
 
-          {hasPremiumAccess && formattedProfitLoss && (
+          {formattedProfitLoss && (
             <div className="rounded-2xl border border-gray-200 bg-gray-50 px-5 py-4 sm:text-right">
               <p className="text-xs font-bold uppercase tracking-[0.14em] text-gray-500">
                 Result
@@ -423,50 +411,38 @@ function RecentResultCard({
           )}
         </div>
 
-        {hasPremiumAccess ? (
-          <>
-            <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
-                <p className="text-xs font-bold uppercase tracking-[0.14em] text-gray-500">
-                  Recommended Risk
-                </p>
-
-                <p className="mt-2 font-black text-black">
-                  {formatUnits(pick.units)}
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
-                <p className="text-xs font-bold uppercase tracking-[0.14em] text-gray-500">
-                  Confidence
-                </p>
-
-                <p className="mt-2 tracking-wider text-amber-500">
-                  {confidenceStars(pick.confidence)}
-                </p>
-              </div>
-            </div>
-
-            {pick.analysis && (
-              <details className="mt-5 rounded-2xl border border-gray-200 bg-gray-50 p-5">
-                <summary className="cursor-pointer text-sm font-black uppercase tracking-[0.14em] text-amber-700">
-                  Review original analysis
-                </summary>
-
-                <div className="mt-4 whitespace-pre-line text-sm leading-7 text-gray-700">
-                  {pick.analysis}
-                </div>
-              </details>
-            )}
-          </>
-        ) : (
-          <div className="mt-6 flex items-center justify-between gap-4 rounded-2xl border border-gray-200 bg-gray-50 p-5">
-            <p className="text-sm font-semibold text-gray-600">
-              Premium members can review the selection and original analysis.
+        <div className="mt-6 grid gap-3 sm:grid-cols-2">
+          <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-gray-500">
+              Recommended Risk
             </p>
 
-            <span className="shrink-0 text-xl">🔒</span>
+            <p className="mt-2 font-black text-black">
+              {formatUnits(pick.units)}
+            </p>
           </div>
+
+          <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-gray-500">
+              Confidence
+            </p>
+
+            <p className="mt-2 tracking-wider text-amber-500">
+              {confidenceStars(pick.confidence)}
+            </p>
+          </div>
+        </div>
+
+        {pick.analysis && (
+          <details className="mt-5 rounded-2xl border border-gray-200 bg-gray-50 p-5">
+            <summary className="cursor-pointer text-sm font-black uppercase tracking-[0.14em] text-amber-700">
+              Review original analysis
+            </summary>
+
+            <div className="mt-4 whitespace-pre-line text-sm leading-7 text-gray-700">
+              {pick.analysis}
+            </div>
+          </details>
         )}
       </div>
     </article>
@@ -525,10 +501,6 @@ export default async function PremiumPicksPage({
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-  const thirtyDaysAgoDate = thirtyDaysAgo
-    .toISOString()
-    .split("T")[0];
-
   const [
     { data: activeData, error: activeError },
     { data: recentData, error: recentError },
@@ -548,8 +520,7 @@ export default async function PremiumPicksPage({
       .eq("is_published", true)
       .eq("is_premium", true)
       .in("status", ["won", "lost", "push", "void"])
-      .gte("game_date", thirtyDaysAgoDate)
-      .order("game_date", { ascending: false })
+      .gte("game_time", thirtyDaysAgo.toISOString())
       .order("game_time", { ascending: false })
       .limit(10),
   ]);
@@ -568,20 +539,20 @@ export default async function PremiumPicksPage({
   }
 
   return (
-    <main className="bg-white text-black">
-      <section className="relative overflow-hidden bg-black px-6 py-20 text-white sm:py-24">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(251,191,36,0.22),transparent_36%)]" />
+   <main className="bg-white text-black">
+  <section className="relative overflow-hidden bg-black px-6 py-10 text-white sm:py-12">
+    <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(251,191,36,0.22),transparent_36%)]" />
 
-        <div className="relative mx-auto max-w-6xl">
-          <span className="inline-flex rounded-full border border-amber-400/50 bg-amber-400/10 px-4 py-2 text-xs font-black uppercase tracking-[0.22em] text-amber-300">
-            KofSports Premium
-          </span>
+    <div className="relative mx-auto max-w-6xl">
+      <span className="inline-flex rounded-full border border-amber-400/50 bg-amber-400/10 px-4 py-2 text-xs font-black uppercase tracking-[0.22em] text-amber-300">
+        KofSports Premium
+      </span>
 
-          <h1 className="mt-7 max-w-4xl text-5xl font-black tracking-tight sm:text-6xl lg:text-7xl">
+          <h1 className="mt-4 max-w-3xl text-4xl font-black tracking-tight sm:text-5xl lg:text-5xl">
             Today&apos;s premium betting card.
           </h1>
 
-          <p className="mt-6 max-w-2xl text-lg leading-8 text-gray-300 sm:text-xl">
+          <p className="mt-4 max-w-2xl text-lg leading-7 text-gray-300">
             Get every published selection, recommended unit size, best
             available odds, confidence rating, and the complete reasoning
             behind each play.
@@ -757,8 +728,8 @@ export default async function PremiumPicksPage({
               </h2>
 
               <p className="mt-3 max-w-2xl leading-7 text-gray-600">
-                The 10 most recent graded Premium plays from the last 30
-                days remain visible for members to review.
+                See the 10 most recent graded Premium plays from the last
+                30 days, including the original selections and analysis.
               </p>
             </div>
 
@@ -785,21 +756,14 @@ export default async function PremiumPicksPage({
           {!recentError && recentPicks.length > 0 && (
             <div className="mt-10 grid gap-5 lg:grid-cols-2">
               {recentPicks.map((pick) => (
-                <RecentResultCard
-                  key={pick.id}
-                  pick={pick}
-                  hasPremiumAccess={hasPremiumAccess}
-                />
+                <RecentResultCard key={pick.id} pick={pick} />
               ))}
             </div>
           )}
         </div>
       </section>
 
-      <PremiumVault
-        searchParams={resolvedSearchParams}
-        hasPremiumAccess={hasPremiumAccess}
-      />
+  <PremiumVault searchParams={resolvedSearchParams} />
     </main>
   );
 }

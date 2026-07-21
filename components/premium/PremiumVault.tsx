@@ -133,11 +133,10 @@ function buildVaultHref(
 
 export default async function PremiumVault({
   searchParams,
-  hasPremiumAccess,
 }: {
   searchParams: VaultSearchParams;
-  hasPremiumAccess: boolean;
 }) {
+
   const supabase = await createClient();
 
   const currentPage = parsePage(searchParams.vaultPage);
@@ -265,35 +264,11 @@ export default async function PremiumVault({
           </h2>
 
           <p className="mt-3 leading-7 text-gray-600">
-            Search the complete KofSports Premium archive by selection,
-            sport, bet type, result, or year.
-          </p>
+  Search the complete KofSports Premium results archive by
+  selection, sport, bet type, result, or year.
+</p>
         </div>
-
-        {!hasPremiumAccess ? (
-          <div className="mt-10 rounded-3xl border border-amber-200 bg-amber-50 px-6 py-12 text-center">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-black text-2xl text-white">
-              🔒
-            </div>
-
-            <h3 className="mt-5 text-2xl font-black">
-              Premium Vault access is locked
-            </h3>
-
-            <p className="mx-auto mt-3 max-w-xl leading-7 text-gray-600">
-              Upgrade to Premium to search every archived KofSports pick
-              dating back to 2017.
-            </p>
-
-            <Link
-              href="/plans"
-              className="mt-6 inline-flex min-h-12 items-center justify-center rounded-xl bg-amber-400 px-7 py-3 font-black text-black transition hover:bg-amber-300"
-            >
-              View Premium Plans
-            </Link>
-          </div>
-        ) : (
-          <>
+    
             <form
               action="/vip#premium-vault"
               method="get"
@@ -567,8 +542,6 @@ export default async function PremiumVault({
                 )}
               </nav>
             )}
-          </>
-        )}
       </div>
     </section>
   );
