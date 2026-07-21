@@ -66,25 +66,26 @@ function statusClasses(status: string | null) {
 export default async function AdminPicksPage() {
   const supabase = await createClient();
 
-  const { data, error } = await supabase
-    .from("vip_picks")
-    .select(
-      `
-        id,
-        sport,
-        bet_type,
-        matchup,
-        selection,
-        odds,
-        units,
-        confidence,
-        game_time,
-        status,
-        profit_loss,
-        is_published
-      `,
-    )
-    .order("game_time", { ascending: false });
+ const { data, error } = await supabase
+  .from("vip_picks")
+  .select(
+    `
+      id,
+      sport,
+      bet_type,
+      matchup,
+      selection,
+      odds,
+      units,
+      confidence,
+      game_time,
+      status,
+      profit_loss,
+      is_published
+    `,
+  )
+  .eq("status", "pending")
+  .order("game_time", { ascending: true });
 
   const picks = (data ?? []) as Pick[];
 
@@ -97,7 +98,7 @@ export default async function AdminPicksPage() {
           </span>
 
           <h1 className="mt-5 text-4xl font-black tracking-tight text-black sm:text-5xl">
-            Premium selections
+            Active Premium selections
           </h1>
 
           <p className="mt-4 max-w-2xl text-lg leading-8 text-gray-600">
@@ -122,7 +123,7 @@ export default async function AdminPicksPage() {
       {!error && picks.length === 0 && (
         <section className="mt-10 rounded-3xl border border-dashed border-gray-300 bg-white px-6 py-16 text-center">
           <p className="text-xl font-bold text-black">
-            No premium picks yet
+            No active Premium picks
           </p>
 
           <Link
