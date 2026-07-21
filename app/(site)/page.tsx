@@ -18,7 +18,7 @@ const trustPoints = [
     number: "03",
     title: "Personal Access",
     description:
-      "VIP members can reach Kof directly with questions about picks, lines, and bankroll strategy.",
+      "Premium members can reach Kof directly with questions about picks, lines, and bankroll strategy.",
   },
 ];
 
@@ -44,8 +44,7 @@ const overallRecord = getOverallRecord(sportsResults);
             </p>
 
             <h1 className="mt-5 max-w-4xl font-display text-6xl font-bold uppercase leading-[0.95] tracking-tight text-white sm:text-7xl lg:text-[92px]">
-              Bet smarter.
-              <span className="block text-brand">Trust the record.</span>
+              Winning Starts With Better Information.
             </h1>
 
             <p className="mt-7 max-w-2xl text-lg leading-8 text-zinc-300">

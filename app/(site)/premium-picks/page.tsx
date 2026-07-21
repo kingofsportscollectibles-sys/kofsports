@@ -2,6 +2,8 @@ import Link from "next/link";
 
 import { createClient } from "@/lib/supabase/server";
 
+type PickStatus = "pending" | "won" | "lost" | "push" | "void";
+
 type PremiumPick = {
   id: string;
   sport: string | null;
@@ -15,6 +17,8 @@ type PremiumPick = {
   analysis: string | null;
   best_sportsbook: string | null;
   game_notes: string | null;
+  status: PickStatus | string | null;
+  profit_loss: number | null;
 };
 
 type Profile = {
@@ -59,6 +63,65 @@ function confidenceStars(confidence: number | null) {
   ).join("");
 }
 
+function formatProfitLoss(profitLoss: number | null) {
+  if (profitLoss === null) {
+    return null;
+  }
+
+  const sign = profitLoss > 0 ? "+" : "";
+
+  return `${sign}${profitLoss.toFixed(2)}u`;
+}
+
+function getResultDisplay(status: PremiumPick["status"]) {
+  switch (status) {
+    case "won":
+      return {
+        label: "Win",
+        symbol: "✓",
+        badgeClass:
+          "border-green-300 bg-green-50 text-green-700",
+        cardClass: "border-green-200",
+      };
+
+    case "lost":
+      return {
+        label: "Loss",
+        symbol: "×",
+        badgeClass:
+          "border-red-300 bg-red-50 text-red-700",
+        cardClass: "border-red-200",
+      };
+
+    case "push":
+      return {
+        label: "Push",
+        symbol: "—",
+        badgeClass:
+          "border-gray-300 bg-gray-100 text-gray-700",
+        cardClass: "border-gray-200",
+      };
+
+    case "void":
+      return {
+        label: "Void",
+        symbol: "—",
+        badgeClass:
+          "border-gray-300 bg-gray-100 text-gray-700",
+        cardClass: "border-gray-200",
+      };
+
+    default:
+      return {
+        label: "Pending",
+        symbol: "•",
+        badgeClass:
+          "border-amber-300 bg-amber-50 text-amber-700",
+        cardClass: "border-amber-200",
+      };
+  }
+}
+
 function LockedPremiumCard({
   pick,
   index,
@@ -81,7 +144,7 @@ function LockedPremiumCard({
           </div>
 
           <p className="text-sm font-semibold text-gray-500">
-            Today&apos;s Card
+            {formatGameTime(pick.game_time)}
           </p>
         </div>
       </div>
@@ -198,7 +261,9 @@ function UnlockedPremiumCard({ pick }: { pick: PremiumPick }) {
 
           <h2 className="mt-2 text-3xl font-black tracking-tight text-black">
             {pick.selection}{" "}
-            <span className="text-amber-700">{formatOdds(pick.odds)}</span>
+            <span className="text-amber-700">
+              {formatOdds(pick.odds)}
+            </span>
           </h2>
         </div>
 
@@ -264,6 +329,139 @@ function UnlockedPremiumCard({ pick }: { pick: PremiumPick }) {
   );
 }
 
+function RecentResultCard({
+  pick,
+  hasPremiumAccess,
+}: {
+  pick: PremiumPick;
+  hasPremiumAccess: boolean;
+}) {
+  const result = getResultDisplay(pick.status);
+  const formattedProfitLoss = formatProfitLoss(pick.profit_loss);
+
+  return (
+    <article
+      className={`overflow-hidden rounded-3xl border bg-white shadow-sm ${result.cardClass}`}
+    >
+      <div className="border-b border-gray-100 bg-gray-50 px-6 py-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded-full bg-black px-3 py-1 text-xs font-black uppercase tracking-[0.16em] text-white">
+              {pick.sport ?? "Sports"}
+            </span>
+
+            {pick.bet_type && (
+              <span className="rounded-full border border-gray-300 bg-white px-3 py-1 text-xs font-bold uppercase tracking-[0.12em] text-gray-700">
+                {pick.bet_type}
+              </span>
+            )}
+          </div>
+
+          <span
+            className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-black uppercase tracking-[0.14em] ${result.badgeClass}`}
+          >
+            <span>{result.symbol}</span>
+            {result.label}
+          </span>
+        </div>
+      </div>
+
+      <div className="px-6 py-6">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="text-sm font-bold uppercase tracking-[0.14em] text-gray-500">
+              {pick.matchup ?? "Premium matchup"}
+            </p>
+
+            <h3 className="mt-3 text-2xl font-black tracking-tight text-black">
+              {hasPremiumAccess ? (
+                <>
+                  {pick.selection}{" "}
+                  <span className="text-amber-700">
+                    {formatOdds(pick.odds)}
+                  </span>
+                </>
+              ) : (
+                "Premium selection"
+              )}
+            </h3>
+
+            <p className="mt-2 text-sm font-semibold text-gray-500">
+              {formatGameTime(pick.game_time)}
+            </p>
+          </div>
+
+          {hasPremiumAccess && formattedProfitLoss && (
+            <div className="rounded-2xl border border-gray-200 bg-gray-50 px-5 py-4 sm:text-right">
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-gray-500">
+                Result
+              </p>
+
+              <p
+                className={`mt-1 text-xl font-black ${
+                  pick.profit_loss && pick.profit_loss > 0
+                    ? "text-green-700"
+                    : pick.profit_loss && pick.profit_loss < 0
+                      ? "text-red-700"
+                      : "text-gray-700"
+                }`}
+              >
+                {formattedProfitLoss}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {hasPremiumAccess ? (
+          <>
+            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
+                <p className="text-xs font-bold uppercase tracking-[0.14em] text-gray-500">
+                  Recommended Risk
+                </p>
+
+                <p className="mt-2 font-black text-black">
+                  {formatUnits(pick.units)}
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
+                <p className="text-xs font-bold uppercase tracking-[0.14em] text-gray-500">
+                  Confidence
+                </p>
+
+                <p className="mt-2 tracking-wider text-amber-500">
+                  {confidenceStars(pick.confidence)}
+                </p>
+              </div>
+            </div>
+
+            {pick.analysis && (
+              <details className="mt-5 rounded-2xl border border-gray-200 bg-gray-50 p-5">
+                <summary className="cursor-pointer text-sm font-black uppercase tracking-[0.14em] text-amber-700">
+                  Review original analysis
+                </summary>
+
+                <div className="mt-4 whitespace-pre-line text-sm leading-7 text-gray-700">
+                  {pick.analysis}
+                </div>
+              </details>
+            )}
+          </>
+        ) : (
+          <div className="mt-6 flex items-center justify-between gap-4 rounded-2xl border border-gray-200 bg-gray-50 p-5">
+            <p className="text-sm font-semibold text-gray-600">
+              Premium members can review the selection and original analysis.
+            </p>
+
+            <span className="shrink-0 text-xl">🔒</span>
+          </div>
+        )}
+      </div>
+    </article>
+  );
+}
+
 export default async function PremiumPicksPage() {
   const supabase = await createClient();
 
@@ -275,56 +473,73 @@ export default async function PremiumPicksPage() {
 
   if (user) {
     const { data: profileData, error: profileError } = await supabase
-  .from("profiles")
-  .select("membership, role")
-  .eq("id", user.id)
-  .maybeSingle();
+      .from("profiles")
+      .select("membership, role")
+      .eq("id", user.id)
+      .maybeSingle();
 
-console.log("Logged in user:", user.id);
-console.log("Profile:", profileData);
+    if (profileError) {
+      console.error("Unable to load profile:", profileError);
+    }
 
-if (profileError) {
-  console.error("Unable to load profile:", profileError);
-}
-
-profile = profileData as Profile | null;
+    profile = profileData as Profile | null;
   }
 
   const hasPremiumAccess =
     profile?.membership === "premium" || profile?.role === "admin";
 
-    console.log({
-  userId: user?.id,
-  membership: profile?.membership,
-  role: profile?.role,
-  hasPremiumAccess,
-});
+  const pickFields = `
+    id,
+    sport,
+    matchup,
+    bet_type,
+    selection,
+    odds,
+    units,
+    confidence,
+    game_time,
+    analysis,
+    best_sportsbook,
+    game_notes,
+    status,
+    profit_loss
+  `;
 
-  const { data, error } = await supabase
-    .from("vip_picks")
-    .select(
-      `
-        id,
-        sport,
-        matchup,
-        bet_type,
-        selection,
-        odds,
-        units,
-        confidence,
-        game_time,
-        analysis,
-        best_sportsbook,
-        game_notes
-      `,
-    )
-    .eq("is_published", true)
-    .eq("is_premium", true)
-    .eq("result", "pending")
-    .order("game_time", { ascending: true })
-    .limit(12);
+  const [
+    { data: activeData, error: activeError },
+    { data: recentData, error: recentError },
+  ] = await Promise.all([
+    supabase
+      .from("vip_picks")
+      .select(pickFields)
+      .eq("is_published", true)
+      .eq("is_premium", true)
+      .eq("status", "pending")
+      .order("game_time", { ascending: true })
+      .limit(12),
 
-  const picks = (data ?? []) as PremiumPick[];
+    supabase
+      .from("vip_picks")
+      .select(pickFields)
+      .eq("is_published", true)
+      .eq("is_premium", true)
+      .in("status", ["won", "lost", "push", "void"])
+      .order("game_time", { ascending: false })
+      .limit(10),
+  ]);
+
+  const activePicks = (activeData ?? []) as PremiumPick[];
+  const recentPicks = (recentData ?? []) as PremiumPick[];
+
+  const hasError = Boolean(activeError || recentError);
+
+  if (activeError) {
+    console.error("Unable to load active Premium picks:", activeError);
+  }
+
+  if (recentError) {
+    console.error("Unable to load recent Premium results:", recentError);
+  }
 
   return (
     <main className="bg-white text-black">
@@ -417,21 +632,22 @@ profile = profileData as Profile | null;
               </p>
             </div>
 
-            {hasPremiumAccess && picks.length > 0 && (
+            {activePicks.length > 0 && (
               <p className="font-bold text-gray-500">
-                {picks.length} active {picks.length === 1 ? "pick" : "picks"}
+                {activePicks.length} active{" "}
+                {activePicks.length === 1 ? "pick" : "picks"}
               </p>
             )}
           </div>
 
-          {error && (
+          {hasError && (
             <div className="mt-10 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-red-700">
-              We could not load the Premium card right now. Please check back
+              We could not load all Premium picks right now. Please check back
               shortly.
             </div>
           )}
 
-          {!error && picks.length === 0 && (
+          {!activeError && activePicks.length === 0 && (
             <div className="mt-10 rounded-3xl border border-dashed border-gray-300 bg-gray-50 px-6 py-16 text-center">
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-black text-2xl text-white">
                 ♛
@@ -443,13 +659,14 @@ profile = profileData as Profile | null;
 
               <p className="mx-auto mt-3 max-w-xl leading-7 text-gray-600">
                 New selections will appear here as soon as they are published.
+                Recent graded plays remain available below.
               </p>
             </div>
           )}
 
-          {!error && picks.length > 0 && (
+          {!activeError && activePicks.length > 0 && (
             <div className="mt-10 grid gap-6 lg:grid-cols-2">
-              {picks.map((pick, index) =>
+              {activePicks.map((pick, index) =>
                 hasPremiumAccess ? (
                   <UnlockedPremiumCard key={pick.id} pick={pick} />
                 ) : (
@@ -463,37 +680,91 @@ profile = profileData as Profile | null;
             </div>
           )}
 
-          {!error && picks.length > 0 && !hasPremiumAccess && (
-            <div className="mt-10 rounded-3xl bg-gray-100 px-6 py-10 text-center">
-              <h3 className="text-2xl font-black text-black">
-                {user
-                  ? "Upgrade your account to unlock the card"
-                  : "Already a Premium member?"}
-              </h3>
+          {!activeError &&
+            activePicks.length > 0 &&
+            !hasPremiumAccess && (
+              <div className="mt-10 rounded-3xl bg-gray-100 px-6 py-10 text-center">
+                <h3 className="text-2xl font-black text-black">
+                  {user
+                    ? "Upgrade your account to unlock the card"
+                    : "Already a Premium member?"}
+                </h3>
 
-              <p className="mx-auto mt-3 max-w-xl leading-7 text-gray-600">
-                {user
-                  ? "Choose a Premium plan to access every selection, unit size, sportsbook, and full analysis."
-                  : "Log in using the account connected to your Premium membership."}
+                <p className="mx-auto mt-3 max-w-xl leading-7 text-gray-600">
+                  {user
+                    ? "Choose a Premium plan to access every selection, unit size, sportsbook, and full analysis."
+                    : "Log in using the account connected to your Premium membership."}
+                </p>
+
+                <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
+                  {!user && (
+                    <Link
+                      href="/login"
+                      className="inline-flex min-h-12 items-center justify-center rounded-xl bg-black px-7 py-3 font-black text-white transition hover:bg-amber-400 hover:text-black"
+                    >
+                      Log In
+                    </Link>
+                  )}
+
+                  <Link
+                    href="/plans"
+                    className="inline-flex min-h-12 items-center justify-center rounded-xl bg-amber-400 px-7 py-3 font-black text-black transition hover:bg-amber-300"
+                  >
+                    {user ? "Upgrade to Premium" : "View Premium Plans"}
+                  </Link>
+                </div>
+              </div>
+            )}
+        </div>
+      </section>
+
+      <section className="border-t border-gray-200 bg-gray-50 px-6 py-16 sm:py-20">
+        <div className="mx-auto max-w-6xl">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-sm font-black uppercase tracking-[0.22em] text-amber-700">
+                Transparent Tracking
               </p>
 
-              <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
-                {!user && (
-                  <Link
-                    href="/login"
-                    className="inline-flex min-h-12 items-center justify-center rounded-xl bg-black px-7 py-3 font-black text-white transition hover:bg-amber-400 hover:text-black"
-                  >
-                    Log In
-                  </Link>
-                )}
+              <h2 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">
+                Recent Premium results
+              </h2>
 
-                <Link
-                  href="/plans"
-                  className="inline-flex min-h-12 items-center justify-center rounded-xl bg-amber-400 px-7 py-3 font-black text-black transition hover:bg-amber-300"
-                >
-                  {user ? "Upgrade to Premium" : "View Premium Plans"}
-                </Link>
-              </div>
+              <p className="mt-3 max-w-2xl leading-7 text-gray-600">
+                Recently graded Premium plays remain visible so members can
+                review the original selections and analysis.
+              </p>
+            </div>
+
+            <Link
+              href="/results"
+              className="font-black text-amber-700 transition hover:text-black"
+            >
+              View full results →
+            </Link>
+          </div>
+
+          {!recentError && recentPicks.length === 0 && (
+            <div className="mt-10 rounded-3xl border border-dashed border-gray-300 bg-white px-6 py-12 text-center">
+              <h3 className="text-xl font-black">
+                No Premium results have been graded yet
+              </h3>
+
+              <p className="mt-3 text-gray-600">
+                Completed Premium plays will appear here after grading.
+              </p>
+            </div>
+          )}
+
+          {!recentError && recentPicks.length > 0 && (
+            <div className="mt-10 grid gap-5 lg:grid-cols-2">
+              {recentPicks.map((pick) => (
+                <RecentResultCard
+                  key={pick.id}
+                  pick={pick}
+                  hasPremiumAccess={hasPremiumAccess}
+                />
+              ))}
             </div>
           )}
         </div>
