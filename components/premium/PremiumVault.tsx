@@ -128,7 +128,7 @@ function buildVaultHref(
 
   urlParams.set("vaultPage", String(page));
 
-  return `/vip?${urlParams.toString()}#premium-vault`;
+  return `/premium-picks?${urlParams.toString()}#premium-vault`;
 }
 
 export default async function PremiumVault({
@@ -270,8 +270,8 @@ export default async function PremiumVault({
         </div>
     
             <form
-              action="/vip#premium-vault"
-              method="get"
+  action="/premium-picks"
+  method="get"
               className="mt-10 rounded-3xl border border-gray-200 bg-gray-50 p-6 sm:p-8"
             >
               <div className="grid gap-5 lg:grid-cols-2">
@@ -393,10 +393,9 @@ export default async function PremiumVault({
                   Search Vault
                 </button>
 
-                <Link
-                  href="/vip#premium-vault"
+                <Link href="/premium-picks#premium-vault">
                   className="inline-flex min-h-12 items-center justify-center rounded-xl border border-gray-300 bg-white px-7 py-3 font-black text-black transition hover:border-black"
-                >
+                
                   Clear Filters
                 </Link>
               </div>
