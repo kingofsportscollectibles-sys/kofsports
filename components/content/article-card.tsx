@@ -101,7 +101,7 @@ export function ArticleCard({
         </p>
 
         <Link
-          href={`/free-picks/${article.slug}`}
+          href={`/blog/${article.slug}`}
           className="mt-7 inline-flex text-sm font-extrabold uppercase tracking-wide text-brand"
         >
           Read article →

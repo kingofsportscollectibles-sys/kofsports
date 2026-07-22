@@ -6,9 +6,9 @@ import { ArticleCard } from "@/components/content/article-card";
 import { getArticles, getFeaturedArticle } from "@/sanity/lib/articles";
 
 export const metadata: Metadata = {
-  title: "Free Sports Betting Picks",
+  title: "Sports Betting Blog | KofSports",
   description:
-    "Read free sports betting picks, game analysis, and betting education from KofSports.",
+    "Free picks, betting education, predictions, sports betting strategy, and sports analysis from KofSports.",
 };
 
 const categories = [
@@ -21,7 +21,7 @@ const categories = [
   { label: "College Basketball", value: "cbb" },
 ] as const;
 
-export default async function FreePicksPage() {
+export default async function BlogPage() {
   const [featuredArticle, articles] = await Promise.all([
     getFeaturedArticle(),
     getArticles(),
@@ -43,17 +43,18 @@ export default async function FreePicksPage() {
       <section className="border-b border-white/10 bg-zinc-950">
         <div className="mx-auto max-w-7xl px-5 py-20 lg:px-8">
           <p className="text-sm font-extrabold uppercase tracking-[0.3em] text-brand">
-            Free analysis
+            KofSports Blog
           </p>
 
           <h1 className="mt-4 max-w-4xl font-display text-5xl font-bold uppercase leading-tight text-white sm:text-6xl">
-            Free picks, previews, and betting education
-          </h1>
+  Sports betting picks, predictions, and analysis
+</h1>
 
           <p className="mt-6 max-w-3xl text-lg leading-8 text-zinc-400">
-            Read free analysis from Kof covering the NFL, MLB, NBA, NHL,
-            college football, college basketball, and the betting market.
-          </p>
+  Read free picks, game predictions, betting education, sports news,
+  and market analysis from Kof across the NFL, MLB, NBA, NHL,
+  college football, and college basketball.
+</p>
         </div>
       </section>
 

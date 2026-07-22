@@ -7,7 +7,7 @@ import type { HeaderUser } from "@/components/layout/site-header";
 import { SignOutButton } from "@/components/layout/sign-out-button";
 
 const navigation = [
-  { name: "Free Picks", href: "/free-picks" },
+  { name: "Blog", href: "/blog" },
   { name: "Premium Picks", href: "/premium-picks" },
   { name: "Results", href: "/results" },
   { name: "Plans", href: "/plans" },

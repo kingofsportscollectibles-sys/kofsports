@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 const footerLinks = [
-  { name: "Free Picks", href: "/free-picks" },
+  { name: "Blog", href: "/blog" },
   { name: "Results", href: "/results" },
   { name: "Plans", href: "/plans" },
   { name: "About Kof", href: "/about" },

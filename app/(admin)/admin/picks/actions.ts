@@ -46,6 +46,7 @@ function validatePickFields(formData: FormData) {
   const selection = String(formData.get("selection") ?? "").trim();
   const analysis = String(formData.get("analysis") ?? "").trim();
   const gameTime = String(formData.get("game_time") ?? "").trim();
+  const gameDate = gameTime.slice(0, 10);
 
   const odds = Number(String(formData.get("odds") ?? "").trim());
   const units = Number(String(formData.get("units") ?? "").trim());
@@ -53,7 +54,14 @@ function validatePickFields(formData: FormData) {
     String(formData.get("confidence") ?? "").trim(),
   );
 
-  if (!sport || !betType || !matchup || !selection || !gameTime) {
+  if (
+  !sport ||
+  !betType ||
+  !matchup ||
+  !selection ||
+  !gameTime ||
+  !gameDate
+) {
     return {
       error:
         "Sport, bet type, matchup, selection, and game time are required.",
@@ -107,6 +115,7 @@ const parsedGameTime = fromZonedTime(gameTime, "America/New_York");
       odds,
       units,
       confidence,
+       gameDate,
       gameTime: parsedGameTime.toISOString(),
     },
   };
@@ -180,6 +189,7 @@ export async function createPick(
     units: validation.data.units,
     confidence: validation.data.confidence,
     analysis: validation.data.analysis || null,
+    game_date: validation.data.gameDate,
     game_time: validation.data.gameTime,
     status: "pending",
     profit_loss: null,
@@ -293,6 +303,7 @@ export async function updatePick(
       units: validation.data.units,
       confidence: validation.data.confidence,
       analysis: validation.data.analysis || null,
+      game_date: validation.data.gameDate,
       game_time: validation.data.gameTime,
       status,
       profit_loss: profitLoss,

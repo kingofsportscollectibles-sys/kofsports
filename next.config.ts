@@ -10,6 +10,16 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+
+  async redirects() {
+    return [
+      {
+        source: "/free-picks",
+        destination: "/blog",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;
