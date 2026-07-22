@@ -36,22 +36,14 @@ function formatOdds(odds: number | null) {
 }
 
 function formatDate(value: string | null) {
-  if (!value) {
-    return "Date unavailable";
-  }
+  if (!value) return "Date unavailable";
 
-  const date = new Date(`${value}T12:00:00`);
-
-  if (Number.isNaN(date.getTime())) {
-    return "Date unavailable";
-  }
-
-  return new Intl.DateTimeFormat("en-US", {
+  return new Date(value).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
-    timeZone: DISPLAY_TIME_ZONE,
-  }).format(date);
+    timeZone: "UTC",
+  });
 }
 
 function formatProfitLoss(value: number | null) {
