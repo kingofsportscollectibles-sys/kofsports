@@ -3,15 +3,16 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "SMS Terms & Conditions | KofSports",
   description:
-    "Terms and conditions for KofSports SMS Premium Pick notifications.",
+    "Terms and conditions governing KofSports SMS Premium Pick notifications.",
 };
 
 export default function SmsTermsPage() {
   return (
     <main className="bg-white">
+      {/* Hero */}
       <section className="border-b border-gray-200 bg-gradient-to-b from-black via-gray-900 to-black py-20">
         <div className="mx-auto max-w-4xl px-6 text-center">
-          <p className="text-sm font-bold uppercase tracking-[0.3em] text-amber-400">
+          <p className="text-sm font-bold uppercase tracking-[0.3em] text-brand">
             Legal
           </p>
 
@@ -19,140 +20,185 @@ export default function SmsTermsPage() {
             SMS Terms &amp; Conditions
           </h1>
 
-          <p className="mx-auto mt-6 max-w-2xl text-lg text-gray-300">
+          <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-gray-300">
             These terms govern the use of SMS notifications provided by
             KofSports to Premium members.
           </p>
         </div>
       </section>
 
+      {/* Content */}
       <section className="mx-auto max-w-4xl px-6 py-16">
-        <div className="prose prose-lg max-w-none prose-headings:text-gray-900 prose-p:text-gray-700 prose-li:text-gray-700">
-          <p>
-            <strong>Effective Date:</strong> July 23, 2026
-          </p>
+        <div className="space-y-10 text-gray-700">
 
-          <h2>Program Description</h2>
+          <div>
+            <p className="text-sm text-gray-500">
+              <strong>Effective Date:</strong> July 23, 2026
+            </p>
+          </div>
 
-          <p>
-            By opting in to receive SMS notifications from KofSports, you agree
-            to receive automated text messages related to your Premium
-            membership.
-          </p>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">
+              Program Description
+            </h2>
 
-          <p>Messages may include:</p>
+            <p className="mt-4 leading-7">
+              By opting in to receive SMS notifications from KofSports, you
+              agree to receive automated text messages related to your Premium
+              membership.
+            </p>
 
-          <ul>
-            <li>New Premium Pick alerts</li>
-            <li>Updates to the current Premium card</li>
-            <li>Important account notifications</li>
-            <li>Service-related announcements</li>
-          </ul>
+            <p className="mt-4 font-semibold text-gray-900">
+              Messages may include:
+            </p>
 
-          <p>
-            Marketing or promotional SMS messages are not sent unless you
-            separately consent to receive them.
-          </p>
+            <ul className="mt-3 list-disc space-y-2 pl-6 leading-7">
+              <li>New Premium Pick alerts</li>
+              <li>Updates to the current Premium Picks card</li>
+              <li>Important account notifications</li>
+              <li>Service-related announcements</li>
+            </ul>
 
-          <h2>Message Frequency</h2>
+            <p className="mt-4 leading-7">
+              Marketing or promotional SMS messages will only be sent if you
+              separately consent to receive them.
+            </p>
+          </div>
 
-          <p>
-            Message frequency varies depending on Premium Pick activity and your
-            account.
-          </p>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">
+              Message Frequency
+            </h2>
 
-          <h2>Message &amp; Data Rates</h2>
+            <p className="mt-4 leading-7">
+              Message frequency varies depending on Premium Pick activity,
+              account activity, and notification preferences.
+            </p>
+          </div>
 
-          <p>
-            Message and data rates may apply based on your wireless carrier and
-            mobile plan.
-          </p>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">
+              Message &amp; Data Rates
+            </h2>
 
-          <h2>Opt-In</h2>
+            <p className="mt-4 leading-7">
+              Message and data rates may apply according to your wireless
+              carrier's plan.
+            </p>
+          </div>
 
-          <p>
-            SMS notifications are optional. Members choose to receive text
-            alerts by enabling SMS notifications from their KofSports Account
-            Settings and providing their mobile phone number.
-          </p>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">
+              Opt-In
+            </h2>
 
-          <h2>Opt-Out</h2>
+            <p className="mt-4 leading-7">
+              Users explicitly opt in to receive SMS notifications by enabling
+              SMS alerts within their KofSports Account Settings and providing a
+              valid mobile phone number.
+            </p>
+          </div>
 
-          <p>
-            You may stop receiving SMS messages at any time by replying:
-          </p>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">
+              Opt-Out
+            </h2>
 
-          <p className="font-bold text-black">STOP</p>
+            <p className="mt-4 leading-7">
+              You may stop receiving SMS notifications at any time by replying{" "}
+              <span className="rounded bg-gray-900 px-2 py-1 font-mono text-sm font-bold text-white">
+                STOP
+              </span>{" "}
+              to any message.
+            </p>
 
-          <p>
-            After opting out, you will no longer receive SMS notifications
-            unless you choose to opt in again.
-          </p>
+            <p className="mt-4 leading-7">
+              After opting out, you will no longer receive SMS notifications
+              unless you choose to opt in again.
+            </p>
+          </div>
 
-          <h2>Help</h2>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">
+              Help
+            </h2>
 
-          <p>
-            For assistance, reply:
-          </p>
+            <p className="mt-4 leading-7">
+              For assistance, reply{" "}
+              <span className="rounded bg-gray-900 px-2 py-1 font-mono text-sm font-bold text-white">
+                HELP
+              </span>{" "}
+              or contact us at{" "}
+              <a
+                href="mailto:kofsports1@gmail.com"
+                className="font-medium text-brand hover:underline"
+              >
+                kofsports1@gmail.com
+              </a>
+              .
+            </p>
+          </div>
 
-          <p className="font-bold text-black">HELP</p>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">
+              Privacy
+            </h2>
 
-          <p>
-            or contact us at{" "}
-            <a
-              href="mailto:kofsports1@gmail.com"
-              className="text-amber-600 hover:text-amber-700"
-            >
-              kofsports1@gmail.com
-            </a>
-            .
-          </p>
+            <p className="mt-4 leading-7">
+              Your personal information is handled in accordance with the
+              KofSports Privacy Policy.
+            </p>
 
-          <h2>Privacy</h2>
-
-          <p>
-            Your personal information is handled in accordance with our Privacy
-            Policy.
-          </p>
-
-          <p>
             <a
               href="/privacy"
-              className="font-semibold text-amber-600 hover:text-amber-700"
+              className="mt-4 inline-block font-semibold text-brand hover:underline"
             >
-              View our Privacy Policy
+              View Privacy Policy →
             </a>
-          </p>
+          </div>
 
-          <h2>Eligibility</h2>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">
+              Eligibility
+            </h2>
 
-          <p>
-            By enrolling in SMS notifications, you represent that you are the
-            authorized user of the mobile phone number provided or have the
-            account holder's permission to receive messages.
-          </p>
+            <p className="mt-4 leading-7">
+              By enrolling in SMS notifications, you represent that you are the
+              authorized user of the mobile phone number provided or have the
+              account holder's permission to receive messages.
+            </p>
+          </div>
 
-          <h2>Changes</h2>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">
+              Changes to These Terms
+            </h2>
 
-          <p>
-            KofSports reserves the right to modify or discontinue the SMS
-            notification program at any time. Updated terms will be posted on
-            this page.
-          </p>
+            <p className="mt-4 leading-7">
+              KofSports reserves the right to modify or discontinue the SMS
+              notification program at any time. Updated terms will be posted on
+              this page and become effective immediately upon publication.
+            </p>
+          </div>
 
-          <h2>Contact</h2>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">
+              Contact
+            </h2>
 
-          <p>
-            Questions regarding these SMS Terms &amp; Conditions may be directed
-            to{" "}
-            <a
-              href="mailto:kofsports1@gmail.com"
-              className="text-amber-600 hover:text-amber-700"
-            >
-              kofsports1@gmail.com
-            </a>
-            .
-          </p>
+            <p className="mt-4 leading-7">
+              Questions regarding these SMS Terms &amp; Conditions may be sent
+              to{" "}
+              <a
+                href="mailto:kofsports1@gmail.com"
+                className="font-medium text-brand hover:underline"
+              >
+                kofsports1@gmail.com
+              </a>
+              .
+            </p>
+          </div>
+
         </div>
       </section>
     </main>
