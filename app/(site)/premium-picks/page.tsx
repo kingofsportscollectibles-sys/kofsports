@@ -26,7 +26,6 @@ type PremiumPick = {
   game_date: string | null;
   game_time: string | null;
   analysis: string | null;
-  best_sportsbook: string | null;
   game_notes: string | null;
   status: PickStatus | string | null;
   profit_loss: number | null;
@@ -300,16 +299,6 @@ function UnlockedPremiumCard({ pick }: { pick: PremiumPick }) {
 
             <p className="mt-2 text-lg font-black text-black">
               {formatUnits(pick.units)}
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
-            <p className="text-xs font-bold uppercase tracking-[0.14em] text-gray-500">
-              Best Sportsbook
-            </p>
-
-            <p className="mt-2 text-lg font-black text-black">
-              {pick.best_sportsbook ?? "Shop for the best line"}
             </p>
           </div>
         </div>

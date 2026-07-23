@@ -274,10 +274,10 @@ export default async function ArticlePage({
       <header className="border-b border-white/10 bg-zinc-950">
         <div className="mx-auto max-w-5xl px-5 pb-14 pt-12 lg:px-8 lg:pb-20 lg:pt-16">
           <Link
-            href="/free-picks"
+            href="/blog"
             className="inline-flex text-sm font-extrabold uppercase tracking-wide text-brand transition hover:text-brand-light"
           >
-            ← Back to free picks
+            ← Back to Blog
           </Link>
 
           <div className="mt-10 flex flex-wrap items-center gap-3">

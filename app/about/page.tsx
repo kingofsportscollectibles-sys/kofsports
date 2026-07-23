@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { getOverallRecord, getSportResults } from "@/lib/results";
-
 export const metadata: Metadata = {
   title: "About Kof",
   description:
@@ -16,11 +14,11 @@ const personalFacts = [
   },
   {
     label: "Favorite Sports Moment",
-    value: "Attending the Patriots' Super Bowl LIII victory and HAMMERING the -2.5",
+    value: "Attending the Patriots' Super Bowl LIII victory",
   },
   {
     label: "Toughest Sports Moment",
-    value: "Seeing the Patriots losing Super Bowl 60 in person",
+    value: "The Patriots losing Super Bowl XLII",
   },
   {
     label: "Best Bet",
@@ -32,7 +30,7 @@ const personalFacts = [
   },
   {
     label: "Favorite Beer",
-    value: "Tree House Brewing Company - HAZE",
+    value: "Tree House Brewing Company",
   },
   {
     label: "Favorite Stadium",
@@ -48,10 +46,7 @@ const personalFacts = [
   },
 ];
 
-export default async function AboutPage() {
-  const sportsResults = await getSportResults();
-  const overallRecord = getOverallRecord(sportsResults);
-
+export default function AboutPage() {
   return (
     <>
       <section className="border-b border-white/10 bg-zinc-950">
@@ -76,30 +71,24 @@ export default async function AboutPage() {
             <div className="mt-9 flex flex-wrap gap-3">
               <Link
                 href="/blog"
-                className="rounded-md bg-brand px-6 py-3.5 text-sm font-extrabold uppercase text-black transition hover:bg-brand-light"
+                className="rounded-md bg-brand px-6 py-3.5 text-sm font-extrabold uppercase text-black"
               >
-                Read Blog
+                Read Blog 
               </Link>
 
               <Link
                 href="/plans"
-                className="rounded-md border border-white/20 bg-white/5 px-6 py-3.5 text-sm font-extrabold uppercase text-white transition hover:border-white/40 hover:bg-white/10"
+                className="rounded-md border border-white/20 bg-white/5 px-6 py-3.5 text-sm font-extrabold uppercase text-white"
               >
-                Join Premium
+                Join VIP
               </Link>
             </div>
           </div>
 
           <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-8">
-            <div className="flex items-center justify-between gap-4">
-              <p className="text-xs font-bold uppercase tracking-[0.25em] text-zinc-500">
-                The numbers
-              </p>
-
-              <span className="rounded-full border border-brand/30 bg-brand/10 px-3 py-1 text-xs font-extrabold uppercase tracking-wide text-brand">
-                Live record
-              </span>
-            </div>
+            <p className="text-xs font-bold uppercase tracking-[0.25em] text-zinc-500">
+              The numbers
+            </p>
 
             <div className="mt-7 grid grid-cols-2 gap-6">
               <div>
@@ -118,43 +107,19 @@ export default async function AboutPage() {
 
               <div>
                 <p className="font-display text-5xl font-bold text-brand">
-                  {overallRecord.formattedTotal}
+                  11.7K
                 </p>
-                <p className="mt-2 text-sm text-zinc-400">Official picks</p>
+                <p className="mt-2 text-sm text-zinc-400">Historical picks</p>
               </div>
 
               <div>
                 <p className="font-display text-5xl font-bold text-brand">
-                  {overallRecord.formattedWinRate}
+                  56.7%
                 </p>
                 <p className="mt-2 text-sm text-zinc-400">
-                  Official win rate
+                  Historical win rate
                 </p>
               </div>
-            </div>
-
-            <div className="mt-8 border-t border-white/10 pt-6">
-              <div className="flex items-center justify-between gap-4 text-sm">
-                <span className="text-zinc-500">Overall record</span>
-
-                <span className="font-bold text-white">
-                  {overallRecord.formattedWins}–
-                  {overallRecord.formattedLosses}
-                </span>
-              </div>
-
-              <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-zinc-800">
-                <div
-                  className="h-full rounded-full bg-brand"
-                  style={{ width: `${overallRecord.winRate}%` }}
-                />
-              </div>
-
-              <p className="mt-4 text-sm leading-6 text-zinc-500">
-                Historical performance is combined with every official pick
-                published since the KofSports relaunch. Records update
-                automatically as picks are settled.
-              </p>
             </div>
           </div>
         </div>
@@ -189,8 +154,7 @@ export default async function AboutPage() {
             <p>
               The new KofSports is designed to preserve that personality while
               providing a stronger platform for transparent tracking, faster
-              publishing, mobile access, and a better Premium member
-              experience.
+              publishing, mobile access, and a better VIP member experience.
             </p>
           </div>
         </div>
@@ -232,13 +196,6 @@ export default async function AboutPage() {
               Built for sports fans and bettors who want honest analysis,
               transparent results, and a real person behind the picks.
             </p>
-
-            <Link
-              href="/plans"
-              className="mt-7 inline-flex rounded-md bg-black px-7 py-4 text-sm font-extrabold uppercase tracking-wide text-white transition hover:bg-zinc-800"
-            >
-              Join Premium
-            </Link>
           </div>
         </div>
       </section>

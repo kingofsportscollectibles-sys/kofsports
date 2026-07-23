@@ -1,5 +1,49 @@
 import Link from "next/link";
-import { getOverallRecord, getSportResults } from "@/lib/results";
+
+const sportsResults = [
+  {
+    sport: "NFL",
+    wins: "1,096",
+    losses: "805",
+    total: "1,901",
+    winRate: "57.7%",
+  },
+  {
+    sport: "MLB",
+    wins: "2,656",
+    losses: "1,954",
+    total: "4,610",
+    winRate: "57.6%",
+  },
+  {
+    sport: "NHL",
+    wins: "1,010",
+    losses: "785",
+    total: "1,795",
+    winRate: "56.3%",
+  },
+  {
+    sport: "NBA",
+    wins: "1,057",
+    losses: "853",
+    total: "1,910",
+    winRate: "55.3%",
+  },
+  {
+    sport: "CFB",
+    wins: "567",
+    losses: "464",
+    total: "1,031",
+    winRate: "55.0%",
+  },
+  {
+    sport: "CBB",
+    wins: "277",
+    losses: "235",
+    total: "512",
+    winRate: "54.1%",
+  },
+];
 
 const trustPoints = [
   {
@@ -18,13 +62,11 @@ const trustPoints = [
     number: "03",
     title: "Personal Access",
     description:
-      "Premium members can reach Kof directly with questions about picks, lines, and bankroll strategy.",
+      "VIP members can reach Kof directly with questions about picks, lines, and bankroll strategy.",
   },
 ];
 
-export default async function Home() {
-  const sportsResults = await getSportResults();
-const overallRecord = getOverallRecord(sportsResults);
+export default function Home() {
   return (
     <>
       <section className="relative overflow-hidden border-b border-white/10">
@@ -44,7 +86,8 @@ const overallRecord = getOverallRecord(sportsResults);
             </p>
 
             <h1 className="mt-5 max-w-4xl font-display text-6xl font-bold uppercase leading-[0.95] tracking-tight text-white sm:text-7xl lg:text-[92px]">
-              Winning Starts With Better Information.
+              Bet smarter.
+              <span className="block text-brand">Trust the record.</span>
             </h1>
 
             <p className="mt-7 max-w-2xl text-lg leading-8 text-zinc-300">
@@ -59,14 +102,14 @@ const overallRecord = getOverallRecord(sportsResults);
                 href="/plans"
                 className="rounded-md bg-brand px-7 py-4 text-center text-sm font-extrabold uppercase tracking-wide text-black transition hover:bg-brand-light"
               >
-                Upgrade to Premium
+                Join VIP
               </Link>
 
               <Link
                 href="/blog"
                 className="rounded-md border border-white/20 bg-white/5 px-7 py-4 text-center text-sm font-extrabold uppercase tracking-wide text-white transition hover:border-white/40 hover:bg-white/10"
               >
-                View Blog 
+                View Blog
               </Link>
             </div>
 
@@ -84,17 +127,17 @@ const overallRecord = getOverallRecord(sportsResults);
               <div className="border-b border-white/10 px-6 py-5">
                 <div className="flex items-center justify-between">
                   <div>
-                   <p className="text-xs font-bold uppercase tracking-[0.22em] text-zinc-500">
-  Official KofSports Record
-</p>
+                    <p className="text-xs font-bold uppercase tracking-[0.22em] text-zinc-500">
+                      Historical record
+                    </p>
                     <p className="mt-1 font-display text-2xl font-bold uppercase text-white">
                       All Sports
                     </p>
                   </div>
 
                   <div className="rounded-full border border-brand/30 bg-brand/10 px-3 py-1 text-xs font-extrabold text-brand">
-  Live Updated
-</div>
+                    2015–2025
+                  </div>
                 </div>
               </div>
 
@@ -104,7 +147,7 @@ const overallRecord = getOverallRecord(sportsResults);
                     Total Picks
                   </p>
                   <p className="mt-2 font-display text-5xl font-bold text-white">
-                    {overallRecord.formattedTotal}
+                    11,759
                   </p>
                 </div>
 
@@ -113,7 +156,7 @@ const overallRecord = getOverallRecord(sportsResults);
                     Win Rate
                   </p>
                   <p className="mt-2 font-display text-5xl font-bold text-brand">
-                    {overallRecord.formattedWinRate}
+                    56.7%
                   </p>
                 </div>
               </div>
@@ -122,22 +165,19 @@ const overallRecord = getOverallRecord(sportsResults);
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-zinc-500">Overall record</span>
                   <span className="font-bold text-white">
-                    {overallRecord.formattedWins}–{overallRecord.formattedLosses}
+                    6,663–5,096
                   </span>
                 </div>
 
                 <div className="mt-4 h-3 overflow-hidden rounded-full bg-zinc-800">
-                  <div
-  className="h-full rounded-full bg-brand"
-  style={{ width: `${overallRecord.winRate}%` }}
-/>
+                  <div className="h-full w-[56.7%] rounded-full bg-brand" />
                 </div>
 
                 <p className="mt-5 text-sm leading-6 text-zinc-400">
-  Historical performance from the original KofSports platform has
-  been combined with every official pick published since the relaunch.
-  Records update automatically as picks are settled.
-</p>
+                  Historical results from the original KofSports platform.
+                  Relaunch results will be independently tracked and timestamped
+                  within the new system.
+                </p>
               </div>
 
               <div className="bg-brand px-6 py-4 text-center">
@@ -189,15 +229,15 @@ const overallRecord = getOverallRecord(sportsResults);
                       <td className="px-6 py-5 font-display text-xl font-bold text-white">
                         {result.sport}
                       </td>
-                      <td className="px-6 py-5 text-zinc-300">{result.formattedWins}</td>
+                      <td className="px-6 py-5 text-zinc-300">{result.wins}</td>
                       <td className="px-6 py-5 text-zinc-300">
-                        {result.formattedLosses}
+                        {result.losses}
                       </td>
                       <td className="px-6 py-5 text-zinc-300">
-                        {result.formattedTotal}
+                        {result.total}
                       </td>
                       <td className="px-6 py-5 text-right font-bold text-brand">
-                        {result.formattedWinRate}
+                        {result.winRate}
                       </td>
                     </tr>
                   ))}
@@ -208,11 +248,11 @@ const overallRecord = getOverallRecord(sportsResults);
                     <td className="px-6 py-5 font-display text-xl font-bold uppercase text-white">
                       Total
                     </td>
-                    <td className="px-6 py-5 font-bold text-white">{overallRecord.formattedWins}</td>
-                    <td className="px-6 py-5 font-bold text-white">{overallRecord.formattedLosses}</td>
-                    <td className="px-6 py-5 font-bold text-white">{overallRecord.formattedTotal}</td>
+                    <td className="px-6 py-5 font-bold text-white">6,663</td>
+                    <td className="px-6 py-5 font-bold text-white">5,096</td>
+                    <td className="px-6 py-5 font-bold text-white">11,759</td>
                     <td className="px-6 py-5 text-right text-lg font-extrabold text-brand">
-                      {overallRecord.formattedWinRate}
+                      56.7%
                     </td>
                   </tr>
                 </tfoot>
