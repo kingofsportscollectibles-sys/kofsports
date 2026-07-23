@@ -220,7 +220,7 @@ export async function generateMetadata({
     description: article.seoDescription || article.excerpt,
 
     alternates: {
-      canonical: `/free-picks/${article.slug}`,
+      canonical: `/blog/${article.slug}`,
     },
 
     openGraph: {
@@ -229,7 +229,7 @@ export async function generateMetadata({
       description: article.seoDescription || article.excerpt,
       publishedTime: article.publishedAt,
       authors: [article.author],
-      url: `/free-picks/${article.slug}`,
+      url: `/blog/${article.slug}`,
       images: imageUrl
         ? [
             {

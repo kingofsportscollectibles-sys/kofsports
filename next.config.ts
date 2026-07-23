@@ -14,10 +14,10 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       {
-        source: "/blog",
-        destination: "/blog",
-        permanent: true,
-      },
+  source: "/free-picks",
+  destination: "/blog",
+  permanent: true,
+},
     ];
   },
 };
