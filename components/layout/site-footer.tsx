@@ -8,6 +8,7 @@ const footerLinks = [
   { name: "Responsible Betting", href: "/responsible-betting" },
   { name: "Terms", href: "/terms" },
   { name: "Privacy", href: "/privacy" },
+  { name: "SMS Terms", href: "/sms-terms" },
 ];
 
 export function SiteFooter() {
@@ -28,12 +29,12 @@ export function SiteFooter() {
 
             <p className="mt-4 text-sm font-semibold text-zinc-300">
               Contact:{" "}
-              <a
-                href="mailto:kof@kofsports.com"
-                className="text-brand hover:text-brand-light"
-              >
-                kofsports1@gmail.com 
-              </a>
+             <a
+  href="mailto:kofsports1@gmail.com"
+  className="text-brand hover:text-brand-light"
+>
+  kofsports1@gmail.com
+</a>
             </p>
           </div>
 

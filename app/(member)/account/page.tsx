@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 
 import AccountForm from "@/components/member/AccountForm";
 import { createClient } from "@/lib/supabase/server";
+import NotificationPreferencesForm from "@/components/member/NotificationPreferencesForm";
 
 function formatMembershipDate(date: string | null) {
   if (!date) return "N/A";
@@ -63,6 +64,12 @@ export default async function AccountPage({
     )
     .eq("id", user.id)
     .maybeSingle();
+
+    const { data: notificationPreferences } = await supabase
+  .from("notification_preferences")
+  .select("email_enabled, sms_enabled, phone_number")
+  .eq("user_id", user.id)
+  .maybeSingle();
 
   const today = new Date();
   const todayStart = new Date(today);
@@ -271,26 +278,10 @@ export default async function AccountPage({
             )}
           </section>
 
-          <section className="rounded-3xl border border-gray-200 bg-white p-6 text-black shadow-sm">
-            <h2 className="font-bold text-black">Notifications</h2>
-
-            <div className="mt-5 space-y-3 text-sm text-gray-700">
-              <label className="flex items-center gap-3 text-black">
-                <input type="checkbox" checked readOnly />
-                Email Premium Picks
-              </label>
-
-              <label className="flex items-center gap-3 text-gray-400">
-                <input type="checkbox" disabled />
-                SMS Alerts (Coming Soon)
-              </label>
-
-              <label className="flex items-center gap-3 text-gray-400">
-                <input type="checkbox" disabled />
-                Weekly Recap (Coming Soon)
-              </label>
-            </div>
-          </section>
+         <NotificationPreferencesForm
+  initialEmailEnabled={notificationPreferences?.email_enabled ?? false}
+  isPremiumMember={profile?.membership === "premium"}
+/>
 
           <section className="rounded-3xl border border-gray-200 bg-white p-6 text-black shadow-sm">
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-gray-500">

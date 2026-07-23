@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { fromZonedTime } from "date-fns-tz";
+import { notifyPremiumMembers } from "@/lib/notifications/notify-premium-members";
 
 import { createClient } from "@/lib/supabase/server";
 
@@ -180,7 +181,9 @@ export async function createPick(
 
   const isPublished = formData.get("is_published") === "on";
 
-  const { error } = await auth.supabase.from("vip_picks").insert({
+const { data: createdPick, error } = await auth.supabase
+  .from("vip_picks")
+  .insert({
     sport: validation.data.sport,
     bet_type: validation.data.betType,
     matchup: validation.data.matchup,
@@ -194,16 +197,23 @@ export async function createPick(
     status: "pending",
     profit_loss: null,
     is_published: isPublished,
+    is_premium: true,
     published_at: isPublished ? new Date().toISOString() : null,
     created_by: auth.user.id,
     updated_at: new Date().toISOString(),
-  });
+  })
+  .select("id")
+  .single();
 
-  if (error) {
-    return {
-      error: error.message,
-    };
-  }
+  if (error || !createdPick) {
+  return {
+    error: error?.message ?? "The pick could not be created.",
+  };
+}
+
+if (isPublished) {
+  await notifyPremiumMembers(createdPick.id);
+}
 
   revalidatePath("/admin");
   revalidatePath("/admin/picks");
@@ -253,6 +263,9 @@ export async function updatePick(
       error: existingPickError?.message ?? "Pick could not be found.",
     };
   }
+
+  const isFirstPublication =
+  actionType === "publish" && existingPick.is_published !== true;
 
   let status = existingPick.status ?? "pending";
   let isPublished = existingPick.is_published ?? false;
@@ -318,6 +331,10 @@ export async function updatePick(
       error: error.message,
     };
   }
+
+  if (isFirstPublication) {
+  await notifyPremiumMembers(pickId);
+}
 
   revalidatePath("/admin");
   revalidatePath("/admin/picks");
