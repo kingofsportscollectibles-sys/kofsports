@@ -1,18 +1,21 @@
-"use client";
+import { SiteFooter } from "@/components/layout/site-footer";
+import { SiteHeader } from "@/components/layout/site-header";
+import Clarity from "@/components/analytics/clarity";
 
-import { useEffect } from "react";
-import clarity from "@microsoft/clarity";
+export default function SiteLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <>
+      <SiteHeader />
 
-export default function Clarity() {
-  useEffect(() => {
-    if (process.env.NODE_ENV !== "production") return;
+      <main>{children}</main>
 
-    const projectId = process.env.NEXT_PUBLIC_CLARITY_ID;
+      <SiteFooter />
 
-    if (projectId) {
-      clarity.init(projectId);
-    }
-  }, []);
-
-  return null;
+      <Clarity />
+    </>
+  );
 }
