@@ -2,31 +2,36 @@ import { sanityClient } from "@/sanity/lib/client";
 import {
   ARTICLE_BY_SLUG_QUERY,
   ARTICLE_SLUGS_QUERY,
+  ARTICLES_BY_CATEGORY_QUERY,
   ARTICLES_BY_CONTENT_TYPE_QUERY,
   ARTICLES_BY_SPORT_QUERY,
   ARTICLES_QUERY,
   FEATURED_ARTICLE_QUERY,
   LATEST_ARTICLES_QUERY,
+  RELATED_ARTICLES_QUERY,
 } from "@/sanity/queries/articles";
 import type {
   Article,
   ArticleCard,
+  ArticleCategory,
   ArticleContentType,
   ArticleSport,
 } from "@/sanity/types/article";
 
 const REVALIDATE_SECONDS = 60;
 
+const articleFetchOptions = {
+  next: {
+    revalidate: REVALIDATE_SECONDS,
+    tags: ["articles"],
+  },
+};
+
 export async function getArticles(): Promise<ArticleCard[]> {
   return sanityClient.fetch<ArticleCard[]>(
     ARTICLES_QUERY,
     {},
-    {
-      next: {
-        revalidate: REVALIDATE_SECONDS,
-        tags: ["articles"],
-      },
-    }
+    articleFetchOptions
   );
 }
 
@@ -36,12 +41,7 @@ export async function getLatestArticles(
   return sanityClient.fetch<ArticleCard[]>(
     LATEST_ARTICLES_QUERY,
     { limit },
-    {
-      next: {
-        revalidate: REVALIDATE_SECONDS,
-        tags: ["articles"],
-      },
-    }
+    articleFetchOptions
   );
 }
 
@@ -52,12 +52,7 @@ export async function getArticlesBySport(
   return sanityClient.fetch<ArticleCard[]>(
     ARTICLES_BY_SPORT_QUERY,
     { sport, limit },
-    {
-      next: {
-        revalidate: REVALIDATE_SECONDS,
-        tags: ["articles"],
-      },
-    }
+    articleFetchOptions
   );
 }
 
@@ -68,12 +63,18 @@ export async function getArticlesByContentType(
   return sanityClient.fetch<ArticleCard[]>(
     ARTICLES_BY_CONTENT_TYPE_QUERY,
     { contentType, limit },
-    {
-      next: {
-        revalidate: REVALIDATE_SECONDS,
-        tags: ["articles"],
-      },
-    }
+    articleFetchOptions
+  );
+}
+
+export async function getArticlesByCategory(
+  category: ArticleCategory,
+  limit = 3
+): Promise<ArticleCard[]> {
+  return sanityClient.fetch<ArticleCard[]>(
+    ARTICLES_BY_CATEGORY_QUERY,
+    { category, limit },
+    articleFetchOptions
   );
 }
 
@@ -81,12 +82,7 @@ export async function getFeaturedArticle(): Promise<ArticleCard | null> {
   return sanityClient.fetch<ArticleCard | null>(
     FEATURED_ARTICLE_QUERY,
     {},
-    {
-      next: {
-        revalidate: REVALIDATE_SECONDS,
-        tags: ["articles"],
-      },
-    }
+    articleFetchOptions
   );
 }
 
@@ -105,15 +101,24 @@ export async function getArticleBySlug(
   );
 }
 
+export async function getRelatedArticles(
+  category: ArticleCategory,
+  slug: string,
+  limit = 3
+): Promise<ArticleCard[]> {
+  const articles = await sanityClient.fetch<ArticleCard[]>(
+    RELATED_ARTICLES_QUERY,
+    { category, slug },
+    articleFetchOptions
+  );
+
+  return articles.slice(0, limit);
+}
+
 export async function getArticleSlugs(): Promise<Array<{ slug: string }>> {
   return sanityClient.fetch<Array<{ slug: string }>>(
     ARTICLE_SLUGS_QUERY,
     {},
-    {
-      next: {
-        revalidate: REVALIDATE_SECONDS,
-        tags: ["articles"],
-      },
-    }
+    articleFetchOptions
   );
 }

@@ -1,3 +1,7 @@
 import { articleType } from "./article";
+import { faqItemType } from "./faqItem";
 
-export const schemaTypes = [articleType];
+export const schemaTypes = [
+  faqItemType,
+  articleType,
+];

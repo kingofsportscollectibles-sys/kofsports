@@ -34,6 +34,76 @@ const leagues = [
   { title: "College Basketball", value: "cbb" },
 ];
 
+const categories = [
+  {
+    title: "Betting Education",
+    value: "betting-education",
+  },
+  {
+    title: "NFL Betting",
+    value: "nfl-betting",
+  },
+  {
+    title: "MLB Betting",
+    value: "mlb-betting",
+  },
+  {
+    title: "NBA Betting",
+    value: "nba-betting",
+  },
+  {
+    title: "NHL Betting",
+    value: "nhl-betting",
+  },
+  {
+    title: "College Football",
+    value: "college-football",
+  },
+  {
+    title: "College Basketball",
+    value: "college-basketball",
+  },
+  {
+    title: "Golf Betting",
+    value: "golf-betting",
+  },
+  {
+    title: "Bankroll Management",
+    value: "bankroll-management",
+  },
+  {
+    title: "Odds Explained",
+    value: "odds-explained",
+  },
+  {
+    title: "Betting Strategy",
+    value: "betting-strategy",
+  },
+  {
+    title: "Sports Betting News",
+    value: "sports-betting-news",
+  },
+  {
+    title: "KofSports Updates",
+    value: "kofsports-updates",
+  },
+];
+
+const readingLevels = [
+  {
+    title: "Beginner",
+    value: "beginner",
+  },
+  {
+    title: "Intermediate",
+    value: "intermediate",
+  },
+  {
+    title: "Advanced",
+    value: "advanced",
+  },
+];
+
 export const articleType = defineType({
   name: "article",
   title: "Content",
@@ -105,8 +175,12 @@ export const articleType = defineType({
           title: "Alternative Text",
           type: "string",
           description:
-            "Describe the image for accessibility and search engines.",
-          validation: (rule) => rule.required(),
+            "Describe the image for accessibility and search engines. Avoid phrases such as “image of” or “picture of.”",
+          validation: (rule) =>
+            rule
+              .required()
+              .min(10)
+              .max(160),
         }),
 
         defineField({
@@ -185,8 +259,15 @@ export const articleType = defineType({
               name: "alt",
               title: "Alternative Text",
               type: "string",
-              validation: (rule) => rule.required(),
+              description:
+                "Describe the image for accessibility and search engines.",
+              validation: (rule) =>
+                rule
+                  .required()
+                  .min(10)
+                  .max(160),
             }),
+
             defineField({
               name: "caption",
               title: "Caption",
@@ -198,6 +279,21 @@ export const articleType = defineType({
       validation: (rule) => rule.required(),
     }),
 
+   defineField({
+  name: "faq",
+  title: "Frequently Asked Questions",
+  type: "array",
+  group: "content",
+  description:
+    "Add questions and answers that may be displayed on the article and used for FAQ structured data.",
+  of: [
+    defineArrayMember({
+      type: "faqItem",
+    }),
+  ],
+  validation: (rule) => rule.max(10),
+}),
+
     defineField({
       name: "author",
       title: "Author",
@@ -208,10 +304,26 @@ export const articleType = defineType({
     }),
 
     defineField({
+      name: "category",
+      title: "Category",
+      type: "string",
+      group: "distribution",
+      description:
+        "Primary SEO and editorial category for this article.",
+      options: {
+        list: categories,
+        layout: "dropdown",
+      },
+      validation: (rule) => rule.required(),
+    }),
+
+    defineField({
       name: "contentType",
       title: "Content Type",
       type: "string",
       group: "distribution",
+      description:
+        "Legacy content classification retained for existing filtering and frontend compatibility.",
       options: {
         list: contentTypes,
         layout: "dropdown",
@@ -225,6 +337,8 @@ export const articleType = defineType({
       title: "Sport",
       type: "string",
       group: "distribution",
+      description:
+        "Legacy sport classification retained for existing filtering and frontend compatibility.",
       options: {
         list: sports,
         layout: "dropdown",
@@ -253,17 +367,49 @@ export const articleType = defineType({
       type: "array",
       group: "distribution",
       description:
-        "Examples: best bets, player props, futures, betting strategy.",
+        "Add relevant topics such as spread, moneyline, parlay, bankroll, closing line value, expected value, props, live betting, or futures.",
       of: [
         defineArrayMember({
           type: "string",
+          validation: (rule) =>
+            rule.min(2).max(60),
         }),
       ],
       options: {
         layout: "tags",
       },
+      validation: (rule) => rule.unique(),
+    }),
+
+    defineField({
+      name: "readingLevel",
+      title: "Reading Level",
+      type: "string",
+      group: "distribution",
+      description:
+        "The intended experience level of the reader.",
+      options: {
+        list: readingLevels,
+        layout: "dropdown",
+      },
+      initialValue: "beginner",
+    }),
+
+    defineField({
+      name: "relatedArticles",
+      title: "Related Articles",
+      type: "array",
+      group: "distribution",
+      description:
+        "Choose up to five articles to recommend after this article.",
+      of: [
+        defineArrayMember({
+          type: "reference",
+          to: [{ type: "article" }],
+        }),
+      ],
       validation: (rule) =>
-        rule.unique().max(10),
+        rule.unique().max(5),
     }),
 
     defineField({
@@ -293,7 +439,7 @@ export const articleType = defineType({
       type: "boolean",
       group: "distribution",
       description:
-        "Featured content may appear prominently on the homepage or Free Picks page.",
+        "Featured content may appear prominently on the homepage or Free Picks page. Generally, only one article should be featured at a time.",
       initialValue: false,
     }),
 
@@ -309,23 +455,110 @@ export const articleType = defineType({
     }),
 
     defineField({
-      name: "seoTitle",
-      title: "SEO Title",
+      name: "metaTitle",
+      title: "Meta Title",
       type: "string",
       group: "seo",
       description:
-        "Optional search title. The content title will be used when blank.",
+        "The title shown in search results. Keep it at 60 characters or fewer.",
+      validation: (rule) =>
+        rule
+          .required()
+          .max(60)
+          .warning(
+            "Meta titles longer than 60 characters may be truncated in search results.",
+          ),
+    }),
+
+    defineField({
+      name: "metaDescription",
+      title: "Meta Description",
+      type: "text",
+      rows: 3,
+      group: "seo",
+      description:
+        "The page description shown in search results. Keep it at 155 characters or fewer.",
+      validation: (rule) =>
+        rule
+          .required()
+          .max(155)
+          .warning(
+            "Meta descriptions longer than 155 characters may be truncated in search results.",
+          ),
+    }),
+
+    defineField({
+      name: "primaryKeyword",
+      title: "Primary Keyword",
+      type: "string",
+      group: "seo",
+      description:
+        "The main search query this article is intended to target.",
+      validation: (rule) =>
+        rule.required().min(2).max(100),
+    }),
+
+    defineField({
+      name: "secondaryKeywords",
+      title: "Secondary Keywords",
+      type: "array",
+      group: "seo",
+      description:
+        "Related search terms and keyword variations targeted by this article.",
+      of: [
+        defineArrayMember({
+          type: "string",
+          validation: (rule) =>
+            rule.min(2).max(100),
+        }),
+      ],
+      options: {
+        layout: "tags",
+      },
+      validation: (rule) => rule.unique(),
+    }),
+
+    defineField({
+      name: "canonicalUrl",
+      title: "Canonical URL",
+      type: "url",
+      group: "seo",
+      description:
+        "Optional. Use only when another URL should be treated as the primary version of this content.",
+      validation: (rule) =>
+        rule.uri({
+          scheme: ["http", "https"],
+        }),
+    }),
+
+    defineField({
+      name: "noIndex",
+      title: "Prevent Search Indexing",
+      type: "boolean",
+      group: "seo",
+      description:
+        "Enable this only when search engines should not index this article.",
+      initialValue: false,
+    }),
+
+    defineField({
+      name: "seoTitle",
+      title: "Legacy SEO Title",
+      type: "string",
+      group: "seo",
+      description:
+        "Legacy field retained for existing articles and frontend compatibility. Use Meta Title for new articles.",
       validation: (rule) => rule.max(65),
     }),
 
     defineField({
       name: "seoDescription",
-      title: "SEO Description",
+      title: "Legacy SEO Description",
       type: "text",
       rows: 3,
       group: "seo",
       description:
-        "Optional search description. The excerpt will be used when blank.",
+        "Legacy field retained for existing articles and frontend compatibility. Use Meta Description for new articles.",
       validation: (rule) => rule.max(165),
     }),
   ],
@@ -347,6 +580,7 @@ export const articleType = defineType({
     select: {
       title: "title",
       author: "author",
+      category: "category",
       sport: "sport",
       contentType: "contentType",
       isPremium: "isPremium",
@@ -356,15 +590,22 @@ export const articleType = defineType({
     prepare({
       title,
       author,
+      category,
       sport,
       contentType,
       isPremium,
       media,
     }) {
+      const classification =
+        category ??
+        sport?.toUpperCase() ??
+        contentType?.replaceAll("-", " ").toUpperCase();
+
       const subtitle = [
         isPremium ? "VIP" : "FREE",
-        sport?.toUpperCase(),
-        contentType?.replaceAll("-", " ").toUpperCase(),
+        classification
+          ?.replaceAll("-", " ")
+          .toUpperCase(),
         author ? `By ${author}` : null,
       ]
         .filter(Boolean)
