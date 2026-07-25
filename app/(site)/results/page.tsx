@@ -7,7 +7,6 @@ type RangeFilter =
   | "30-days"
   | "month"
   | "7-days"
-  | "all-time";
 
 type SearchParams = {
   range?: string;
@@ -84,10 +83,6 @@ const rangeOptions: Array<{
     value: "7-days",
     label: "Last 7 Days",
   },
-  {
-    value: "all-time",
-    label: "All Time",
-  },
 ];
 
 function normalizeNumber(value: number | null | undefined) {
@@ -102,7 +97,6 @@ function normalizeRange(value: string | undefined): RangeFilter {
     "30-days",
     "month",
     "7-days",
-    "all-time",
   ];
 
   if (value && validRanges.includes(value as RangeFilter)) {
@@ -216,11 +210,6 @@ function filterByRange(
   range: RangeFilter,
   currentDate: Date,
 ) {
-  if (range === "all-time") {
-    return picks.filter(
-      (pick) => getPerformanceDate(pick) !== null,
-    );
-  }
 
   const now = currentDate;
 
