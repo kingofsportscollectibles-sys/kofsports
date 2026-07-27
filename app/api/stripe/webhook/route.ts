@@ -210,6 +210,15 @@ async function recordTransaction({
   expiresAt: string | null;
 }): Promise<void> {
   const supabase = getSupabaseAdmin();
+  const { data: existing } = await supabase
+  .from("membership_transactions")
+  .select("id")
+  .eq("stripe_event_id", eventId)
+  .maybeSingle();
+
+if (existing) {
+  return;
+}
 
   const { error } = await supabase.from("membership_transactions").insert({
     profile_id: profileId,
