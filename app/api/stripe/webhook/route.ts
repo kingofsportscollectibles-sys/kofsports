@@ -210,33 +210,49 @@ async function recordTransaction({
   expiresAt: string | null;
 }): Promise<void> {
   const supabase = getSupabaseAdmin();
-  const { data: existing } = await supabase
-  .from("membership_transactions")
-  .select("id")
-  .eq("stripe_event_id", eventId)
-  .maybeSingle();
 
-if (existing) {
-  return;
-}
+  // Record the membership transaction (ignore duplicate Stripe events)
+  const { error: transactionError } = await supabase
+    .from("membership_transactions")
+    .insert({
+      profile_id: profileId,
+      stripe_customer_id: customerId,
+      stripe_subscription_id: subscriptionId,
+      stripe_checkout_session_id: checkoutSessionId,
+      stripe_price_id: priceId,
+      stripe_event_id: eventId,
+      amount,
+      currency,
+      membership_type: membershipType,
+      payment_status: paymentStatus,
+      purchased_at: purchasedAt,
+      expires_at: expiresAt,
+    });
 
-  const { error } = await supabase.from("membership_transactions").insert({
-    profile_id: profileId,
-    stripe_customer_id: customerId,
-    stripe_subscription_id: subscriptionId,
-    stripe_checkout_session_id: checkoutSessionId,
-    stripe_price_id: priceId,
-    stripe_event_id: eventId,
-    amount,
-    currency,
-    membership_type: membershipType,
-    payment_status: paymentStatus,
-    purchased_at: purchasedAt,
-    expires_at: expiresAt,
+  if (transactionError && transactionError.code !== "23505") {
+    throw new Error(
+      `Unable to record membership transaction: ${transactionError.message}`
+    );
+  }
+
+  // Record the purchase in Growth OS (Orders, Payments, CRM, Timeline)
+  const { error: saleError } = await supabase.rpc("record_stripe_sale", {
+    p_profile_id: profileId,
+    p_stripe_event_id: eventId,
+    p_stripe_customer_id: customerId,
+    p_stripe_subscription_id: subscriptionId,
+    p_stripe_checkout_session_id: checkoutSessionId,
+    p_stripe_price_id: priceId,
+    p_amount_cents: amount,
+    p_currency: currency,
+    p_payment_status: paymentStatus,
+    p_purchased_at: purchasedAt,
   });
 
-  if (error && error.code !== "23505") {
-    throw new Error(`Unable to record transaction: ${error.message}`);
+  if (saleError) {
+    throw new Error(
+      `Unable to record Stripe sale: ${saleError.message}`
+    );
   }
 }
 

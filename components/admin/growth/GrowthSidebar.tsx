@@ -20,6 +20,10 @@ const navigation = [
     icon: "◌",
   },
   {
+  label: "Sales",
+  href: "/admin/sales",
+},
+  {
     label: "Tasks",
     href: "/admin/growth/tasks",
     icon: "✓",
