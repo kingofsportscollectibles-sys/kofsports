@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Script from "next/script";
 import { Inter, Oswald } from "next/font/google";
 import "./globals.css";
+import GrowthTracker from "@/components/growth/GrowthTracker";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -58,6 +59,7 @@ export default function RootLayout({
         className={`${inter.variable} ${oswald.variable} min-h-screen bg-black text-white antialiased`}
       >
         {children}
+        <GrowthTracker />
       </body>
     </html>
   );
