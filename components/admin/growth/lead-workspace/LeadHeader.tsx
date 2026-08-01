@@ -1,9 +1,9 @@
 import type { GrowthActivity } from "@/lib/growth/activity";
+import type { Customer360 } from "@/lib/growth/customer360";
 import type { GrowthLead } from "@/lib/growth/lead";
 
 type LeadHeaderProps = {
-  lead: GrowthLead;
-  activities: GrowthActivity[];
+  customer: Customer360;
 };
 
 type PriorityLevel =
@@ -89,7 +89,7 @@ function hasRecentInboundActivity(
 function getPriorityScore(
   lead: GrowthLead,
   activities: GrowthActivity[],
-) {
+): number {
   if (isCustomerStatus(lead.status)) {
     return 0;
   }
@@ -110,23 +110,23 @@ function getPriorityScore(
     score += 20;
   }
 
-  if (lead.lastContactAt) {
-    const lastContactDate = new Date(
-      lead.lastContactAt,
-    ).getTime();
+ if (lead.lastContactAt) {
+  const lastContactDate = new Date(
+    lead.lastContactAt,
+  ).getTime();
 
-    const fourteenDaysAgo =
-      Date.now() - 14 * 24 * 60 * 60 * 1000;
+  const fourteenDaysAgo =
+    Date.now() - 14 * 24 * 60 * 60 * 1000;
 
-    if (
-      !Number.isNaN(lastContactDate) &&
-      lastContactDate < fourteenDaysAgo
-    ) {
-      score -= 20;
-    }
+  if (
+    !Number.isNaN(lastContactDate) &&
+    lastContactDate < fourteenDaysAgo
+  ) {
+    score -= 20;
   }
+}
 
-  return Math.max(score, 0);
+return Math.max(score, 0);
 }
 
 function getPriorityLevel(
@@ -274,25 +274,41 @@ function formatFollowUp(value: string | null) {
   }).format(date);
 }
 
-function getDaysSinceAdded(createdAt: string) {
-  const createdDate = new Date(createdAt);
+function formatCurrency(value: number) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(value);
+}
 
-  if (Number.isNaN(createdDate.getTime())) {
-    return 0;
+function formatDate(value: string | null) {
+  if (!value) {
+    return "Not set";
   }
 
-  return Math.max(
-    0,
-    Math.floor(
-      (Date.now() - createdDate.getTime()) / 86_400_000,
-    ),
-  );
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Not set";
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(date);
 }
 
 export default function LeadHeader({
-  lead,
-  activities,
+  customer,
 }: LeadHeaderProps) {
+  const {
+    lead,
+    activities,
+    membership,
+    revenue,
+  } = customer;
+
   const priorityScore = getPriorityScore(
     lead,
     activities,
@@ -304,14 +320,6 @@ export default function LeadHeader({
   );
 
   const priority = getPriorityDisplay(priorityLevel);
-
-  const inboundReplies = activities.filter(
-    (activity) => activity.direction === "inbound",
-  ).length;
-
-  const daysSinceAdded = getDaysSinceAdded(
-    lead.createdAt,
-  );
 
   return (
     <header className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -326,7 +334,7 @@ export default function LeadHeader({
             </span>
 
             <p className="mt-4 text-xs font-black uppercase tracking-[0.22em] text-emerald-400">
-              Lead 360
+              Customer 360
             </p>
 
             <h1 className="mt-2 text-3xl font-black">
@@ -357,30 +365,49 @@ export default function LeadHeader({
                   </span>
                 </>
               ) : null}
+              {membership.membership ? (
+  <>
+    <span>•</span>
+    <span>
+      {formatText(membership.membership)}
+    </span>
+  </>
+) : null}
+
+{membership.subscriptionStatus ? (
+  <>
+    <span>•</span>
+    <span>
+      {formatText(
+        membership.subscriptionStatus,
+      )}
+    </span>
+  </>
+) : null}
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="min-w-28 rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-center backdrop-blur">
-              <p className="text-xs font-bold uppercase tracking-wide text-slate-300">
-                Priority
-              </p>
+  <div className="min-w-28 rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-center backdrop-blur">
+    <p className="text-xs font-bold uppercase tracking-wide text-slate-300">
+      Lifetime Value
+    </p>
 
-              <p className="mt-1 text-2xl font-black">
-                {priorityScore}
-              </p>
-            </div>
+    <p className="mt-1 text-2xl font-black">
+      {formatCurrency(revenue.lifetimeValue ?? 0)}
+    </p>
+  </div>
 
-            <div className="min-w-28 rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-center backdrop-blur">
-              <p className="text-xs font-bold uppercase tracking-wide text-slate-300">
-                Lead Score
-              </p>
+  <div className="min-w-28 rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-center backdrop-blur">
+    <p className="text-xs font-bold uppercase tracking-wide text-slate-300">
+      Lead Score
+    </p>
 
-              <p className="mt-1 text-2xl font-black">
-                {lead.leadScore}
-              </p>
-            </div>
-          </div>
+    <p className="mt-1 text-2xl font-black">
+      {lead.leadScore}
+    </p>
+  </div>
+</div>
         </div>
       </div>
 
@@ -428,37 +455,47 @@ export default function LeadHeader({
         </div>
       </div>
 
-      <div className="grid border-t border-slate-200 bg-slate-50 sm:grid-cols-3">
-        <div className="px-5 py-4">
-          <p className="text-2xl font-black text-slate-950">
-            {activities.length}
-          </p>
+     <div className="grid border-t border-slate-200 bg-slate-50 sm:grid-cols-2 xl:grid-cols-4">
+  <div className="px-5 py-4">
+    <p className="text-2xl font-black text-slate-950">
+      {revenue.totalOrders}
+    </p>
 
-          <p className="mt-1 text-xs font-bold uppercase tracking-wide text-slate-500">
-            Activities
-          </p>
-        </div>
+    <p className="mt-1 text-xs font-bold uppercase tracking-wide text-slate-500">
+      Total Orders
+    </p>
+  </div>
 
-        <div className="border-t border-slate-200 px-5 py-4 sm:border-l sm:border-t-0">
-          <p className="text-2xl font-black text-slate-950">
-            {inboundReplies}
-          </p>
+  <div className="border-t border-slate-200 px-5 py-4 sm:border-l sm:border-t-0">
+    <p className="text-2xl font-black text-slate-950">
+      {formatText(membership.membership)}
+    </p>
 
-          <p className="mt-1 text-xs font-bold uppercase tracking-wide text-slate-500">
-            Inbound Replies
-          </p>
-        </div>
+    <p className="mt-1 text-xs font-bold uppercase tracking-wide text-slate-500">
+      Membership
+    </p>
+  </div>
 
-        <div className="border-t border-slate-200 px-5 py-4 sm:border-l sm:border-t-0">
-          <p className="text-2xl font-black text-slate-950">
-            {daysSinceAdded}
-          </p>
+  <div className="border-t border-slate-200 px-5 py-4 xl:border-l xl:border-t-0">
+    <p className="text-2xl font-black text-slate-950">
+      {formatDate(membership.expiresAt)}
+    </p>
 
-          <p className="mt-1 text-xs font-bold uppercase tracking-wide text-slate-500">
-            Days Since Added
-          </p>
-        </div>
-      </div>
+    <p className="mt-1 text-xs font-bold uppercase tracking-wide text-slate-500">
+      Membership Expires
+    </p>
+  </div>
+
+  <div className="border-t border-slate-200 px-5 py-4 sm:border-l xl:border-t-0">
+    <p className="text-2xl font-black text-slate-950">
+      {activities.length}
+    </p>
+
+    <p className="mt-1 text-xs font-bold uppercase tracking-wide text-slate-500">
+      Activities
+    </p>
+  </div>
+</div>
     </header>
   );
 }

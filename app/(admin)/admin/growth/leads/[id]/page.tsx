@@ -1,14 +1,14 @@
 import { notFound } from "next/navigation";
 
-import ActivityTimeline from "@/components/admin/growth/activity/ActivityTimeline";
+import CustomerPurchaseHistory from "@/components/admin/growth/customer-360/CustomerPurchaseHistory";
+import CustomerTimeline from "@/components/admin/growth/customer-360/CustomerTimeline";
 import ActivityComposer from "@/components/admin/growth/lead-workspace/ActivityComposer";
 import LeadHeader from "@/components/admin/growth/lead-workspace/LeadHeader";
 import LeadInsights from "@/components/admin/growth/lead-workspace/LeadInsights";
 import LeadIntelligenceCards from "@/components/admin/growth/lead-workspace/LeadIntelligenceCards";
 import LeadProfileCard from "@/components/admin/growth/lead-workspace/LeadProfileCard";
 
-import { getLeadActivities } from "@/lib/growth/activity";
-import { getGrowthLead } from "@/lib/growth/lead";
+import { getCustomer360 } from "@/lib/growth/customer360";
 
 type GrowthLeadPageProps = {
   params: Promise<{
@@ -21,39 +21,39 @@ export default async function GrowthLeadPage({
 }: GrowthLeadPageProps) {
   const { id } = await params;
 
-  const lead = await getGrowthLead(id);
+  const customer = await getCustomer360(id);
 
-  if (!lead) {
+  if (!customer) {
     notFound();
   }
 
-  const activities = await getLeadActivities(lead.id);
+  const { lead, activities } = customer;
 
   return (
     <div className="space-y-6">
-      <LeadHeader
-        lead={lead}
-        activities={activities}
-      />
+      <LeadHeader customer={customer} />
 
       <LeadIntelligenceCards
         lead={lead}
         activities={activities}
+        revenue={customer.revenue}
+        membership={customer.membership}
       />
 
       <div className="grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)_320px]">
-        <LeadProfileCard lead={lead} />
+        <LeadProfileCard customer={customer} />
 
         <main className="space-y-5">
           <ActivityComposer leadId={lead.id} />
 
-          <ActivityTimeline activities={activities} />
+          <CustomerPurchaseHistory
+            orders={customer.orders}
+          />
+
+          <CustomerTimeline customer={customer} />
         </main>
 
-        <LeadInsights
-          lead={lead}
-          activities={activities}
-        />
+        <LeadInsights customer={customer} />
       </div>
     </div>
   );

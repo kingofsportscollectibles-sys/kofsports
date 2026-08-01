@@ -2,6 +2,8 @@ import Link from "next/link";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 
+import ClickableOrderRow from "@/components/admin/sales/ClickableOrderRow";
+
 export const dynamic = "force-dynamic";
 
 type OrderItem = {
@@ -432,59 +434,59 @@ export default async function SalesPage() {
 
               <tbody className="divide-y divide-gray-100 bg-white">
                 {recentOrders.map((order) => (
-                  <tr
-                    key={order.id}
-                    className="transition hover:bg-gray-50"
-                  >
-                    <td className="whitespace-nowrap px-6 py-4">
-                      <p className="text-sm font-semibold text-gray-950">
-                        #{order.order_number}
-                      </p>
+<ClickableOrderRow
+  key={order.id}
+  href={`/admin/sales/${order.id}`}
+>
+  <td className="whitespace-nowrap px-6 py-4">
+    <p className="text-sm font-semibold text-gray-950">
+      #{order.order_number}
+    </p>
 
-                      <p className="mt-1 text-xs text-gray-500">
-                        {formatDate(order.sold_at)}
-                      </p>
-                    </td>
+    <p className="mt-1 text-xs text-gray-500">
+      {formatDate(order.sold_at)}
+    </p>
+  </td>
 
-                    <td className="px-6 py-4">
-                      <p className="text-sm font-medium text-gray-950">
-                        {getCustomerDisplay(order)}
-                      </p>
+  <td className="px-6 py-4">
+    <p className="text-sm font-medium text-gray-950">
+      {getCustomerDisplay(order)}
+    </p>
 
-                      {order.customer_name &&
-                      order.customer_email ? (
-                        <p className="mt-1 text-xs text-gray-500">
-                          {order.customer_email}
-                        </p>
-                      ) : null}
-                    </td>
+    {order.customer_name &&
+    order.customer_email ? (
+      <p className="mt-1 text-xs text-gray-500">
+        {order.customer_email}
+      </p>
+    ) : null}
+  </td>
 
-                    <td className="px-6 py-4 text-sm text-gray-700">
-                      {getProductDisplay(order)}
-                    </td>
+  <td className="px-6 py-4 text-sm text-gray-700">
+    {getProductDisplay(order)}
+  </td>
 
-                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-700">
-                      {getPaymentMethod(order)}
-                    </td>
+  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-700">
+    {getPaymentMethod(order)}
+  </td>
 
-                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-700">
-                      {formatLabel(order.source)}
-                    </td>
+  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-700">
+    {formatLabel(order.source)}
+  </td>
 
-                    <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-semibold text-gray-950">
-                      {formatCurrency(toNumber(order.total))}
-                    </td>
+  <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-semibold text-gray-950">
+    {formatCurrency(toNumber(order.total))}
+  </td>
 
-                    <td className="whitespace-nowrap px-6 py-4">
-                      <span
-                        className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${getStatusClasses(
-                          order.status,
-                        )}`}
-                      >
-                        {formatLabel(order.status)}
-                      </span>
-                    </td>
-                  </tr>
+  <td className="whitespace-nowrap px-6 py-4">
+    <span
+      className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${getStatusClasses(
+        order.status,
+      )}`}
+    >
+      {formatLabel(order.status)}
+    </span>
+  </td>
+</ClickableOrderRow>
                 ))}
               </tbody>
             </table>
