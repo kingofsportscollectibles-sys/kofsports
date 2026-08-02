@@ -30,7 +30,7 @@ const navigation = [
   },
   {
     label: "Campaigns",
-    href: "/admin/growth/campaigns",
+    href: "/admin/campaigns",
     icon: "◇",
   },
   {

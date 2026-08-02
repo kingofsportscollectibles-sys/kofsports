@@ -5,7 +5,8 @@ export type TimelineEventType =
   | "activity"
   | "membership"
   | "purchase"
-  | "payment";
+  | "payment"
+  | "campaign";
 
 export type TimelineEvent = {
   id: string;
@@ -33,9 +34,17 @@ function sortNewest(
   );
 }
 
+function toNumber(
+  value: number | string | null | undefined,
+) {
+  const parsed = Number(value ?? 0);
+
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
 function formatTitle(value: string | null) {
   if (!value) {
-    return "Membership Event";
+    return "Event";
   }
 
   return value
@@ -46,18 +55,13 @@ function formatTitle(value: string | null) {
 }
 
 function formatCurrency(
-  amountInCents: number | null,
-  currency: string | null,
+  value: number,
+  currency = "USD",
 ) {
-  const amount =
-    typeof amountInCents === "number"
-      ? amountInCents / 100
-      : 0;
-
   return new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency: currency?.toUpperCase() ?? "USD",
-  }).format(amount);
+    currency: currency.toUpperCase(),
+  }).format(value);
 }
 
 export async function getCustomerTimeline({
@@ -100,16 +104,41 @@ export async function getCustomerTimeline({
       ascending: false,
     });
 
+  const campaignMembershipsQuery = supabase
+    .from("growth_campaign_members")
+    .select(`
+      campaign_id,
+      status,
+      joined_at,
+      contacted_at,
+      replied_at,
+      converted_at,
+      revenue_attributed,
+      notes,
+      growth_campaigns (
+        id,
+        name,
+        platform,
+        campaign_type
+      )
+    `)
+    .eq("lead_id", leadId)
+    .order("joined_at", {
+      ascending: false,
+    });
+
   const [
     activities,
     membershipEventsResult,
     membershipTransactionsResult,
     ordersResult,
+    campaignMembershipsResult,
   ] = await Promise.all([
     getLeadActivities(leadId),
     membershipEventsQuery,
     membershipTransactionsQuery,
     ordersQuery,
+    campaignMembershipsQuery,
   ]);
 
   if (membershipEventsResult.error) {
@@ -133,6 +162,13 @@ export async function getCustomerTimeline({
     );
   }
 
+  if (campaignMembershipsResult.error) {
+    console.error(
+      "[CustomerTimeline] Campaign memberships query failed:",
+      campaignMembershipsResult.error,
+    );
+  }
+
   const timeline: TimelineEvent[] = [];
 
   //
@@ -140,6 +176,15 @@ export async function getCustomerTimeline({
   //
 
   for (const activity of activities) {
+    /*
+     * Campaign milestones are rendered from
+     * growth_campaign_members below, so skip their generic
+     * CRM activity copies to prevent duplicates.
+     */
+    if (activity.activityType.startsWith("campaign_")) {
+      continue;
+    }
+
     timeline.push({
       id: `activity-${activity.id}`,
       type: "activity",
@@ -168,13 +213,129 @@ export async function getCustomerTimeline({
   }
 
   //
+  // Campaign Journey
+  //
+
+  for (
+    const membership of
+    campaignMembershipsResult.data ?? []
+  ) {
+    const campaignRelation =
+      membership.growth_campaigns;
+
+    const campaign = Array.isArray(campaignRelation)
+      ? campaignRelation[0]
+      : campaignRelation;
+
+    const campaignName =
+      campaign?.name ?? "Campaign";
+
+    const campaignDescription = [
+      campaign?.platform
+        ? `Platform: ${formatTitle(
+            campaign.platform,
+          )}`
+        : "",
+      campaign?.campaign_type
+        ? `Type: ${formatTitle(
+            campaign.campaign_type,
+          )}`
+        : "",
+    ]
+      .filter(Boolean)
+      .join(" · ");
+
+    timeline.push({
+      id: `campaign-joined-${membership.campaign_id}`,
+      type: "campaign",
+      title: `Joined ${campaignName}`,
+      description:
+        campaignDescription ||
+        "Added to campaign audience.",
+      occurredAt: membership.joined_at,
+      icon: "📣",
+      color: "indigo",
+      metadata: {
+        campaignId: membership.campaign_id,
+        campaignStatus: membership.status,
+      },
+    });
+
+    if (membership.contacted_at) {
+      timeline.push({
+        id: `campaign-contacted-${membership.campaign_id}`,
+        type: "campaign",
+        title: `Contacted through ${campaignName}`,
+        description:
+          membership.notes ||
+          campaignDescription ||
+          "Campaign outreach recorded.",
+        occurredAt: membership.contacted_at,
+        icon: "✉️",
+        color: "indigo",
+        metadata: {
+          campaignId: membership.campaign_id,
+          campaignStatus: "contacted",
+        },
+      });
+    }
+
+    if (membership.replied_at) {
+      timeline.push({
+        id: `campaign-replied-${membership.campaign_id}`,
+        type: "campaign",
+        title: `Replied to ${campaignName}`,
+        description:
+          membership.notes ||
+          "Campaign reply recorded.",
+        occurredAt: membership.replied_at,
+        icon: "💬",
+        color: "indigo",
+        metadata: {
+          campaignId: membership.campaign_id,
+          campaignStatus: "replied",
+        },
+      });
+    }
+
+    if (membership.converted_at) {
+      const revenue = toNumber(
+        membership.revenue_attributed,
+      );
+
+      timeline.push({
+        id: `campaign-converted-${membership.campaign_id}`,
+        type: "campaign",
+        title: `Converted through ${campaignName}`,
+        description:
+          revenue > 0
+            ? `${formatCurrency(
+                revenue,
+              )} attributed revenue`
+            : "Campaign conversion recorded.",
+        occurredAt: membership.converted_at,
+        icon: "🎯",
+        color: "indigo",
+        metadata: {
+          campaignId: membership.campaign_id,
+          campaignStatus: "converted",
+          revenueAttributed: revenue,
+        },
+      });
+    }
+  }
+
+  //
   // Membership Events
   //
 
-  for (const event of membershipEventsResult.data ?? []) {
+  for (
+    const event of membershipEventsResult.data ?? []
+  ) {
     const membershipChange =
       event.new_membership &&
-      event.previous_membership !== event.new_membership
+      event.previous_membership !==
+        event.new_membership
         ? `${formatTitle(
             event.previous_membership,
           )} → ${formatTitle(event.new_membership)}`
@@ -209,7 +370,7 @@ export async function getCustomerTimeline({
       icon:
         event.event_type === "renewed"
           ? "🔄"
-          : event.event_type === "cancelled"
+          : event.event_type === "canceled"
             ? "❌"
             : "⭐",
       color: "violet",
@@ -225,13 +386,14 @@ export async function getCustomerTimeline({
     const transaction of
     membershipTransactionsResult.data ?? []
   ) {
-    const amount = formatCurrency(
-      transaction.amount,
-      transaction.currency,
-    );
+    const amount =
+      toNumber(transaction.amount) / 100;
 
-    const details = [
-      amount,
+    const description = [
+      formatCurrency(
+        amount,
+        transaction.currency ?? "USD",
+      ),
       formatTitle(transaction.membership_type),
       formatTitle(transaction.payment_status),
     ]
@@ -242,7 +404,7 @@ export async function getCustomerTimeline({
       id: `payment-${transaction.id}`,
       type: "payment",
       title: "Membership Payment",
-      description: details,
+      description,
       occurredAt:
         transaction.purchased_at ??
         transaction.created_at,
@@ -257,19 +419,13 @@ export async function getCustomerTimeline({
   //
 
   for (const order of ordersResult.data ?? []) {
-    const total =
-      typeof order.total === "number"
-        ? new Intl.NumberFormat("en-US", {
-            style: "currency",
-            currency: "USD",
-          }).format(order.total)
-        : null;
+    const total = toNumber(order.total);
 
-    const details = [
+    const description = [
       order.order_number
         ? `Order #${order.order_number}`
         : "Order",
-      total,
+      formatCurrency(total),
       formatTitle(order.status),
     ]
       .filter(Boolean)
@@ -279,10 +435,9 @@ export async function getCustomerTimeline({
       id: `purchase-${order.id}`,
       type: "purchase",
       title: "Order Placed",
-      description: details,
+      description,
       occurredAt:
-        order.sold_at ??
-        order.created_at,
+        order.sold_at ?? order.created_at,
       icon: "🛒",
       color: "amber",
       metadata: order,

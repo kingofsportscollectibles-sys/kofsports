@@ -35,6 +35,11 @@ const eventStyles: Record<
       "bg-emerald-100 text-emerald-700 ring-emerald-200",
     line: "bg-emerald-200",
   },
+  campaign: {
+  badge:
+    "bg-indigo-100 text-indigo-700 ring-indigo-200",
+  line: "bg-indigo-200",
+},
 };
 
 function formatEventType(type: TimelineEvent["type"]) {
