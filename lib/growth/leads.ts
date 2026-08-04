@@ -229,7 +229,7 @@ export async function getGrowthLeads(): Promise<
             created_at
           `,
         )
-        .limit(100),
+        .limit(1000),
 
       supabase
         .from("growth_activities")

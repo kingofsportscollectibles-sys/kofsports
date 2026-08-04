@@ -1,12 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import CampaignMembersTable from "@/components/admin/campaigns/CampaignMembersTable";
 import {
   getCampaignDetail,
   type GrowthCampaignStatus,
 } from "@/lib/growth/campaigns";
-
-import CampaignMemberRow from "@/components/admin/campaigns/CampaignMemberRow";
 
 export const dynamic = "force-dynamic";
 
@@ -129,66 +128,76 @@ export default async function CampaignDetailPage({
   }
 
   const replyRate =
-  campaign.contactedCount > 0
-    ? (campaign.repliedCount /
-        campaign.contactedCount) *
-      100
-    : 0;
+    campaign.contactedCount > 0
+      ? (campaign.repliedCount /
+          campaign.contactedCount) *
+        100
+      : 0;
 
-const conversionRate =
-  campaign.contactedCount > 0
-    ? (campaign.convertedCount /
-        campaign.contactedCount) *
-      100
-    : 0;
+  const conversionRate =
+    campaign.contactedCount > 0
+      ? (campaign.convertedCount /
+          campaign.contactedCount) *
+        100
+      : 0;
 
-const averageRevenuePerConversion =
-  campaign.convertedCount > 0
-    ? campaign.revenueAttributed /
-      campaign.convertedCount
-    : 0;
+  const averageRevenuePerConversion =
+    campaign.convertedCount > 0
+      ? campaign.revenueAttributed /
+        campaign.convertedCount
+      : 0;
 
-const budget = campaign.budgetCents / 100;
+  const budget = campaign.budgetCents / 100;
 
-const roi =
-  budget > 0
-    ? ((campaign.revenueAttributed - budget) /
-        budget) *
-      100
-    : null;
+  const roi =
+    budget > 0
+      ? ((campaign.revenueAttributed - budget) /
+          budget) *
+        100
+      : null;
 
-const remainingLeads = Math.max(
-  campaign.members.length -
-    campaign.contactedCount,
-  0,
-);
+  const remainingLeads = Math.max(
+    campaign.members.length -
+      campaign.contactedCount,
+    0,
+  );
 
-const goalProgress =
-  campaign.goalValue &&
-  campaign.goalValue > 0
-    ? Math.min(
-        campaign.goalType === "revenue"
-          ? (campaign.revenueAttributed /
-              campaign.goalValue) *
-              100
-          : campaign.goalType === "replies"
-            ? (campaign.repliedCount /
+  const audienceProgress =
+    campaign.members.length > 0
+      ? Math.min(
+          (campaign.contactedCount /
+            campaign.members.length) *
+            100,
+          100,
+        )
+      : 0;
+
+  const goalProgress =
+    campaign.goalValue &&
+    campaign.goalValue > 0
+      ? Math.min(
+          campaign.goalType === "revenue"
+            ? (campaign.revenueAttributed /
                 campaign.goalValue) *
-              100
-            : campaign.goalType ===
-                "conversations"
-              ? (campaign.contactedCount /
+                100
+            : campaign.goalType === "replies"
+              ? (campaign.repliedCount /
                   campaign.goalValue) *
                 100
               : campaign.goalType ===
-                  "conversions"
-                ? (campaign.convertedCount /
+                  "conversations"
+                ? (campaign.contactedCount /
                     campaign.goalValue) *
                   100
-                : 0,
-        100,
-      )
-    : 0;
+                : campaign.goalType ===
+                    "conversions"
+                  ? (campaign.convertedCount /
+                      campaign.goalValue) *
+                    100
+                  : 0,
+          100,
+        )
+      : 0;
 
   return (
     <main className="space-y-8">
@@ -282,167 +291,158 @@ const goalProgress =
       </section>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-    <div>
-      <p className="text-xs font-black uppercase tracking-[0.2em] text-emerald-600">
-        Campaign Analytics
-      </p>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-emerald-600">
+              Campaign Analytics
+            </p>
 
-      <h2 className="mt-2 text-xl font-black text-slate-950">
-        Performance Overview
-      </h2>
+            <h2 className="mt-2 text-xl font-black text-slate-950">
+              Performance Overview
+            </h2>
 
-      <p className="mt-2 text-sm leading-6 text-slate-500">
-        Outreach efficiency, conversion performance, and
-        revenue impact.
-      </p>
-    </div>
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              Outreach efficiency, conversion performance, and
+              revenue impact.
+            </p>
+          </div>
 
-    <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-black text-slate-600">
-      {campaign.members.length} total leads
-    </span>
-  </div>
-
-  <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-    <div className="rounded-xl bg-slate-50 p-4">
-      <p className="text-xs font-black uppercase tracking-wide text-slate-400">
-        Reply Rate
-      </p>
-
-      <p className="mt-2 text-2xl font-black text-slate-950">
-        {replyRate.toFixed(1)}%
-      </p>
-
-      <p className="mt-1 text-xs text-slate-500">
-        {campaign.repliedCount} of{" "}
-        {campaign.contactedCount} contacted
-      </p>
-    </div>
-
-    <div className="rounded-xl bg-slate-50 p-4">
-      <p className="text-xs font-black uppercase tracking-wide text-slate-400">
-        Conversion Rate
-      </p>
-
-      <p className="mt-2 text-2xl font-black text-slate-950">
-        {conversionRate.toFixed(1)}%
-      </p>
-
-      <p className="mt-1 text-xs text-slate-500">
-        {campaign.convertedCount} conversions
-      </p>
-    </div>
-
-    <div className="rounded-xl bg-slate-50 p-4">
-      <p className="text-xs font-black uppercase tracking-wide text-slate-400">
-        Avg. Conversion Value
-      </p>
-
-      <p className="mt-2 text-2xl font-black text-slate-950">
-        {formatCurrency(
-          averageRevenuePerConversion,
-        )}
-      </p>
-
-      <p className="mt-1 text-xs text-slate-500">
-        Revenue per converted lead
-      </p>
-    </div>
-
-    <div className="rounded-xl bg-emerald-50 p-4">
-      <p className="text-xs font-black uppercase tracking-wide text-emerald-600">
-        Campaign ROI
-      </p>
-
-      <p className="mt-2 text-2xl font-black text-emerald-800">
-        {roi === null
-          ? "No spend"
-          : `${roi.toFixed(1)}%`}
-      </p>
-
-      <p className="mt-1 text-xs text-emerald-700">
-        {formatCurrency(
-          campaign.revenueAttributed,
-        )}{" "}
-        revenue on {formatCurrency(budget)} spend
-      </p>
-    </div>
-  </div>
-
-  <div className="mt-6 grid gap-5 lg:grid-cols-2">
-    <div className="rounded-xl border border-slate-200 p-5">
-      <div className="flex items-end justify-between gap-4">
-        <div>
-          <p className="text-xs font-black uppercase tracking-wide text-slate-400">
-            Audience Progress
-          </p>
-
-          <p className="mt-2 text-lg font-black text-slate-950">
-            {campaign.contactedCount} contacted
-          </p>
+          <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-black text-slate-600">
+            {campaign.members.length} total leads
+          </span>
         </div>
 
-        <p className="text-sm font-bold text-slate-500">
-          {remainingLeads} remaining
-        </p>
-      </div>
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-xl bg-slate-50 p-4">
+            <p className="text-xs font-black uppercase tracking-wide text-slate-400">
+              Reply Rate
+            </p>
 
-      <div className="mt-4 h-3 overflow-hidden rounded-full bg-slate-100">
-        <div
-          className="h-full rounded-full bg-emerald-500 transition-all"
-          style={{
-            width: `${
-              campaign.members.length > 0
-                ? Math.min(
-                    (campaign.contactedCount /
-                      campaign.members.length) *
-                      100,
-                    100,
-                  )
-                : 0
-            }%`,
-          }}
-        />
-      </div>
-    </div>
+            <p className="mt-2 text-2xl font-black text-slate-950">
+              {replyRate.toFixed(1)}%
+            </p>
 
-    <div className="rounded-xl border border-slate-200 p-5">
-      <div className="flex items-end justify-between gap-4">
-        <div>
-          <p className="text-xs font-black uppercase tracking-wide text-slate-400">
-            Goal Progress
-          </p>
+            <p className="mt-1 text-xs text-slate-500">
+              {campaign.repliedCount} of{" "}
+              {campaign.contactedCount} contacted
+            </p>
+          </div>
 
-          <p className="mt-2 text-lg font-black text-slate-950">
-            {formatLabel(campaign.goalType)}
-          </p>
+          <div className="rounded-xl bg-slate-50 p-4">
+            <p className="text-xs font-black uppercase tracking-wide text-slate-400">
+              Conversion Rate
+            </p>
+
+            <p className="mt-2 text-2xl font-black text-slate-950">
+              {conversionRate.toFixed(1)}%
+            </p>
+
+            <p className="mt-1 text-xs text-slate-500">
+              {campaign.convertedCount} conversions
+            </p>
+          </div>
+
+          <div className="rounded-xl bg-slate-50 p-4">
+            <p className="text-xs font-black uppercase tracking-wide text-slate-400">
+              Avg. Conversion Value
+            </p>
+
+            <p className="mt-2 text-2xl font-black text-slate-950">
+              {formatCurrency(
+                averageRevenuePerConversion,
+              )}
+            </p>
+
+            <p className="mt-1 text-xs text-slate-500">
+              Revenue per converted lead
+            </p>
+          </div>
+
+          <div className="rounded-xl bg-emerald-50 p-4">
+            <p className="text-xs font-black uppercase tracking-wide text-emerald-600">
+              Campaign ROI
+            </p>
+
+            <p className="mt-2 text-2xl font-black text-emerald-800">
+              {roi === null
+                ? "No spend"
+                : `${roi.toFixed(1)}%`}
+            </p>
+
+            <p className="mt-1 text-xs text-emerald-700">
+              {formatCurrency(
+                campaign.revenueAttributed,
+              )}{" "}
+              revenue on {formatCurrency(budget)} spend
+            </p>
+          </div>
         </div>
 
-        <p className="text-sm font-bold text-slate-500">
-          {goalProgress.toFixed(0)}%
-        </p>
-      </div>
+        <div className="mt-6 grid gap-5 lg:grid-cols-2">
+          <div className="rounded-xl border border-slate-200 p-5">
+            <div className="flex items-end justify-between gap-4">
+              <div>
+                <p className="text-xs font-black uppercase tracking-wide text-slate-400">
+                  Audience Progress
+                </p>
 
-      <div className="mt-4 h-3 overflow-hidden rounded-full bg-slate-100">
-        <div
-          className="h-full rounded-full bg-violet-500 transition-all"
-          style={{
-            width: `${goalProgress}%`,
-          }}
-        />
-      </div>
+                <p className="mt-2 text-lg font-black text-slate-950">
+                  {campaign.contactedCount} contacted
+                </p>
+              </div>
 
-      <p className="mt-3 text-xs font-semibold text-slate-500">
-        Target:{" "}
-        {campaign.goalValue !== null
-          ? campaign.goalType === "revenue"
-            ? formatCurrency(campaign.goalValue)
-            : campaign.goalValue
-          : "No goal set"}
-      </p>
-    </div>
-  </div>
-</section>
+              <p className="text-sm font-bold text-slate-500">
+                {remainingLeads} remaining
+              </p>
+            </div>
+
+            <div className="mt-4 h-3 overflow-hidden rounded-full bg-slate-100">
+              <div
+                className="h-full rounded-full bg-emerald-500 transition-all"
+                style={{
+                  width: `${audienceProgress}%`,
+                }}
+              />
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-slate-200 p-5">
+            <div className="flex items-end justify-between gap-4">
+              <div>
+                <p className="text-xs font-black uppercase tracking-wide text-slate-400">
+                  Goal Progress
+                </p>
+
+                <p className="mt-2 text-lg font-black text-slate-950">
+                  {formatLabel(campaign.goalType)}
+                </p>
+              </div>
+
+              <p className="text-sm font-bold text-slate-500">
+                {goalProgress.toFixed(0)}%
+              </p>
+            </div>
+
+            <div className="mt-4 h-3 overflow-hidden rounded-full bg-slate-100">
+              <div
+                className="h-full rounded-full bg-violet-500 transition-all"
+                style={{
+                  width: `${goalProgress}%`,
+                }}
+              />
+            </div>
+
+            <p className="mt-3 text-xs font-semibold text-slate-500">
+              Target:{" "}
+              {campaign.goalValue !== null
+                ? campaign.goalType === "revenue"
+                  ? formatCurrency(campaign.goalValue)
+                  : campaign.goalValue
+                : "No goal set"}
+            </p>
+          </div>
+        </div>
+      </section>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
         <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -459,11 +459,11 @@ const goalProgress =
             </div>
 
             <Link
-  href={`/admin/campaigns/${campaign.id}/add-leads`}
-  className="rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-black text-white transition hover:bg-slate-800"
->
-  + Add Leads
-</Link>
+              href={`/admin/campaigns/${campaign.id}/add-leads`}
+              className="rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-black text-white transition hover:bg-slate-800"
+            >
+              + Add Leads
+            </Link>
           </div>
 
           {campaign.members.length === 0 ? (
@@ -480,39 +480,10 @@ const goalProgress =
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-slate-200">
-                <thead className="bg-slate-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-black uppercase tracking-wide text-slate-500">
-                      Lead
-                    </th>
-
-                    <th className="px-6 py-3 text-left text-xs font-black uppercase tracking-wide text-slate-500">
-                      Status
-                    </th>
-
-                    <th className="px-6 py-3 text-left text-xs font-black uppercase tracking-wide text-slate-500">
-                      Score
-                    </th>
-
-                    <th className="px-6 py-3 text-right text-xs font-black uppercase tracking-wide text-slate-500">
-                      Revenue
-                    </th>
-                  </tr>
-                </thead>
-
-                <tbody className="divide-y divide-slate-100">
-                  {campaign.members.map((member) => (
-  <CampaignMemberRow
-    key={member.leadId}
-    campaignId={campaign.id}
-    member={member}
-  />
-))}
-                </tbody>
-              </table>
-            </div>
+            <CampaignMembersTable
+              campaignId={campaign.id}
+              members={campaign.members}
+            />
           )}
         </section>
 
@@ -527,6 +498,7 @@ const goalProgress =
                 <dt className="text-xs font-black uppercase tracking-wide text-slate-400">
                   Type
                 </dt>
+
                 <dd className="mt-1 text-sm font-bold text-slate-800">
                   {formatLabel(campaign.campaignType)}
                 </dd>
@@ -536,6 +508,7 @@ const goalProgress =
                 <dt className="text-xs font-black uppercase tracking-wide text-slate-400">
                   Start
                 </dt>
+
                 <dd className="mt-1 text-sm font-bold text-slate-800">
                   {formatDate(campaign.startsAt)}
                 </dd>
@@ -545,6 +518,7 @@ const goalProgress =
                 <dt className="text-xs font-black uppercase tracking-wide text-slate-400">
                   End
                 </dt>
+
                 <dd className="mt-1 text-sm font-bold text-slate-800">
                   {formatDate(campaign.endsAt)}
                 </dd>
@@ -554,6 +528,7 @@ const goalProgress =
                 <dt className="text-xs font-black uppercase tracking-wide text-slate-400">
                   Goal
                 </dt>
+
                 <dd className="mt-1 text-sm font-bold text-slate-800">
                   {formatLabel(campaign.goalType)}
                   {campaign.goalValue !== null
@@ -566,6 +541,7 @@ const goalProgress =
                 <dt className="text-xs font-black uppercase tracking-wide text-slate-400">
                   Budget
                 </dt>
+
                 <dd className="mt-1 text-sm font-bold text-slate-800">
                   {formatCurrency(
                     campaign.budgetCents / 100,
