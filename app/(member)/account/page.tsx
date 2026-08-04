@@ -67,7 +67,7 @@ export default async function AccountPage({
 
     const { data: notificationPreferences } = await supabase
   .from("notification_preferences")
-  .select("email_enabled, sms_enabled, phone_number")
+  .select("email_enabled")
   .eq("user_id", user.id)
   .maybeSingle();
 

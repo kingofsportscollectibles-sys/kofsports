@@ -23,11 +23,13 @@ export async function updateNotificationPreferences(
   if (userError || !user) {
     return {
       success: false,
-      message: "You must be signed in to update notifications.",
+      message:
+        "You must be signed in to update email alerts.",
     };
   }
 
-  const emailEnabled = formData.get("email_enabled") === "on";
+  const emailEnabled =
+    formData.get("email_enabled") === "on";
 
   const { error } = await supabase
     .from("notification_preferences")
@@ -43,11 +45,15 @@ export async function updateNotificationPreferences(
     );
 
   if (error) {
-    console.error("Notification preference update failed:", error);
+    console.error(
+      "Notification preference update failed:",
+      error,
+    );
 
     return {
       success: false,
-      message: "We could not save your notification preferences.",
+      message:
+        "We could not save your email alert preferences.",
     };
   }
 
