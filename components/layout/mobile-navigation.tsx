@@ -9,6 +9,7 @@ import { SignOutButton } from "@/components/layout/sign-out-button";
 const navigation = [
   { name: "Blog", href: "/blog" },
   { name: "Premium Picks", href: "/premium-picks" },
+  { name: "Tools", href: "/nfl-player-prop-trends" },
   { name: "Results", href: "/results" },
   { name: "Plans", href: "/plans" },
   { name: "About", href: "/about" },
