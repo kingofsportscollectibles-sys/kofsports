@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/nfl-prop-lines",
       "schedule": "0 14 * * 1,4,0"
+    },
+    {
+      "path": "/api/cron/nfl-results",
+      "schedule": "0 14 * * 2"
     }
   ]
 }
