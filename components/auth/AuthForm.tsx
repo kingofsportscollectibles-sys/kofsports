@@ -8,9 +8,26 @@ import { createClient } from "@/lib/supabase/client";
 
 type AuthFormProps = {
   mode: "login" | "signup";
+  redirect?: string;
 };
 
-export default function AuthForm({ mode }: AuthFormProps) {
+function getSafeRedirect(value: string | null): string {
+  if (!value) {
+    return "/account";
+  }
+
+  // Only allow internal KofSports paths.
+  if (!value.startsWith("/") || value.startsWith("//")) {
+    return "/account";
+  }
+
+  return value;
+}
+
+export default function AuthForm({
+  mode,
+  redirect,
+}: AuthFormProps) {
   const router = useRouter();
   const supabase = createClient();
 
@@ -21,6 +38,12 @@ export default function AuthForm({ mode }: AuthFormProps) {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [isError, setIsError] = useState(false);
+
+  const redirectTo = getSafeRedirect(redirect ?? null);
+
+  const alternateAuthHref = isLogin
+    ? `/signup?redirect=${encodeURIComponent(redirectTo)}`
+    : `/login?redirect=${encodeURIComponent(redirectTo)}`;
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -41,16 +64,20 @@ export default function AuthForm({ mode }: AuthFormProps) {
           throw loginError;
         }
 
-        router.push("/account");
+        router.push(redirectTo);
         router.refresh();
         return;
       }
+
+      const loginAfterConfirmation = `/login?redirect=${encodeURIComponent(
+        redirectTo,
+      )}`;
 
       const { error: signupError } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/login`,
+          emailRedirectTo: `${window.location.origin}${loginAfterConfirmation}`,
         },
       });
 
@@ -63,7 +90,6 @@ export default function AuthForm({ mode }: AuthFormProps) {
       );
     } catch (error) {
       setIsError(true);
-
       setMessage(
         error instanceof Error
           ? error.message
@@ -176,7 +202,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
             </p>
 
             <Link
-              href={isLogin ? "/signup" : "/login"}
+              href={alternateAuthHref}
               className="mt-2 inline-block font-bold text-amber-700 transition hover:text-amber-800"
             >
               {isLogin ? "Create an account" : "Log in"}
