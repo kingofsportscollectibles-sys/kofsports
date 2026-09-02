@@ -16,6 +16,8 @@ type ProfileUpdate = {
   stripe_price_id?: string | null;
   subscription_status?: string | null;
   membership_expires_at?: string | null;
+  premium_trial_used_at?: string | null;
+  premium_trial_source?: string | null;
 };
 
 function getSupabaseAdmin() {
@@ -307,18 +309,32 @@ async function syncSubscription(
     );
   }
 
-  const priceId = getSubscriptionPriceId(subscription);
-  const periodEnd = getSubscriptionPeriodEnd(subscription);
-  const hasAccess = subscriptionHasPremiumAccess(subscription.status);
+ const priceId = getSubscriptionPriceId(subscription);
 
-  await updateProfile(profileId, {
-    membership: hasAccess ? "premium" : "free",
-    stripe_customer_id: customerId,
-    stripe_subscription_id: subscription.id,
-    stripe_price_id: priceId,
-    subscription_status: subscription.status,
-    membership_expires_at: periodEnd,
-  });
+const periodEnd = getSubscriptionPeriodEnd(subscription);
+
+const hasAccess = subscriptionHasPremiumAccess(subscription.status);
+
+const isFreeTrial =
+  subscription.status === "trialing" &&
+  subscription.metadata.is_free_trial === "true";
+
+const trialSource = subscription.metadata.trial_source ?? null;
+
+await updateProfile(profileId, {
+  membership: hasAccess ? "premium" : "free",
+  stripe_customer_id: customerId,
+  stripe_subscription_id: subscription.id,
+  stripe_price_id: priceId,
+  subscription_status: subscription.status,
+  membership_expires_at: periodEnd,
+  ...(isFreeTrial
+    ? {
+        premium_trial_used_at: new Date().toISOString(),
+        premium_trial_source: trialSource,
+      }
+    : {}),
+});
 }
 
 async function handleCheckoutCompleted(
@@ -412,6 +428,15 @@ console.log({
     const subscription = await stripe.subscriptions.retrieve(subscriptionId);
 
     await syncSubscription(subscription);
+
+    /*
+     * A free-trial checkout creates a real subscription but no paid sale yet.
+     * Premium access and trial attribution are handled by syncSubscription().
+     * The first actual $25 payment will be recorded later by invoice.paid.
+     */
+    if (subscription.metadata.is_free_trial === "true") {
+      return;
+    }
 
     const priceId =
       getSubscriptionPriceId(subscription) ??
