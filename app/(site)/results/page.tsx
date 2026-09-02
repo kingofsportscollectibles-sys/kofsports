@@ -687,138 +687,9 @@ export default async function PublicResultsPage({
             </div>
           )}
 
-          {!error && (
-            <>
-              <section className="rounded-3xl border border-gray-200 bg-gray-50 p-6 sm:p-8">
-                <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-700">
-                      Refine Performance
-                    </p>
-
-                    <h2 className="mt-2 text-2xl font-black">
-                      Filter the verified record
-                    </h2>
-                  </div>
-
-                  {(selectedSport ||
-                    selectedBetType) && (
-                    <a
-  href={buildFilterHref({
-    range: selectedRange,
-  })}
-  className="font-bold text-amber-700 transition hover:text-amber-900"
->
-  Clear filters
-</a>
-                  )}
-                </div>
-
-                <div className="mt-6 grid gap-6 lg:grid-cols-2">
-                  <div>
-  <p className="text-sm font-bold text-gray-700">
-    Sport
-  </p>
-
-  <div className="mt-3 flex flex-wrap gap-2">
-    <a
-      href={buildFilterHref({
-        range: selectedRange,
-        betType: selectedBetType || undefined,
-      })}
-      className={`rounded-full border px-4 py-2 text-sm font-bold transition ${
-        !selectedSport
-          ? "border-black bg-black text-white"
-          : "border-gray-300 bg-white text-gray-700 hover:border-black"
-      }`}
-    >
-      All Sports
-    </a>
-
-    {availableSports.map((sport) => (
-      <a
-        key={sport}
-        href={buildFilterHref({
-          range: selectedRange,
-          sport,
-          betType: selectedBetType || undefined,
-        })}
-        className={`rounded-full border px-4 py-2 text-sm font-bold transition ${
-          selectedSport === sport
-            ? "border-black bg-black text-white"
-            : "border-gray-300 bg-white text-gray-700 hover:border-black"
-        }`}
-      >
-        {sport}
-      </a>
-    ))}
-  </div>
-</div>
-
-                 <div>
-  <p className="text-sm font-bold text-gray-700">
-    Bet Type
-  </p>
-
-  <div className="mt-3 flex flex-wrap gap-2">
-    <a
-      href={buildFilterHref({
-        range: selectedRange,
-        sport: selectedSport || undefined,
-      })}
-      className={`rounded-full border px-4 py-2 text-sm font-bold transition ${
-        !selectedBetType
-          ? "border-black bg-black text-white"
-          : "border-gray-300 bg-white text-gray-700 hover:border-black"
-      }`}
-    >
-      All Bet Types
-    </a>
-
-    {availableBetTypes.map((betType) => (
-      <a
-        key={betType}
-        href={buildFilterHref({
-          range: selectedRange,
-          sport: selectedSport || undefined,
-          betType,
-        })}
-        className={`rounded-full border px-4 py-2 text-sm font-bold transition ${
-          selectedBetType === betType
-            ? "border-black bg-black text-white"
-            : "border-gray-300 bg-white text-gray-700 hover:border-black"
-        }`}
-      >
-        {betType}
-      </a>
-    ))}
-  </div>
-</div>
-                </div>
-              </section>
-
-              {picks.length === 0 ? (
-                <section className="mt-10 rounded-3xl border border-dashed border-gray-300 px-6 py-16 text-center">
-                  <h2 className="text-3xl font-black">
-                    No results match these filters
-                  </h2>
-
-                  <p className="mx-auto mt-4 max-w-xl text-gray-600">
-                    Try another date range, sport, or bet
-                    type.
-                  </p>
-
-                  <Link
-                    href="/results?range=season"
-                    className="mt-6 inline-flex rounded-xl bg-black px-6 py-3 font-bold text-white transition hover:bg-amber-500 hover:text-black"
-                  >
-                    View Season Results
-                  </Link>
-                </section>
-              ) : (
-                <>
-
-                  <section className="mt-10 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+{!error && (
+  <>
+    <section className="mt-10 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                     <div className="rounded-3xl border border-gray-200 p-6 shadow-sm">
                       <p className="text-xs font-bold uppercase tracking-[0.16em] text-gray-400">
                         Current Win Streak
@@ -1232,9 +1103,7 @@ export default async function PublicResultsPage({
                       </Link>
                     </div>
                   </section>
-                </>
-              )}
-            </>
+                          </>
           )}
         </div>
       </section>
