@@ -50,10 +50,6 @@ type MonthlyGroup = {
   riskedUnits: number;
 };
 
-type ChartPoint = {
-  label: string;
-  value: number;
-};
 
 type ResultStyles = {
   label: string;
@@ -161,23 +157,6 @@ function formatDate(value: string | null) {
   }).format(date);
 }
 
-function formatChartDate(value: string | Date | null) {
-  if (!value) {
-    return "";
-  }
-
-  const date = value instanceof Date ? value : new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return "";
-  }
-
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    timeZone: DISPLAY_TIME_ZONE,
-  }).format(date);
-}
 
 function getPerformanceDate(pick: Pick) {
   const value =
@@ -411,27 +390,6 @@ function calculateStreaks(picks: Pick[]) {
   };
 }
 
-function createChartPoints(picks: Pick[]): ChartPoint[] {
-  const sortedPicks = [...picks].sort((a, b) => {
-    const firstDate = getPerformanceDate(a)?.getTime() ?? 0;
-    const secondDate = getPerformanceDate(b)?.getTime() ?? 0;
-
-    return firstDate - secondDate;
-  });
-
-  let cumulativeUnits = 0;
-
-  return sortedPicks.map((pick) => {
-    cumulativeUnits += normalizeNumber(pick.profit_loss);
-
-    return {
-    label: formatChartDate(
-  getPerformanceDate(pick),
-),
-      value: cumulativeUnits,
-    };
-  });
-}
 
 function getResultStyles(
   status: string | null,
@@ -489,191 +447,6 @@ function buildFilterHref({
   }
 
   return `/results?${params.toString()}`;
-}
-
-function CumulativeUnitsChart({
-  points,
-}: {
-  points: ChartPoint[];
-}) {
-  if (points.length === 0) {
-    return (
-      <div className="flex min-h-80 items-center justify-center rounded-3xl border border-dashed border-gray-300 bg-gray-50 px-6 text-center text-gray-500">
-        Grade and publish picks to build the cumulative units
-        chart.
-      </div>
-    );
-  }
-
-  const width = 900;
-  const height = 360;
-  const horizontalPadding = 60;
-  const verticalPadding = 45;
-
-  const values = points.map((point) => point.value);
-
-  const minimumValue = Math.min(0, ...values);
-  const maximumValue = Math.max(0, ...values);
-  const rawRange = maximumValue - minimumValue;
-  const valueRange = rawRange === 0 ? 1 : rawRange;
-
-  const getX = (index: number) => {
-    if (points.length === 1) {
-      return width / 2;
-    }
-
-    const availableWidth = width - horizontalPadding * 2;
-
-    return (
-      horizontalPadding +
-      (index / (points.length - 1)) * availableWidth
-    );
-  };
-
-  const getY = (value: number) => {
-    const availableHeight = height - verticalPadding * 2;
-
-    return (
-      verticalPadding +
-      ((maximumValue - value) / valueRange) * availableHeight
-    );
-  };
-
-  const linePoints = points
-    .map(
-      (point, index) =>
-        `${getX(index)},${getY(point.value)}`,
-    )
-    .join(" ");
-
-  const zeroY = getY(0);
-  const finalPoint = points[points.length - 1];
-
-  const gridValues = Array.from({ length: 5 }, (_, index) => {
-    const ratio = index / 4;
-
-    return maximumValue - ratio * valueRange;
-  });
-
-  return (
-    <div className="overflow-hidden rounded-3xl border border-gray-200 bg-white p-5 shadow-sm sm:p-8">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-gray-400">
-            Running Profit
-          </p>
-
-          <h3 className="mt-2 text-2xl font-black">
-            Cumulative units
-          </h3>
-        </div>
-
-        <div className="sm:text-right">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-gray-400">
-            Current
-          </p>
-
-          <p
-            className={`mt-1 text-3xl font-black ${
-              finalPoint.value > 0
-                ? "text-green-700"
-                : finalPoint.value < 0
-                  ? "text-red-700"
-                  : "text-black"
-            }`}
-          >
-            {formatUnits(finalPoint.value)}
-          </p>
-        </div>
-      </div>
-
-      <div className="mt-8 overflow-x-auto">
-        <svg
-          viewBox={`0 0 ${width} ${height}`}
-          className="min-w-[720px]"
-          role="img"
-          aria-label="Cumulative units performance chart"
-        >
-          {gridValues.map((value) => {
-            const y = getY(value);
-
-            return (
-              <g key={value}>
-                <line
-                  x1={horizontalPadding}
-                  x2={width - horizontalPadding}
-                  y1={y}
-                  y2={y}
-                  stroke="currentColor"
-                  className="text-gray-200"
-                  strokeWidth="1"
-                />
-
-                <text
-                  x={horizontalPadding - 12}
-                  y={y + 4}
-                  textAnchor="end"
-                  className="fill-gray-400 text-[12px]"
-                >
-                  {value.toFixed(1)}
-                </text>
-              </g>
-            );
-          })}
-
-          <line
-            x1={horizontalPadding}
-            x2={width - horizontalPadding}
-            y1={zeroY}
-            y2={zeroY}
-            stroke="currentColor"
-            className="text-gray-500"
-            strokeWidth="1.5"
-            strokeDasharray="6 6"
-          />
-
-          <polyline
-            points={linePoints}
-            fill="none"
-            stroke="currentColor"
-            className="text-amber-500"
-            strokeWidth="5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-
-          {points.map((point, index) => (
-          <circle
-  key={`${point.label}-${index}`}
-  cx={getX(index)}
-  cy={getY(point.value)}
-  r={index === points.length - 1 ? 7 : 4}
-  fill="currentColor"
-  className="text-black"
-/>
-          ))}
-
-          <text
-            x={horizontalPadding}
-            y={height - 10}
-            textAnchor="start"
-            className="fill-gray-400 text-[12px]"
-          >
-            {points[0]?.label}
-          </text>
-
-          <text
-            x={width - horizontalPadding}
-            y={height - 10}
-            textAnchor="end"
-            className="fill-gray-400 text-[12px]"
-          >
-            {finalPoint.label}
-          </text>
-        </svg>
-      </div>
-    </div>
-  );
 }
 
 export default async function PublicResultsPage({
@@ -812,7 +585,6 @@ export default async function PublicResultsPage({
 
   const monthlyGroups = createMonthlyGroups(picks);
   const streaks = calculateStreaks(picks);
-  const chartPoints = createChartPoints(picks);
 
   const recentResults = [...picks]
     .sort((a, b) => {
@@ -1075,11 +847,6 @@ export default async function PublicResultsPage({
                 </section>
               ) : (
                 <>
-                  <section className="mt-10">
-                    <CumulativeUnitsChart
-                      points={chartPoints}
-                    />
-                  </section>
 
                   <section className="mt-10 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                     <div className="rounded-3xl border border-gray-200 p-6 shadow-sm">
