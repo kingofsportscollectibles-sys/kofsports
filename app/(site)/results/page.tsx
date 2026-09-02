@@ -2,11 +2,7 @@ import Link from "next/link";
 
 import { createClient } from "@/lib/supabase/server";
 
-type RangeFilter =
-  | "season"
-  | "30-days"
-  | "month"
-  | "7-days"
+type RangeFilter = "30-days" | "7-days";
 
 type SearchParams = {
   range?: string;
@@ -57,27 +53,17 @@ type ResultStyles = {
   value: string;
 };
 
-const CURRENT_SEASON = new Date().getFullYear();
-
 const rangeOptions: Array<{
   value: RangeFilter;
   label: string;
 }> = [
   {
-    value: "season",
-    label: `${CURRENT_SEASON} Season`,
+    value: "7-days",
+    label: "Last 7 Days",
   },
   {
     value: "30-days",
     label: "Last 30 Days",
-  },
-  {
-    value: "month",
-    label: "This Month",
-  },
-  {
-    value: "7-days",
-    label: "Last 7 Days",
   },
 ];
 
@@ -88,18 +74,13 @@ function normalizeNumber(value: number | null | undefined) {
 }
 
 function normalizeRange(value: string | undefined): RangeFilter {
-  const validRanges: RangeFilter[] = [
-    "season",
-    "30-days",
-    "month",
-    "7-days",
-  ];
+  const validRanges: RangeFilter[] = ["30-days", "7-days"];
 
   if (value && validRanges.includes(value as RangeFilter)) {
     return value as RangeFilter;
   }
 
-  return "season";
+  return "7-days";
 }
 
 function formatUnits(value: number) {
@@ -197,17 +178,6 @@ function filterByRange(
 
     if (!performanceDate) {
       return false;
-    }
-
-    if (range === "season") {
-      return performanceDate.getFullYear() === CURRENT_SEASON;
-    }
-
-    if (range === "month") {
-      return (
-        performanceDate.getFullYear() === now.getFullYear() &&
-        performanceDate.getMonth() === now.getMonth()
-      );
     }
 
     const cutoffDate = new Date(now);
@@ -601,7 +571,7 @@ export default async function PublicResultsPage({
   const selectedRangeLabel =
     rangeOptions.find(
       (option) => option.value === selectedRange,
-    )?.label ?? `${CURRENT_SEASON} Season`;
+    )?.label ?? "Last 7 Days";
 
   return (
     <main className="bg-black text-white">
