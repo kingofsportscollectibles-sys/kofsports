@@ -57,11 +57,11 @@ type NflAnytimeTdScoreRow = {
   kof_score: number | string | null;
 };
 
-type AnytimeTdOddsRow = {
+type AnytimeTdBestPriceRow = {
   external_event_id: string;
   external_player_id: string | null;
-  bookmaker: string;
-  yes_price: number | string | null;
+  best_bookmaker: string | null;
+  best_price: number | string | null;
 };
 
 function numberOrNull(value: number | string | null | undefined) {
@@ -123,11 +123,10 @@ export async function getNflAnytimeTdRankings(): Promise<
       .limit(500),
 
     supabase
-      .from("nfl_anytime_td_prices_with_identity")
-      .select("external_event_id,external_player_id,bookmaker,yes_price")
-      .gt("commence_time", now)
-      .not("yes_price", "is", null)
-      .limit(5000),
+      .from("nfl_anytime_td_best_prices")
+      .select("external_event_id,external_player_id,best_bookmaker,best_price")
+      .not("external_player_id", "is", null)
+      .limit(500),
   ]);
 
   if (scoreError) {
@@ -143,18 +142,14 @@ export async function getNflAnytimeTdRankings(): Promise<
     string,
     {
       price: number;
-      bookmaker: string;
+      bookmaker: string | null;
     }
   >();
 
-  for (const row of (oddsData ?? []) as AnytimeTdOddsRow[]) {
-    const price = numberOrNull(row.yes_price);
+  for (const row of (oddsData ?? []) as AnytimeTdBestPriceRow[]) {
+    const price = numberOrNull(row.best_price);
 
-    if (price === null) {
-      continue;
-    }
-
-    if (!row.external_player_id) {
+    if (price === null || !row.external_player_id) {
       continue;
     }
 
@@ -162,14 +157,11 @@ export async function getNflAnytimeTdRankings(): Promise<
       row.external_event_id,
       row.external_player_id
     );
-    const current = bestBookmakerByPlayer.get(key);
 
-    if (!current || price > current.price) {
-      bestBookmakerByPlayer.set(key, {
-        price,
-        bookmaker: row.bookmaker,
-      });
-    }
+    bestBookmakerByPlayer.set(key, {
+      price,
+      bookmaker: row.best_bookmaker,
+    });
   }
 
   return ((scoreData ?? []) as unknown as NflAnytimeTdScoreRow[])
