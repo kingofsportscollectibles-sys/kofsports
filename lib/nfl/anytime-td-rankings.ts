@@ -59,7 +59,7 @@ type NflAnytimeTdScoreRow = {
 
 type AnytimeTdOddsRow = {
   external_event_id: string;
-  player_name: string;
+  external_player_id: string | null;
   bookmaker: string;
   yes_price: number | string | null;
 };
@@ -74,8 +74,8 @@ function numberOrNull(value: number | string | null | undefined) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-function oddsKey(externalEventId: string, playerName: string) {
-  return `${externalEventId}:${playerName.trim().toLowerCase()}`;
+function oddsKey(externalEventId: string, externalPlayerId: string) {
+  return `${externalEventId}:${externalPlayerId}`;
 }
 
 export async function getNflAnytimeTdRankings(): Promise<
@@ -123,8 +123,8 @@ export async function getNflAnytimeTdRankings(): Promise<
       .limit(500),
 
     supabase
-      .from("nfl_anytime_td_odds")
-      .select("external_event_id,player_name,bookmaker,yes_price")
+      .from("nfl_anytime_td_prices_with_identity")
+      .select("external_event_id,external_player_id,bookmaker,yes_price")
       .gt("commence_time", now)
       .not("yes_price", "is", null)
       .limit(5000),
@@ -154,7 +154,14 @@ export async function getNflAnytimeTdRankings(): Promise<
       continue;
     }
 
-    const key = oddsKey(row.external_event_id, row.player_name);
+    if (!row.external_player_id) {
+      continue;
+    }
+
+    const key = oddsKey(
+      row.external_event_id,
+      row.external_player_id
+    );
     const current = bestBookmakerByPlayer.get(key);
 
     if (!current || price > current.price) {
@@ -189,7 +196,7 @@ export async function getNflAnytimeTdRankings(): Promise<
       }
 
       const bestBook = bestBookmakerByPlayer.get(
-        oddsKey(row.external_event_id, row.player_name)
+        oddsKey(row.external_event_id, row.external_player_id)
       );
 
       return {
