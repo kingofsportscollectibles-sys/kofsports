@@ -7,10 +7,22 @@ import { createClient } from "@/lib/supabase/server";
 const navigation = [
   { name: "Blog", href: "/blog" },
   { name: "Premium Picks", href: "/premium-picks" },
-  { name: "Tools", href: "/nfl-player-prop-trends" },
   { name: "Results", href: "/results" },
   { name: "Plans", href: "/plans" },
   { name: "About", href: "/about" },
+];
+
+const toolsNavigation = [
+  {
+    name: "NFL Player Prop Trends",
+    description: "L5, L10, season and matchup trends",
+    href: "/nfl-player-prop-trends",
+  },
+  {
+    name: "NFL Anytime TD Rankings",
+    description: "KOF Score, odds and touchdown research",
+    href: "/nfl-anytime-touchdown-rankings",
+  },
 ];
 
 export type HeaderUser = {
@@ -74,7 +86,63 @@ export async function SiteHeader() {
         </Link>
 
         <nav className="hidden items-center gap-7 lg:flex">
-          {navigation.map((item) => (
+          <Link
+            href="/blog"
+            className="text-sm font-semibold text-zinc-300 transition hover:text-white"
+          >
+            Blog
+          </Link>
+
+          <Link
+            href="/premium-picks"
+            className="text-sm font-semibold text-zinc-300 transition hover:text-white"
+          >
+            Premium Picks
+          </Link>
+
+          <div className="group relative">
+            <button
+              type="button"
+              className="flex items-center gap-1.5 text-sm font-semibold text-zinc-300 transition hover:text-white"
+            >
+              Tools
+
+              <svg
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                aria-hidden="true"
+                className="h-4 w-4 transition duration-200 group-hover:rotate-180"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </button>
+
+            <div className="invisible absolute left-1/2 top-full z-50 w-80 -translate-x-1/2 pt-4 opacity-0 transition duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
+              <div className="overflow-hidden rounded-xl border border-white/10 bg-zinc-950 p-2 shadow-2xl shadow-black/50">
+                {toolsNavigation.map((tool) => (
+                  <Link
+                    key={tool.href}
+                    href={tool.href}
+                    className="block rounded-lg px-4 py-3 transition hover:bg-white/[0.06]"
+                  >
+                    <div className="text-sm font-bold text-white">
+                      {tool.name}
+                    </div>
+
+                    <div className="mt-1 text-xs leading-5 text-zinc-500">
+                      {tool.description}
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {navigation.slice(2).map((item) => (
             <Link
               key={item.name}
               href={item.href}

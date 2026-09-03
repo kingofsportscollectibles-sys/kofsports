@@ -9,10 +9,20 @@ import { SignOutButton } from "@/components/layout/sign-out-button";
 const navigation = [
   { name: "Blog", href: "/blog" },
   { name: "Premium Picks", href: "/premium-picks" },
-  { name: "Tools", href: "/nfl-player-prop-trends" },
   { name: "Results", href: "/results" },
   { name: "Plans", href: "/plans" },
   { name: "About", href: "/about" },
+];
+
+const toolsNavigation = [
+  {
+    name: "NFL Player Prop Trends",
+    href: "/nfl-player-prop-trends",
+  },
+  {
+    name: "NFL Anytime TD Rankings",
+    href: "/nfl-anytime-touchdown-rankings",
+  },
 ];
 
 type MobileNavigationProps = {
@@ -42,8 +52,9 @@ export function MobileNavigation({ user }: MobileNavigationProps) {
 
   const isPremium = user?.membership === "premium";
   const isAdmin = user?.role === "admin";
+
   const expirationDate = formatExpirationDate(
-    user?.membershipExpiresAt ?? null,
+    user?.membershipExpiresAt ?? null
   );
 
   function closeMenu() {
@@ -136,7 +147,37 @@ export function MobileNavigation({ user }: MobileNavigationProps) {
               )}
 
               <div className="flex flex-col">
-                {navigation.map((item) => (
+                {navigation.slice(0, 2).map((item) => (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    onClick={closeMenu}
+                    className="border-b border-white/10 py-4 font-display text-xl font-bold uppercase text-zinc-200 transition hover:text-brand"
+                  >
+                    {item.name}
+                  </Link>
+                ))}
+
+                <div className="border-b border-white/10 py-4">
+                  <div className="font-display text-xl font-bold uppercase text-zinc-200">
+                    Tools
+                  </div>
+
+                  <div className="mt-3 flex flex-col gap-1 border-l-2 border-brand/30 pl-4">
+                    {toolsNavigation.map((tool) => (
+                      <Link
+                        key={tool.href}
+                        href={tool.href}
+                        onClick={closeMenu}
+                        className="py-2 text-sm font-bold text-zinc-400 transition hover:text-brand"
+                      >
+                        {tool.name}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+
+                {navigation.slice(2).map((item) => (
                   <Link
                     key={item.name}
                     href={item.href}
