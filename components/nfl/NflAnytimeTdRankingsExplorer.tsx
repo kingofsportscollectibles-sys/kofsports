@@ -89,17 +89,32 @@ export default function NflAnytimeTdRankingsExplorer({
   rankings,
 }: Props) {
   const [position, setPosition] = useState<PositionFilter>("ALL");
+
+  const [search, setSearch] = useState("");
+
   const [expandedPlayer, setExpandedPlayer] = useState<string | null>(null);
 
   const filteredRankings = useMemo(() => {
-    if (position === "ALL") return rankings;
+    const normalizedSearch = search.trim().toLowerCase();
 
-    return rankings.filter((ranking) => ranking.position === position);
-  }, [position, rankings]);
+    return rankings.filter((ranking) => {
+      const matchesPosition =
+        position === "ALL" || ranking.position === position;
+
+      const matchesSearch =
+        !normalizedSearch ||
+        ranking.playerName.toLowerCase().includes(normalizedSearch) ||
+        ranking.team.toLowerCase().includes(normalizedSearch) ||
+        ranking.opponent.toLowerCase().includes(normalizedSearch);
+
+      return matchesPosition && matchesSearch;
+    });
+  }, [position, rankings, search]);
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap gap-2">
+      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-wrap gap-2">
         {(["ALL", "RB", "WR", "TE"] as PositionFilter[]).map((filter) => {
           const active = position === filter;
 
@@ -118,6 +133,21 @@ export default function NflAnytimeTdRankingsExplorer({
             </button>
           );
         })}
+        </div>
+
+        <div className="w-full lg:w-[320px]">
+          <label htmlFor="td-player-search" className="sr-only">
+            Search anytime touchdown scorers
+          </label>
+          <input
+            id="td-player-search"
+            type="search"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search player or team..."
+            className="w-full rounded-lg border border-slate-700 bg-slate-900 px-4 py-2.5 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-emerald-400"
+          />
+        </div>
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900">
@@ -335,8 +365,7 @@ export default function NflAnytimeTdRankingsExplorer({
 
       {filteredRankings.length === 0 ? (
         <div className="mt-6 rounded-xl border border-slate-800 bg-slate-900 p-8 text-center text-sm text-slate-400">
-          No qualifying anytime touchdown scorers are currently available for
-          this position.
+          No anytime touchdown scorers match your current filters.
         </div>
       ) : null}
     </div>
