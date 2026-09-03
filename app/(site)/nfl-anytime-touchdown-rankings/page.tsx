@@ -4,6 +4,9 @@ import NflAnytimeTdRankingsExplorer from "@/components/nfl/NflAnytimeTdRankingsE
 
 import { getNflAnytimeTdRankings } from "@/lib/nfl/anytime-td-rankings";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export const metadata: Metadata = {
   title:
     "NFL Anytime Touchdown Scorer Predictions & Rankings Today | KofSports",
