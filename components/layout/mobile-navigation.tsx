@@ -23,6 +23,10 @@ const toolsNavigation = [
     name: "NFL Anytime TD Rankings",
     href: "/nfl-anytime-touchdown-rankings",
   },
+  {
+    name: "NFL Snap Counts",
+    href: "/nfl-snap-counts",
+  },
 ];
 
 type MobileNavigationProps = {

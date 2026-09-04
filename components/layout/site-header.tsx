@@ -23,6 +23,11 @@ const toolsNavigation = [
     description: "KOF Score, odds and touchdown research",
     href: "/nfl-anytime-touchdown-rankings",
   },
+  {
+    name: "NFL Snap Counts",
+    description: "Player snap shares and recent usage trends",
+    href: "/nfl-snap-counts",
+  },
 ];
 
 export type HeaderUser = {
