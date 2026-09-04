@@ -113,7 +113,7 @@ function getSubscriptionPeriodEnd(
 }
 
 function subscriptionHasPremiumAccess(status: Stripe.Subscription.Status) {
-  return status === "active" || status === "trialing" || status === "past_due";
+  return status === "active" || status === "trialing";
 }
 
 async function updateProfile(
@@ -565,7 +565,7 @@ async function handleInvoicePaymentFailed(
   }
 
   await updateProfile(profileId, {
-    membership: "premium",
+    membership: "free",
     stripe_customer_id: customerId,
     stripe_subscription_id: subscription.id,
     stripe_price_id: getSubscriptionPriceId(subscription),
