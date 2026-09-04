@@ -30,10 +30,10 @@ export function SiteFooter() {
             <p className="mt-4 text-sm font-semibold text-zinc-300">
               Contact:{" "}
              <a
-  href="mailto:kofsports1@gmail.com"
+  href="mailto:kof@kofsports.com"
   className="text-brand hover:text-brand-light"
 >
-  kofsports1@gmail.com
+  kof@kofsports.com
 </a>
             </p>
           </div>
