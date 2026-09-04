@@ -28,6 +28,11 @@ const toolsNavigation = [
     description: "Player snap shares and recent usage trends",
     href: "/nfl-snap-counts",
   },
+  {
+    name: "NFL Red Zone Targets",
+    description: "Red zone carries, targets and scoring opportunities",
+    href: "/nfl-red-zone-targets",
+  },
 ];
 
 export type HeaderUser = {

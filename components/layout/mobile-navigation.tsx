@@ -27,6 +27,10 @@ const toolsNavigation = [
     name: "NFL Snap Counts",
     href: "/nfl-snap-counts",
   },
+  {
+    name: "NFL Red Zone Targets",
+    href: "/nfl-red-zone-targets",
+  },
 ];
 
 type MobileNavigationProps = {

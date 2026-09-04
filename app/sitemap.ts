@@ -68,6 +68,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "daily",
       priority: 0.9,
     },
+    {
+      url: `${baseUrl}/nfl-red-zone-targets`,
+      lastModified: now,
+      changeFrequency: "daily",
+      priority: 0.9,
+    },
   ];
 
   const articleSlugs = await getArticleSlugs();
