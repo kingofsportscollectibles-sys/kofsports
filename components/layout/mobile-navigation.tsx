@@ -57,6 +57,7 @@ function formatExpirationDate(value: string | null): string | null {
 
 export function MobileNavigation({ user }: MobileNavigationProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [toolsOpen, setToolsOpen] = useState(false);
 
   const isPremium = user?.membership === "premium";
   const isAdmin = user?.role === "admin";
@@ -67,6 +68,7 @@ export function MobileNavigation({ user }: MobileNavigationProps) {
 
   function closeMenu() {
     setIsOpen(false);
+    setToolsOpen(false);
   }
 
   return (
@@ -166,23 +168,38 @@ export function MobileNavigation({ user }: MobileNavigationProps) {
                   </Link>
                 ))}
 
-                <div className="border-b border-white/10 py-4">
-                  <div className="font-display text-xl font-bold uppercase text-zinc-200">
-                    Tools
-                  </div>
+                <div className="border-b border-white/10">
+                  <button
+                    type="button"
+                    onClick={() => setToolsOpen((current) => !current)}
+                    aria-expanded={toolsOpen}
+                    className="flex w-full items-center justify-between py-4 text-left font-display text-xl font-bold uppercase text-zinc-200 transition hover:text-brand"
+                  >
+                    <span>Tools</span>
+                    <span
+                      aria-hidden="true"
+                      className={`text-base transition-transform duration-200 ${
+                        toolsOpen ? "rotate-180" : ""
+                      }`}
+                    >
+                      ▼
+                    </span>
+                  </button>
 
-                  <div className="mt-3 flex flex-col gap-1 border-l-2 border-brand/30 pl-4">
-                    {toolsNavigation.map((tool) => (
-                      <Link
-                        key={tool.href}
-                        href={tool.href}
-                        onClick={closeMenu}
-                        className="py-2 text-sm font-bold text-zinc-400 transition hover:text-brand"
-                      >
-                        {tool.name}
-                      </Link>
-                    ))}
-                  </div>
+                  {toolsOpen && (
+                    <div className="mb-4 flex flex-col gap-1 border-l-2 border-brand/30 pl-4">
+                      {toolsNavigation.map((tool) => (
+                        <Link
+                          key={tool.href}
+                          href={tool.href}
+                          onClick={closeMenu}
+                          className="py-2 text-sm font-bold text-zinc-400 transition hover:text-brand"
+                        >
+                          {tool.name}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {navigation.slice(2).map((item) => (
