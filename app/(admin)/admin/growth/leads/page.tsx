@@ -2,7 +2,6 @@ import AddLeadForm from "@/components/admin/growth/leads/AddLeadForm";
 import LeadTable from "@/components/admin/growth/leads/LeadTable";
 import GrowthHeader from "@/components/admin/growth/GrowthHeader";
 import { getGrowthLeads } from "@/lib/growth/leads";
-import LeadIntelligenceCards from "@/components/admin/growth/lead-workspace/LeadIntelligenceCards";
 
 export default async function GrowthLeadsPage() {
   const leads = await getGrowthLeads();

@@ -33,6 +33,11 @@ const toolsNavigation = [
     description: "Red zone carries, targets and scoring opportunities",
     href: "/nfl-red-zone-targets",
   },
+  {
+    name: "NFL Defense vs Position",
+    description: "QB, RB, WR and TE matchup rankings",
+    href: "/nfl-defense-vs-position",
+  },
 ];
 
 export type HeaderUser = {

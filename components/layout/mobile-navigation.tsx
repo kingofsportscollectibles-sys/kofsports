@@ -31,6 +31,10 @@ const toolsNavigation = [
     name: "NFL Red Zone Targets",
     href: "/nfl-red-zone-targets",
   },
+  {
+    name: "NFL Defense vs Position",
+    href: "/nfl-defense-vs-position",
+  },
 ];
 
 type MobileNavigationProps = {
