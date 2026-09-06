@@ -31,6 +31,8 @@ const ARTICLE_CARD_PROJECTION = `
 
   readingTime,
 
+  hideFromListingsAt,
+
   featuredImage {
     asset,
     crop,
@@ -40,11 +42,19 @@ const ARTICLE_CARD_PROJECTION = `
   }
 `;
 
+const LISTING_VISIBILITY_FILTER = `
+  (
+    !defined(hideFromListingsAt) ||
+    hideFromListingsAt > now()
+  )
+`;
+
 export const ARTICLES_QUERY = defineQuery(`
 *[
   _type == "article" &&
   defined(slug.current) &&
-  publishedAt <= now()
+  publishedAt <= now() &&
+  ${LISTING_VISIBILITY_FILTER}
 ]
 | order(publishedAt desc){
   ${ARTICLE_CARD_PROJECTION}
@@ -56,7 +66,8 @@ export const FEATURED_ARTICLE_QUERY = defineQuery(`
   _type == "article" &&
   defined(slug.current) &&
   featured == true &&
-  publishedAt <= now()
+  publishedAt <= now() &&
+  ${LISTING_VISIBILITY_FILTER}
 ]
 | order(publishedAt desc)[0]{
   ${ARTICLE_CARD_PROJECTION}
@@ -68,7 +79,8 @@ export const LATEST_ARTICLES_QUERY = defineQuery(`
   _type == "article" &&
   defined(slug.current) &&
   publishedAt <= now() &&
-  coalesce(isPremium,false)==false
+  coalesce(isPremium,false)==false &&
+  ${LISTING_VISIBILITY_FILTER}
 ]
 | order(publishedAt desc)[0...$limit]{
   ${ARTICLE_CARD_PROJECTION}
@@ -81,7 +93,8 @@ export const ARTICLES_BY_SPORT_QUERY = defineQuery(`
   defined(slug.current) &&
   publishedAt <= now() &&
   sport == $sport &&
-  coalesce(isPremium,false)==false
+  coalesce(isPremium,false)==false &&
+  ${LISTING_VISIBILITY_FILTER}
 ]
 | order(publishedAt desc)[0...$limit]{
   ${ARTICLE_CARD_PROJECTION}
@@ -94,7 +107,8 @@ export const ARTICLES_BY_CONTENT_TYPE_QUERY = defineQuery(`
   defined(slug.current) &&
   publishedAt <= now() &&
   contentType == $contentType &&
-  coalesce(isPremium,false)==false
+  coalesce(isPremium,false)==false &&
+  ${LISTING_VISIBILITY_FILTER}
 ]
 | order(publishedAt desc)[0...$limit]{
   ${ARTICLE_CARD_PROJECTION}
@@ -107,7 +121,8 @@ export const ARTICLES_BY_CATEGORY_QUERY = defineQuery(`
   defined(slug.current) &&
   publishedAt <= now() &&
   category == $category &&
-  coalesce(isPremium,false)==false
+  coalesce(isPremium,false)==false &&
+  ${LISTING_VISIBILITY_FILTER}
 ]
 | order(publishedAt desc)[0...$limit]{
   ${ARTICLE_CARD_PROJECTION}
@@ -158,7 +173,8 @@ export const RELATED_ARTICLES_QUERY = defineQuery(`
   defined(slug.current) &&
   category==$category &&
   slug.current != $slug &&
-  publishedAt <= now()
+  publishedAt <= now() &&
+  ${LISTING_VISIBILITY_FILTER}
 ]
 | order(publishedAt desc)[0...3]{
   ${ARTICLE_CARD_PROJECTION}

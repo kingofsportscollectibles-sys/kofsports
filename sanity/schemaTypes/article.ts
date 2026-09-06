@@ -422,16 +422,25 @@ export const articleType = defineType({
       initialValue: false,
     }),
 
-    defineField({
-      name: "publishedAt",
-      title: "Publication Date",
-      type: "datetime",
-      group: "distribution",
-      description:
-        "Future dates can later be used for scheduled publishing.",
-      initialValue: () => new Date().toISOString(),
-      validation: (rule) => rule.required(),
-    }),
+ defineField({
+  name: "publishedAt",
+  title: "Publication Date",
+  type: "datetime",
+  group: "distribution",
+  description:
+    "Future dates can later be used for scheduled publishing.",
+  initialValue: () => new Date().toISOString(),
+  validation: (rule) => rule.required(),
+}),
+
+defineField({
+  name: "hideFromListingsAt",
+  title: "Hide From Listings At",
+  type: "datetime",
+  group: "distribution",
+  description:
+    "Optional. After this time, the article disappears from KofSports listings but remains live and indexable at its URL. Leave blank for evergreen content.",
+}),
 
     defineField({
       name: "featured",
