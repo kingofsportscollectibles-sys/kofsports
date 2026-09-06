@@ -64,16 +64,24 @@ function getArticleLabel(article: Article) {
 function getImageUrl(
   image: ArticleImage | null | undefined,
   width: number,
-  height: number
+  height?: number
 ) {
   if (!image) {
     return null;
   }
 
-  return urlForImage(image)
-    .width(width)
-    .height(height)
-    .url();
+  try {
+    let builder = urlForImage(image).width(width);
+
+    if (height) {
+      builder = builder.height(height);
+    }
+
+    return builder.url();
+  } catch (error) {
+    console.error("Failed to build Sanity image URL:", error);
+    return null;
+  }
 }
 
 const portableTextComponents: PortableTextComponents = {
@@ -164,7 +172,7 @@ const portableTextComponents: PortableTextComponents = {
   types: {
     image: ({ value }) => {
       const image = value as ArticleImage;
-      const imageUrl = getImageUrl(image, 1200, 800);
+      const imageUrl = getImageUrl(image, 1200);
 
       if (!imageUrl) {
         return null;
@@ -172,12 +180,13 @@ const portableTextComponents: PortableTextComponents = {
 
       return (
         <figure className="my-10">
-          <div className="relative aspect-[3/2] overflow-hidden rounded-xl border border-white/10">
+          <div className="overflow-hidden rounded-xl border border-white/10 bg-zinc-950">
             <Image
               src={imageUrl}
               alt={image.alt || "KofSports article image"}
-              fill
-              className="object-cover"
+              width={1200}
+              height={900}
+              className="h-auto w-full"
               sizes="(max-width: 896px) 100vw, 896px"
             />
           </div>
@@ -213,23 +222,57 @@ export async function generateMetadata({
     };
   }
 
-  const imageUrl = getImageUrl(article.featuredImage, 1200, 630);
+  const imageUrl = getImageUrl(
+    article.featuredImage,
+    1200,
+    630
+  );
 
   return {
-    title: article.seoTitle || article.title,
-    description: article.seoDescription || article.excerpt,
+    title:
+      article.metaTitle ||
+      article.seoTitle ||
+      article.title,
+
+    description:
+      article.metaDescription ||
+      article.seoDescription ||
+      article.excerpt,
 
     alternates: {
-      canonical: `/blog/${article.slug}`,
+      canonical:
+        article.canonicalUrl ||
+        `/blog/${article.slug}`,
     },
+
+    robots: article.noIndex
+      ? {
+          index: false,
+          follow: false,
+        }
+      : {
+          index: true,
+          follow: true,
+        },
 
     openGraph: {
       type: "article",
-      title: article.seoTitle || article.title,
-      description: article.seoDescription || article.excerpt,
+      title:
+        article.metaTitle ||
+        article.seoTitle ||
+        article.title,
+
+      description:
+        article.metaDescription ||
+        article.seoDescription ||
+        article.excerpt,
+
       publishedTime: article.publishedAt,
       authors: [article.author],
-      url: `/blog/${article.slug}`,
+      url:
+        article.canonicalUrl ||
+        `/blog/${article.slug}`,
+
       images: imageUrl
         ? [
             {
@@ -245,9 +288,20 @@ export async function generateMetadata({
     },
 
     twitter: {
-      card: imageUrl ? "summary_large_image" : "summary",
-      title: article.seoTitle || article.title,
-      description: article.seoDescription || article.excerpt,
+      card: imageUrl
+        ? "summary_large_image"
+        : "summary",
+
+      title:
+        article.metaTitle ||
+        article.seoTitle ||
+        article.title,
+
+      description:
+        article.metaDescription ||
+        article.seoDescription ||
+        article.excerpt,
+
       images: imageUrl ? [imageUrl] : [],
     },
   };
@@ -268,6 +322,9 @@ export default async function ArticlePage({
     1600,
     900
   );
+
+  const tags = article.tags ?? [];
+  const body = article.body ?? [];
 
   return (
     <article>
@@ -338,18 +395,18 @@ export default async function ArticlePage({
 
       <div className="mx-auto max-w-3xl px-5 py-14 lg:px-8 lg:py-20">
         <PortableText
-          value={article.body}
+          value={body}
           components={portableTextComponents}
         />
 
-        {article.tags.length > 0 ? (
+        {tags.length > 0 ? (
           <div className="mt-14 border-t border-white/10 pt-8">
             <p className="text-xs font-extrabold uppercase tracking-[0.25em] text-zinc-500">
               Topics
             </p>
 
             <div className="mt-4 flex flex-wrap gap-2">
-              {article.tags.map((tag) => (
+              {tags.map((tag) => (
                 <span
                   key={tag}
                   className="rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-sm font-bold text-zinc-400"

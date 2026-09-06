@@ -16,6 +16,10 @@ const navigation = [
 
 const toolsNavigation = [
   {
+    name: "NFL Prop Research",
+    href: "/nfl-prop-research",
+  },
+  {
     name: "NFL Player Prop Trends",
     href: "/nfl-player-prop-trends",
   },
