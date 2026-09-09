@@ -195,6 +195,7 @@ export function NflPropResearchDashboard({
 
   const [market, setMarket] =
     useState<MarketFilter>("ALL");
+  const [game, setGame] = useState("ALL");
 
   const [sortKey, setSortKey] =
     useState<SortKey>(hasProAccess ? "kof" : "l5");
@@ -204,6 +205,41 @@ export function NflPropResearchDashboard({
 
   const [expandedPropId, setExpandedPropId] =
     useState<number | null>(null);
+
+  const games = useMemo(() => {
+    const gameMap = new Map<
+      string,
+      { id: string; label: string; commenceTime: string }
+    >();
+
+    for (const row of rows) {
+      if (!row.externalEventId) continue;
+
+      const teams = [row.playerTeam, row.upcomingOpponent]
+        .filter(Boolean)
+        .map((team) => String(team));
+
+      const sortedTeams = [...teams].sort();
+      const label =
+        sortedTeams.length === 2
+          ? `${sortedTeams[0]} vs ${sortedTeams[1]}`
+          : teams.join(" vs ");
+
+      if (!gameMap.has(row.externalEventId)) {
+        gameMap.set(row.externalEventId, {
+          id: row.externalEventId,
+          label,
+          commenceTime: row.commenceTime,
+        });
+      }
+    }
+
+    return [...gameMap.values()].sort(
+      (a, b) =>
+        new Date(a.commenceTime).getTime() -
+        new Date(b.commenceTime).getTime(),
+    );
+  }, [rows]);
 
   const filteredRows = useMemo(() => {
     const normalizedSearch =
@@ -217,6 +253,10 @@ export function NflPropResearchDashboard({
       const matchesMarket =
         market === "ALL" ||
         row.market === market;
+
+      const matchesGame =
+        game === "ALL" ||
+        row.externalEventId === game;
 
       const matchesSearch =
         normalizedSearch.length === 0 ||
@@ -233,6 +273,7 @@ export function NflPropResearchDashboard({
       return (
         matchesPosition &&
         matchesMarket &&
+        matchesGame &&
         matchesSearch
       );
     });
@@ -271,7 +312,7 @@ export function NflPropResearchDashboard({
         (a.kofOverScore ?? -1)
       );
     });
-  }, [rows, position, market, sortKey, search]);
+  }, [rows, position, market, game, sortKey, search]);
 
   const positions: PositionFilter[] = [
     "ALL",
@@ -334,7 +375,7 @@ export function NflPropResearchDashboard({
           </div>
         </div>
 
-        <div className="mt-5 grid gap-3 md:grid-cols-3">
+        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           <label className="space-y-2">
             <span className="text-xs font-medium uppercase tracking-[0.16em] text-zinc-500">
               Search Player
@@ -381,6 +422,24 @@ export function NflPropResearchDashboard({
               <option value="player_reception_yds">
                 Receiving Yards
               </option>
+            </select>
+          </label>
+
+          <label className="space-y-2">
+            <span className="text-xs font-medium uppercase tracking-[0.16em] text-zinc-500">
+              Game
+            </span>
+            <select
+              value={game}
+              onChange={(event) => setGame(event.target.value)}
+              className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm text-white outline-none focus:border-amber-400"
+            >
+              <option value="ALL">All Games</option>
+              {games.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.label}
+                </option>
+              ))}
             </select>
           </label>
 

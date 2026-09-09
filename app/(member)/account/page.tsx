@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import AccountForm from "@/components/member/AccountForm";
@@ -146,6 +147,7 @@ export default async function AccountPage({
           title="Today's Picks"
           value={`${todayPickCount}`}
           subtitle={todayPickCount === 1 ? "Active Pick" : "Active Picks"}
+          href="/premium-picks"
         />
 
         <StatCard
@@ -299,23 +301,57 @@ export default async function AccountPage({
 }
 
 function StatCard({
+
   title,
+
   value,
+
   subtitle,
+
+  href,
+
 }: {
+
   title: string;
+
   value: string;
+
   subtitle: string;
+
+  href?: string;
+
 }) {
-  return (
-    <div className="rounded-3xl border border-gray-200 bg-white p-6 text-black shadow-sm">
+
+  const card = (
+
+    <div
+      className={`rounded-3xl border border-gray-200 bg-white p-6 text-black shadow-sm ${
+        href
+          ? "cursor-pointer transition hover:-translate-y-0.5 hover:border-amber-400/60 hover:shadow-md"
+          : ""
+      }`}
+    >
+
       <p className="text-xs font-bold uppercase tracking-[0.2em] text-gray-500">
+
         {title}
+
       </p>
 
       <h3 className="mt-3 text-3xl font-black text-black">{value}</h3>
 
       <p className="mt-2 text-sm text-gray-500">{subtitle}</p>
+
     </div>
+
   );
+
+  return href ? (
+    <Link href={href} className="block">
+      {card}
+    </Link>
+  ) : (
+    card
+  );
+
 }

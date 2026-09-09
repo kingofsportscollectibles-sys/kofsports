@@ -91,8 +91,34 @@ export default function NflAnytimeTdRankingsExplorer({
   const [position, setPosition] = useState<PositionFilter>("ALL");
 
   const [search, setSearch] = useState("");
+  const [game, setGame] = useState("ALL");
 
   const [expandedPlayer, setExpandedPlayer] = useState<string | null>(null);
+
+  const games = useMemo(() => {
+    const gameMap = new Map<
+      string,
+      { id: string; label: string; commenceTime: string }
+    >();
+
+    for (const ranking of rankings) {
+      if (!ranking.externalEventId) continue;
+
+      if (!gameMap.has(ranking.externalEventId)) {
+        gameMap.set(ranking.externalEventId, {
+          id: ranking.externalEventId,
+          label: `${ranking.awayTeam} @ ${ranking.homeTeam}`,
+          commenceTime: ranking.commenceTime,
+        });
+      }
+    }
+
+    return [...gameMap.values()].sort(
+      (a, b) =>
+        new Date(a.commenceTime).getTime() -
+        new Date(b.commenceTime).getTime(),
+    );
+  }, [rankings]);
 
   const filteredRankings = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
@@ -101,15 +127,19 @@ export default function NflAnytimeTdRankingsExplorer({
       const matchesPosition =
         position === "ALL" || ranking.position === position;
 
+      const matchesGame =
+        game === "ALL" ||
+        ranking.externalEventId === game;
+
       const matchesSearch =
         !normalizedSearch ||
         ranking.playerName.toLowerCase().includes(normalizedSearch) ||
         ranking.team.toLowerCase().includes(normalizedSearch) ||
         ranking.opponent.toLowerCase().includes(normalizedSearch);
 
-      return matchesPosition && matchesSearch;
+      return matchesPosition && matchesGame && matchesSearch;
     });
-  }, [position, rankings, search]);
+  }, [position, game, rankings, search]);
 
   return (
     <div>
@@ -135,18 +165,39 @@ export default function NflAnytimeTdRankingsExplorer({
         })}
         </div>
 
-        <div className="w-full lg:w-[320px]">
-          <label htmlFor="td-player-search" className="sr-only">
-            Search anytime touchdown scorers
-          </label>
-          <input
-            id="td-player-search"
-            type="search"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search player or team..."
-            className="w-full rounded-lg border border-slate-700 bg-slate-900 px-4 py-2.5 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-emerald-400"
-          />
+        <div className="grid w-full gap-3 sm:grid-cols-2 lg:w-auto">
+          <div className="w-full sm:w-[220px]">
+            <label htmlFor="td-game-filter" className="sr-only">
+              Filter by game
+            </label>
+            <select
+              id="td-game-filter"
+              value={game}
+              onChange={(event) => setGame(event.target.value)}
+              className="w-full rounded-lg border border-slate-700 bg-slate-900 px-4 py-2.5 text-sm text-white outline-none transition focus:border-emerald-400"
+            >
+              <option value="ALL">All Games</option>
+              {games.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="w-full sm:w-[320px]">
+            <label htmlFor="td-player-search" className="sr-only">
+              Search anytime touchdown scorers
+            </label>
+            <input
+              id="td-player-search"
+              type="search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search player or team..."
+              className="w-full rounded-lg border border-slate-700 bg-slate-900 px-4 py-2.5 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-emerald-400"
+            />
+          </div>
         </div>
       </div>
 
