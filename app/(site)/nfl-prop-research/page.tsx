@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { NflPropResearchDashboard } from "@/components/nfl/NflPropResearchDashboard";
 import { getNflPropResearch } from "@/lib/nfl/prop-research";
+import { hasKofSportsProAccess } from "@/lib/auth/entitlements";
 
 export const metadata: Metadata = {
   title:
@@ -13,7 +14,10 @@ export const metadata: Metadata = {
 export const revalidate = 300;
 
 export default async function NflPropResearchPage() {
-  const rows = await getNflPropResearch();
+  const [rows, hasProAccess] = await Promise.all([
+    getNflPropResearch(),
+    hasKofSportsProAccess(),
+  ]);
 
   return (
     <main className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
@@ -35,7 +39,10 @@ export default async function NflPropResearchPage() {
         </p>
       </section>
 
-      <NflPropResearchDashboard rows={rows} />
+      <NflPropResearchDashboard
+        rows={rows}
+        hasProAccess={hasProAccess}
+      />
 
       <section className="mt-12 grid gap-6 lg:grid-cols-2">
         <div className="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-6">

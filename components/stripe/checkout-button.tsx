@@ -3,7 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-type PlanKey = "one_day" | "weekly" | "monthly" | "ninety_day";
+type PlanKey =
+  | "one_day"
+  | "weekly"
+  | "monthly"
+  | "ninety_day"
+  | "pro_monthly"
+  | "pro_annual";
 
 type CheckoutButtonProps = {
   plan: PlanKey;
@@ -42,7 +48,10 @@ export function CheckoutButton({
       };
 
       if (response.status === 401) {
-        const redirectPath = `/plans?purchase=${plan}`;
+        const redirectPath =
+          plan === "pro_monthly" || plan === "pro_annual"
+            ? `/pro?purchase=${plan}`
+            : `/plans?purchase=${plan}`;
 
         router.push(
           `/login?redirect=${encodeURIComponent(redirectPath)}`,

@@ -9,6 +9,8 @@ export const dynamic = "force-dynamic";
 
 type MembershipType = "one_day" | "weekly" | "monthly" | "ninety_day";
 
+type ProEntitlementStatus = "active" | "trialing" | "canceled" | "expired";
+
 type ProfileUpdate = {
   membership: "free" | "premium";
   stripe_customer_id?: string | null;
@@ -290,9 +292,101 @@ async function releaseWebhookEvent(eventId: string): Promise<void> {
   }
 }
 
+function isKofSportsProPriceId(priceId: string | null): boolean {
+  if (!priceId) {
+    return false;
+  }
+
+  return (
+    priceId === process.env.STRIPE_PRICE_PRO_MONTHLY ||
+    priceId === process.env.STRIPE_PRICE_PRO_ANNUAL
+  );
+}
+
+function isKofSportsProSubscription(
+  subscription: Stripe.Subscription,
+): boolean {
+  if (subscription.metadata.product === "kofsports_pro") {
+    return true;
+  }
+
+  return isKofSportsProPriceId(
+    getSubscriptionPriceId(subscription),
+  );
+}
+
+function proEntitlementStatus(
+  status: Stripe.Subscription.Status,
+): ProEntitlementStatus {
+  if (status === "active") {
+    return "active";
+  }
+
+  if (status === "trialing") {
+    return "trialing";
+  }
+
+  if (
+    status === "canceled" ||
+    status === "unpaid" ||
+    status === "past_due" ||
+    status === "paused" ||
+    status === "incomplete"
+  ) {
+    return "canceled";
+  }
+
+  return "expired";
+}
+
+async function syncKofSportsProSubscription(
+  subscription: Stripe.Subscription,
+): Promise<void> {
+  const profileId = subscription.metadata.profile_id ?? null;
+
+  if (!profileId) {
+    throw new Error(
+      `KofSports Pro subscription ${subscription.id} has no profile ID.`,
+    );
+  }
+
+  const supabase = getSupabaseAdmin();
+
+  const { error } = await supabase
+    .from("user_entitlements")
+    .upsert(
+      {
+        user_id: profileId,
+        product: "kofsports_pro",
+        status: proEntitlementStatus(subscription.status),
+        starts_at: new Date(
+          subscription.created * 1000,
+        ).toISOString(),
+        expires_at: getSubscriptionPeriodEnd(subscription),
+        stripe_customer_id: objectId(subscription.customer),
+        stripe_subscription_id: subscription.id,
+        stripe_price_id: getSubscriptionPriceId(subscription),
+        updated_at: new Date().toISOString(),
+      },
+      {
+        onConflict: "user_id,product",
+      },
+    );
+
+  if (error) {
+    throw new Error(
+      `Unable to sync KofSports Pro entitlement: ${error.message}`,
+    );
+  }
+}
+
 async function syncSubscription(
   subscription: Stripe.Subscription,
 ): Promise<void> {
+  if (isKofSportsProSubscription(subscription)) {
+    await syncKofSportsProSubscription(subscription);
+    return;
+  }
   const customerId = objectId(subscription.customer);
   const subscriptionId = subscription.id;
   const metadataProfileId = subscription.metadata.profile_id ?? null;
@@ -427,7 +521,14 @@ console.log({
 
     const subscription = await stripe.subscriptions.retrieve(subscriptionId);
 
+    const isProSubscription =
+      isKofSportsProSubscription(subscription);
+
     await syncSubscription(subscription);
+
+    if (isProSubscription) {
+      return;
+    }
 
     /*
      * A free-trial checkout creates a real subscription but no paid sale yet.
@@ -494,7 +595,14 @@ async function handleInvoicePaid(
 
   const subscription = await stripe.subscriptions.retrieve(subscriptionId);
 
+  const isProSubscription =
+    isKofSportsProSubscription(subscription);
+
   await syncSubscription(subscription);
+
+  if (isProSubscription) {
+    return;
+  }
 
   /*
    * The initial subscription payment is already recorded by
@@ -552,6 +660,11 @@ async function handleInvoicePaymentFailed(
   }
 
   const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+  if (isKofSportsProSubscription(subscription)) {
+    await syncKofSportsProSubscription(subscription);
+    return;
+  }
+
   const customerId = objectId(subscription.customer);
 
   const profileId = await findProfileIdByStripeData({
@@ -577,6 +690,54 @@ async function handleInvoicePaymentFailed(
 async function handleSubscriptionDeleted(
   subscription: Stripe.Subscription,
 ): Promise<void> {
+  if (isKofSportsProSubscription(subscription)) {
+    const profileId =
+      subscription.metadata.profile_id ?? null;
+
+    if (!profileId) {
+      throw new Error(
+        `Deleted KofSports Pro subscription ${subscription.id} has no profile ID.`,
+      );
+    }
+
+    const supabase = getSupabaseAdmin();
+
+    const { error } = await supabase
+      .from("user_entitlements")
+      .upsert(
+        {
+          user_id: profileId,
+          product: "kofsports_pro",
+          status: "canceled",
+          starts_at: new Date(
+            subscription.created * 1000,
+          ).toISOString(),
+          expires_at:
+            getSubscriptionPeriodEnd(subscription) ??
+            new Date().toISOString(),
+          stripe_customer_id: objectId(
+            subscription.customer,
+          ),
+          stripe_subscription_id:
+            subscription.id,
+          stripe_price_id:
+            getSubscriptionPriceId(subscription),
+          updated_at: new Date().toISOString(),
+        },
+        {
+          onConflict: "user_id,product",
+        },
+      );
+
+    if (error) {
+      throw new Error(
+        `Unable to cancel KofSports Pro entitlement: ${error.message}`,
+      );
+    }
+
+    return;
+  }
+
   const profileId = await findProfileIdByStripeData({
     profileId: subscription.metadata.profile_id ?? null,
     customerId: objectId(subscription.customer),

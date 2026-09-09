@@ -18,8 +18,17 @@ type SortKey =
   | "matchup"
   | "edge";
 
+type RecentResult = {
+  value: number;
+  result: "over" | "under" | "push";
+  is_home: boolean;
+  opponent: string;
+  game_date: string;
+};
+
 type Props = {
   rows: NflPropResearchRow[];
+  hasProAccess: boolean;
 };
 
 function formatMarket(market: string) {
@@ -100,6 +109,55 @@ function getScoreClasses(score: number | null) {
   return "border-zinc-700 bg-zinc-900 text-zinc-300";
 }
 
+function getRecentResults(
+  value: unknown,
+): RecentResult[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.filter(
+    (item): item is RecentResult =>
+      typeof item === "object" &&
+      item !== null &&
+      typeof item.value === "number" &&
+      typeof item.opponent === "string" &&
+      typeof item.game_date === "string" &&
+      typeof item.is_home === "boolean" &&
+      (
+        item.result === "over" ||
+        item.result === "under" ||
+        item.result === "push"
+      ),
+  );
+}
+
+function formatGameDate(value: string) {
+  const date = new Date(`${value}T12:00:00`);
+
+  return new Intl.DateTimeFormat(
+    "en-US",
+    {
+      month: "short",
+      day: "numeric",
+    },
+  ).format(date);
+}
+
+function getResultClasses(
+  result: RecentResult["result"],
+) {
+  if (result === "over") {
+    return "border-emerald-500/30 bg-emerald-500/10 text-emerald-300";
+  }
+
+  if (result === "under") {
+    return "border-red-500/30 bg-red-500/10 text-red-300";
+  }
+
+  return "border-zinc-600 bg-zinc-800 text-zinc-300";
+}
+
 function ResearchMetric({
   label,
   value,
@@ -130,6 +188,7 @@ function ResearchMetric({
 
 export function NflPropResearchDashboard({
   rows,
+  hasProAccess,
 }: Props) {
   const [position, setPosition] =
     useState<PositionFilter>("ALL");
@@ -138,12 +197,18 @@ export function NflPropResearchDashboard({
     useState<MarketFilter>("ALL");
 
   const [sortKey, setSortKey] =
-    useState<SortKey>("kof");
+    useState<SortKey>(hasProAccess ? "kof" : "l5");
+
+  const [search, setSearch] =
+    useState("");
 
   const [expandedPropId, setExpandedPropId] =
     useState<number | null>(null);
 
   const filteredRows = useMemo(() => {
+    const normalizedSearch =
+      search.trim().toLowerCase();
+
     const filtered = rows.filter((row) => {
       const matchesPosition =
         position === "ALL" ||
@@ -153,7 +218,23 @@ export function NflPropResearchDashboard({
         market === "ALL" ||
         row.market === market;
 
-      return matchesPosition && matchesMarket;
+      const matchesSearch =
+        normalizedSearch.length === 0 ||
+        row.playerName
+          .toLowerCase()
+          .includes(normalizedSearch) ||
+        (row.playerTeam ?? "")
+          .toLowerCase()
+          .includes(normalizedSearch) ||
+        (row.upcomingOpponent ?? "")
+          .toLowerCase()
+          .includes(normalizedSearch);
+
+      return (
+        matchesPosition &&
+        matchesMarket &&
+        matchesSearch
+      );
     });
 
     return [...filtered].sort((a, b) => {
@@ -190,7 +271,7 @@ export function NflPropResearchDashboard({
         (a.kofOverScore ?? -1)
       );
     });
-  }, [rows, position, market, sortKey]);
+  }, [rows, position, market, sortKey, search]);
 
   const positions: PositionFilter[] = [
     "ALL",
@@ -202,6 +283,16 @@ export function NflPropResearchDashboard({
 
   return (
     <div className="space-y-6">
+      {!hasProAccess ? (
+        <div className="rounded-xl border border-amber-400/30 bg-amber-400/5 px-4 py-3">
+          <div className="text-xs font-bold uppercase tracking-[0.16em] text-amber-400">
+            KofSports Pro Preview
+          </div>
+          <div className="mt-1 text-sm text-zinc-400">
+            Free access is active. Pro research features are locked.
+          </div>
+        </div>
+      ) : null}
       <div className="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4 md:p-5">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>
@@ -243,7 +334,23 @@ export function NflPropResearchDashboard({
           </div>
         </div>
 
-        <div className="mt-5 grid gap-3 md:grid-cols-2">
+        <div className="mt-5 grid gap-3 md:grid-cols-3">
+          <label className="space-y-2">
+            <span className="text-xs font-medium uppercase tracking-[0.16em] text-zinc-500">
+              Search Player
+            </span>
+
+            <input
+              type="text"
+              value={search}
+              onChange={(event) =>
+                setSearch(event.target.value)
+              }
+              placeholder="Search player or team..."
+              className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-amber-400"
+            />
+          </label>
+
           <label className="space-y-2">
             <span className="text-xs font-medium uppercase tracking-[0.16em] text-zinc-500">
               Prop Type
@@ -283,13 +390,14 @@ export function NflPropResearchDashboard({
             </span>
 
             <select
-              value={sortKey}
+              value={hasProAccess ? sortKey : "l5"}
+              disabled={!hasProAccess}
               onChange={(event) =>
                 setSortKey(
                   event.target.value as SortKey,
                 )
               }
-              className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm text-white outline-none focus:border-amber-400"
+              className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm text-white outline-none focus:border-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <option value="kof">
                 KOF Score
@@ -315,7 +423,7 @@ export function NflPropResearchDashboard({
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950/70">
+      <div className="hidden overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950/70 md:block">
         <div className="overflow-x-auto">
           <table className="min-w-[940px] w-full">
             <thead className="border-b border-zinc-800 bg-zinc-900/80">
@@ -360,6 +468,9 @@ export function NflPropResearchDashboard({
               {filteredRows.map((row) => {
                 const isExpanded =
                   expandedPropId === row.propId;
+
+                const recentResults =
+                  getRecentResults(row.lastTen);
 
                 return (
                   <Fragment
@@ -407,20 +518,26 @@ export function NflPropResearchDashboard({
 
                       <td className="px-4 py-4">
                         <div className="flex items-center gap-2">
-                          <span
-                            className={[
-                              "inline-flex min-w-[58px] items-center justify-center rounded-lg border px-2.5 py-1.5 text-sm font-bold",
-                              getScoreClasses(
+                          {hasProAccess ? (
+                            <span
+                              className={[
+                                "inline-flex min-w-[58px] items-center justify-center rounded-lg border px-2.5 py-1.5 text-sm font-bold",
+                                getScoreClasses(
+                                  row.kofOverScore,
+                                ),
+                              ].join(" ")}
+                            >
+                              {formatNumber(
                                 row.kofOverScore,
-                              ),
-                            ].join(" ")}
-                          >
-                            {formatNumber(
-                              row.kofOverScore,
-                            )}
-                          </span>
+                              )}
+                            </span>
+                          ) : (
+                            <span className="inline-flex min-w-[58px] items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 py-1.5 text-xs font-bold text-zinc-400">
+                              🔒 Pro
+                            </span>
+                          )}
 
-                          {row.kofScoreTier ? (
+                          {hasProAccess && row.kofScoreTier ? (
                             <span
                               className={[
                                 "rounded-md border px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em]",
@@ -445,9 +562,9 @@ export function NflPropResearchDashboard({
                       </td>
 
                       <td className="px-4 py-4 text-sm font-semibold text-white">
-                        {formatPct(
-                          row.l10OverPct,
-                        )}
+                        {hasProAccess
+                          ? formatPct(row.l10OverPct)
+                          : "🔒"}
                       </td>
 
                       <td className="px-4 py-4">
@@ -477,23 +594,27 @@ export function NflPropResearchDashboard({
                       <td className="px-4 py-4 text-right">
                         <button
                           type="button"
-                          onClick={() =>
+                          onClick={() => {
+                            if (!hasProAccess) return;
+
                             setExpandedPropId(
                               isExpanded
                                 ? null
                                 : row.propId,
-                            )
-                          }
+                            );
+                          }}
                           className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs font-semibold text-zinc-300 transition hover:border-zinc-500 hover:text-white"
                         >
-                          {isExpanded
-                            ? "Close"
-                            : "Research"}
+                          {!hasProAccess
+                            ? "🔒 Pro"
+                            : isExpanded
+                              ? "Close"
+                              : "Research"}
                         </button>
                       </td>
                     </tr>
 
-                    {isExpanded ? (
+                    {hasProAccess && isExpanded ? (
                       <tr
                         key={`${row.propId}-expanded`}
                         className="border-b border-zinc-800 bg-black/30"
@@ -642,6 +763,114 @@ export function NflPropResearchDashboard({
                               />
                             </div>
                           </div>
+
+                          {recentResults.length > 0 ? (
+                            <div className="mt-5 rounded-xl border border-zinc-800 bg-zinc-950 p-5">
+                              <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+                                <div>
+                                  <div className="text-sm font-semibold text-white">
+                                    Recent Results
+                                  </div>
+
+                                  <div className="mt-1 text-xs text-zinc-500">
+                                    Historical results compared with the current line of O{" "}
+                                    {formatNumber(row.line)}.
+                                  </div>
+                                </div>
+
+                                <div className="text-xs text-zinc-500">
+                                  Most recent first
+                                </div>
+                              </div>
+
+                              <div className="mt-4 overflow-x-auto">
+                                <table className="min-w-[640px] w-full">
+                                  <thead>
+                                    <tr className="border-b border-zinc-800 text-left text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
+                                      <th className="pb-3 pr-4">
+                                        Date
+                                      </th>
+
+                                      <th className="pb-3 pr-4">
+                                        Matchup
+                                      </th>
+
+                                      <th className="pb-3 pr-4">
+                                        Result
+                                      </th>
+
+                                      <th className="pb-3 pr-4">
+                                        Current Line
+                                      </th>
+
+                                      <th className="pb-3 text-right">
+                                        Hit
+                                      </th>
+                                    </tr>
+                                  </thead>
+
+                                  <tbody>
+                                    {recentResults.map(
+                                      (game) => (
+                                        <tr
+                                          key={`${row.propId}-${game.game_date}-${game.opponent}`}
+                                          className="border-b border-zinc-900 last:border-b-0"
+                                        >
+                                          <td className="py-3 pr-4 text-sm text-zinc-400">
+                                            {formatGameDate(
+                                              game.game_date,
+                                            )}
+                                          </td>
+
+                                          <td className="py-3 pr-4">
+                                            <div className="text-sm font-medium text-white">
+                                              {game.is_home
+                                                ? "vs"
+                                                : "@"}{" "}
+                                              {
+                                                game.opponent
+                                              }
+                                            </div>
+                                          </td>
+
+                                          <td className="py-3 pr-4">
+                                            <span className="text-sm font-semibold text-white">
+                                              {formatNumber(
+                                                game.value,
+                                                0,
+                                              )}
+                                            </span>
+                                          </td>
+
+                                          <td className="py-3 pr-4 text-sm text-zinc-400">
+                                            O{" "}
+                                            {formatNumber(
+                                              row.line,
+                                            )}
+                                          </td>
+
+                                          <td className="py-3 text-right">
+                                            <span
+                                              className={[
+                                                "inline-flex min-w-[68px] items-center justify-center rounded-md border px-2 py-1 text-[11px] font-bold uppercase tracking-[0.12em]",
+                                                getResultClasses(
+                                                  game.result,
+                                                ),
+                                              ].join(
+                                                " ",
+                                              )}
+                                            >
+                                              {game.result}
+                                            </span>
+                                          </td>
+                                        </tr>
+                                      ),
+                                    )}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
+                          ) : null}
                         </td>
                       </tr>
                     ) : null}
@@ -654,6 +883,254 @@ export function NflPropResearchDashboard({
 
         {filteredRows.length === 0 ? (
           <div className="px-6 py-16 text-center text-sm text-zinc-500">
+            No current props match these
+            filters.
+          </div>
+        ) : null}
+      </div>
+
+      <div className="space-y-3 md:hidden">
+        {filteredRows.map((row) => {
+          const isExpanded =
+            expandedPropId === row.propId;
+
+          const recentResults =
+            getRecentResults(row.lastTen);
+
+          return (
+            <div
+              key={`${row.propId}-${row.market}-mobile`}
+              className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950/70"
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  if (!hasProAccess) return;
+
+                  setExpandedPropId(
+                    isExpanded
+                      ? null
+                      : row.propId,
+                  );
+                }}
+                className="w-full p-4 text-left"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="font-semibold text-white">
+                      {row.playerName}
+                    </div>
+
+                    <div className="mt-1 text-xs text-zinc-500">
+                      {row.playerTeam ?? "—"}
+                      {row.position
+                        ? ` • ${row.position}`
+                        : ""}
+                      {row.upcomingOpponent
+                        ? ` • vs ${row.upcomingOpponent}`
+                        : ""}
+                    </div>
+                  </div>
+
+                  {hasProAccess ? (
+                    <span
+                      className={[
+                        "inline-flex min-w-[58px] items-center justify-center rounded-lg border px-2.5 py-1.5 text-sm font-bold",
+                        getScoreClasses(
+                          row.kofOverScore,
+                        ),
+                      ].join(" ")}
+                    >
+                      {formatNumber(
+                        row.kofOverScore,
+                      )}
+                    </span>
+                  ) : (
+                    <span className="inline-flex min-w-[58px] items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 py-1.5 text-xs font-bold text-zinc-400">
+                      🔒 Pro
+                    </span>
+                  )}
+                </div>
+
+                <div className="mt-4 grid grid-cols-4 gap-2">
+                  <div>
+                    <div className="text-[10px] uppercase tracking-[0.14em] text-zinc-600">
+                      Prop
+                    </div>
+                    <div className="mt-1 text-sm font-medium text-zinc-200">
+                      {formatMarket(row.market)}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-[10px] uppercase tracking-[0.14em] text-zinc-600">
+                      Line
+                    </div>
+                    <div className="mt-1 text-sm font-medium text-zinc-200">
+                      O {formatNumber(row.line)}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-[10px] uppercase tracking-[0.14em] text-zinc-600">
+                      L5
+                    </div>
+                    <div className="mt-1 text-sm font-medium text-zinc-200">
+                      {formatPct(
+                        row.l5OverPct,
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-[10px] uppercase tracking-[0.14em] text-zinc-600">
+                      DvP
+                    </div>
+                    <div className="mt-1 text-sm font-medium text-zinc-200">
+                      {row.dvpMarketRank !== null
+                        ? `#${row.dvpMarketRank}`
+                        : "—"}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex items-center justify-between border-t border-zinc-800 pt-3">
+                  <span className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-400">
+                    {!hasProAccess
+                      ? "🔒 Pro Research"
+                      : isExpanded
+                        ? "Hide Research"
+                        : "Research"}
+                  </span>
+
+                  <span
+                    className={[
+                      "text-lg leading-none text-lime-400 transition-transform duration-200",
+                      isExpanded
+                        ? "rotate-180"
+                        : "",
+                    ].join(" ")}
+                    aria-hidden="true"
+                  >
+                    ⌄
+                  </span>
+                </div>
+              </button>
+
+              {hasProAccess && isExpanded ? (
+                <div className="border-t border-zinc-800 p-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <ResearchMetric
+                      label="Trend"
+                      value={formatNumber(
+                        row.trendScore,
+                      )}
+                    />
+
+                    <ResearchMetric
+                      label="Edge"
+                      value={formatNumber(
+                        row.edgeScore,
+                      )}
+                    />
+
+                    <ResearchMetric
+                      label="Matchup"
+                      value={formatNumber(
+                        row.matchupScore,
+                      )}
+                    />
+
+                    <ResearchMetric
+                      label="Role"
+                      value={
+                        row.position === "QB"
+                          ? "N/A"
+                          : formatNumber(
+                              row.roleScore,
+                            )
+                      }
+                    />
+
+                    <ResearchMetric
+                      label="L10"
+                      value={formatPct(
+                        row.l10OverPct,
+                      )}
+                    />
+
+                    <ResearchMetric
+                      label="L5 Avg"
+                      value={formatNumber(
+                        row.avgL5,
+                      )}
+                      detail={`Edge ${formatSignedPct(
+                        row.l5EdgePct,
+                      )}`}
+                    />
+                  </div>
+
+                  {recentResults.length > 0 ? (
+                    <div className="mt-4">
+                      <div className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">
+                        Recent Results
+                      </div>
+
+                      <div className="mt-3 space-y-2">
+                        {recentResults
+                          .slice(0, 5)
+                          .map((game) => (
+                            <div
+                              key={`${row.propId}-${game.game_date}-${game.opponent}-mobile`}
+                              className="flex items-center justify-between rounded-lg border border-zinc-800 bg-zinc-900/60 px-3 py-2"
+                            >
+                              <div>
+                                <div className="text-sm font-medium text-white">
+                                  {game.is_home
+                                    ? "vs"
+                                    : "@"}{" "}
+                                  {game.opponent}
+                                </div>
+
+                                <div className="text-[11px] text-zinc-500">
+                                  {formatGameDate(
+                                    game.game_date,
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-3">
+                                <div className="text-sm font-semibold text-white">
+                                  {formatNumber(
+                                    game.value,
+                                    0,
+                                  )}
+                                </div>
+
+                                <span
+                                  className={[
+                                    "rounded-md border px-2 py-1 text-[10px] font-bold uppercase",
+                                    getResultClasses(
+                                      game.result,
+                                    ),
+                                  ].join(" ")}
+                                >
+                                  {game.result}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+          );
+        })}
+
+        {filteredRows.length === 0 ? (
+          <div className="rounded-2xl border border-zinc-800 bg-zinc-950/70 px-6 py-12 text-center text-sm text-zinc-500">
             No current props match these
             filters.
           </div>

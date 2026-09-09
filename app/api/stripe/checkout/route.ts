@@ -3,7 +3,13 @@ import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { createClient } from "@/lib/supabase/server";
 
-type PlanKey = "one_day" | "weekly" | "monthly" | "ninety_day";
+type PlanKey =
+  | "one_day"
+  | "weekly"
+  | "monthly"
+  | "ninety_day"
+  | "pro_monthly"
+  | "pro_annual";
 
 type CheckoutRequestBody = {
   plan?: PlanKey;
@@ -15,6 +21,7 @@ type PlanConfiguration = {
   priceId: string;
   mode: "payment" | "subscription";
   membershipType: string;
+  product: "premium_picks" | "kofsports_pro";
 };
 
 function getPlanConfiguration(plan: PlanKey): PlanConfiguration {
@@ -23,21 +30,37 @@ function getPlanConfiguration(plan: PlanKey): PlanConfiguration {
       priceId: process.env.STRIPE_PRICE_1_DAY ?? "",
       mode: "payment",
       membershipType: "one_day",
+      product: "premium_picks",
     },
     weekly: {
       priceId: process.env.STRIPE_PRICE_WEEKLY ?? "",
       mode: "subscription",
       membershipType: "weekly",
+      product: "premium_picks",
     },
     monthly: {
       priceId: process.env.STRIPE_PRICE_MONTHLY ?? "",
       mode: "subscription",
       membershipType: "monthly",
+      product: "premium_picks",
     },
     ninety_day: {
       priceId: process.env.STRIPE_PRICE_90_DAY ?? "",
       mode: "subscription",
       membershipType: "ninety_day",
+      product: "premium_picks",
+    },
+    pro_monthly: {
+      priceId: process.env.STRIPE_PRICE_PRO_MONTHLY ?? "",
+      mode: "subscription",
+      membershipType: "pro_monthly",
+      product: "kofsports_pro",
+    },
+    pro_annual: {
+      priceId: process.env.STRIPE_PRICE_PRO_ANNUAL ?? "",
+      mode: "subscription",
+      membershipType: "pro_annual",
+      product: "kofsports_pro",
     },
   };
 
@@ -84,7 +107,9 @@ export async function POST(request: Request) {
       plan !== "one_day" &&
       plan !== "weekly" &&
       plan !== "monthly" &&
-      plan !== "ninety_day"
+      plan !== "ninety_day" &&
+      plan !== "pro_monthly" &&
+      plan !== "pro_annual"
     ) {
       return NextResponse.json(
         { error: "Invalid Premium Pass selection." },
@@ -109,7 +134,7 @@ export async function POST(request: Request) {
       console.error(`Missing Stripe Price ID for plan: ${plan}`);
 
       return NextResponse.json(
-        { error: "This Premium Pass is not configured yet." },
+        { error: "This KofSports plan is not configured yet." },
         { status: 500 },
       );
     }
@@ -124,7 +149,7 @@ export async function POST(request: Request) {
     if (userError || !user) {
       return NextResponse.json(
         {
-          error: "You must be logged in before purchasing a Premium Pass.",
+          error: "You must be logged in before purchasing this KofSports plan.",
         },
         { status: 401 },
       );
@@ -206,6 +231,7 @@ export async function POST(request: Request) {
       profile_id: profile.id,
       user_id: user.id,
       membership_type: planConfiguration.membershipType,
+      product: planConfiguration.product,
       stripe_price_id: planConfiguration.priceId,
     };
 
@@ -226,14 +252,20 @@ export async function POST(request: Request) {
           quantity: 1,
         },
       ],
-      success_url: `${siteUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: isTrial
-        ? `${siteUrl}/free-week?checkout=canceled${
-            trialSource
-              ? `&source=${encodeURIComponent(trialSource)}`
-              : ""
-          }`
-        : `${siteUrl}/plans?checkout=canceled`,
+      success_url:
+        planConfiguration.product === "kofsports_pro"
+          ? `${siteUrl}/pro?checkout=success&session_id={CHECKOUT_SESSION_ID}`
+          : `${siteUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url:
+        planConfiguration.product === "kofsports_pro"
+          ? `${siteUrl}/pro?checkout=canceled`
+          : isTrial
+            ? `${siteUrl}/free-week?checkout=canceled${
+                trialSource
+                  ? `&source=${encodeURIComponent(trialSource)}`
+                  : ""
+              }`
+            : `${siteUrl}/plans?checkout=canceled`,
       customer: profile.stripe_customer_id ?? undefined,
       customer_email: profile.stripe_customer_id
         ? undefined
