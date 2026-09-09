@@ -69,6 +69,9 @@ export function MobileNavigation({ user }: MobileNavigationProps) {
 
   const isPremium = user?.membership === "premium";
   const isAdmin = user?.role === "admin";
+  const isPro = Boolean(
+    user && !isAdmin && !isPremium && user.hasProAccess
+  );
 
   const expirationDate = formatExpirationDate(
     user?.membershipExpiresAt ?? null
@@ -144,6 +147,11 @@ export function MobileNavigation({ user }: MobileNavigationProps) {
                         {isPremium && (
                           <span className="rounded bg-brand px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-black">
                             Premium
+                          </span>
+                        )}
+                        {isPro && (
+                          <span className="rounded bg-brand px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-black">
+                            Pro
                           </span>
                         )}
                       </div>

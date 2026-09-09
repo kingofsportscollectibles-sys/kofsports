@@ -34,6 +34,7 @@ export function UserMenu({ user }: UserMenuProps) {
 
   const isPremium = user.membership === "premium";
   const isAdmin = user.role === "admin";
+  const isPro = !isAdmin && !isPremium && user.hasProAccess;
   const expirationDate = formatExpirationDate(user.membershipExpiresAt);
 
   useEffect(() => {
@@ -85,6 +86,11 @@ export function UserMenu({ user }: UserMenuProps) {
                 Premium
               </span>
             )}
+            {isPro && (
+              <span className="rounded bg-brand px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-black">
+                Pro
+              </span>
+            )}
           </div>
 
           <p className="text-[11px] text-zinc-500">
@@ -92,7 +98,9 @@ export function UserMenu({ user }: UserMenuProps) {
               ? "Administrator"
               : isPremium
                 ? "Premium Member"
-                : "Free Member"}
+                : isPro
+                  ? "KofSports Pro"
+                  : "Free Member"}
           </p>
         </div>
 
@@ -125,12 +133,18 @@ export function UserMenu({ user }: UserMenuProps) {
             <div className="mt-3 flex items-center justify-between">
               <span
                 className={`rounded px-2 py-1 text-[10px] font-black uppercase tracking-wider ${
-                  isPremium
+                  isPremium || isPro
                     ? "bg-brand text-black"
                     : "bg-white/10 text-zinc-300"
                 }`}
               >
-                {isPremium ? "Premium Member" : "Free Member"}
+                {isAdmin
+                  ? "Administrator"
+                  : isPremium
+                    ? "Premium Member"
+                    : isPro
+                      ? "KofSports Pro"
+                      : "Free Member"}
               </span>
             </div>
 

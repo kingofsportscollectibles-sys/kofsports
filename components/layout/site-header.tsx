@@ -3,6 +3,7 @@ import Link from "next/link";
 import { MobileNavigation } from "@/components/layout/mobile-navigation";
 import { UserMenu } from "@/components/layout/user-menu";
 import { createClient } from "@/lib/supabase/server";
+import { hasKofSportsProAccess } from "@/lib/auth/entitlements";
 
 const navigation = [
   { name: "Blog", href: "/blog" },
@@ -51,6 +52,7 @@ export type HeaderUser = {
   membership: "free" | "premium";
   role: string;
   membershipExpiresAt: string | null;
+  hasProAccess: boolean;
 };
 
 export async function SiteHeader() {
@@ -73,6 +75,8 @@ export async function SiteHeader() {
       console.error("Unable to load header profile:", profileError);
     }
 
+    const hasProAccess = await hasKofSportsProAccess();
+
     const metadataDisplayName =
       typeof user.user_metadata?.display_name === "string"
         ? user.user_metadata.display_name
@@ -89,6 +93,7 @@ export async function SiteHeader() {
         profile?.membership === "premium" ? "premium" : "free",
       role: profile?.role ?? "user",
       membershipExpiresAt: profile?.membership_expires_at ?? null,
+      hasProAccess,
     };
   }
 
