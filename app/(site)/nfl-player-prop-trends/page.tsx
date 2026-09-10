@@ -2,15 +2,19 @@ import type { Metadata } from "next";
 
 import NflPropTrendsExplorer from "@/components/nfl/NflPropTrendsExplorer";
 import { getNflPlayerPropTrends } from "@/lib/nfl/prop-trends";
+import { hasKofSportsProAccess } from "@/lib/auth/entitlements";
 
 export const metadata: Metadata = {
   title: "NFL Player Props Today: Trends & Hit Rates | KofSports",
   description:
-    "Research NFL player props today with current lines, L5 and L10 hit rates, season trends, and head-to-head stats for passing, rushing, and receiving yards.",
+    "Research NFL player props today with current lines, recent hit rates, historical results, and advanced player prop trends from KofSports.",
 };
 
 export default async function NflPlayerPropTrendsPage() {
-  const props = await getNflPlayerPropTrends();
+  const [props, hasProAccess] = await Promise.all([
+  getNflPlayerPropTrends(),
+  hasKofSportsProAccess(),
+]);
 
   return (
     <main className="min-h-screen bg-slate-950">
@@ -25,14 +29,16 @@ export default async function NflPlayerPropTrendsPage() {
           </h1>
 
           <p className="mt-5 max-w-3xl text-base leading-7 text-slate-400">
-            Research NFL player props today using current DraftKings lines and
-            historical performance. Compare last 5, last 10, season, and
-            head-to-head hit rates for NFL passing, rushing, and receiving
-            yard props.
+            Research NFL player props using current DraftKings lines and
+            historical game results. Quickly compare recent performance against
+            today&apos;s line, then unlock deeper trend analysis with KofSports
+            Pro.
           </p>
 
-          <div className="mt-6 text-sm text-slate-500">
-            Current player prop lines provided by DraftKings.
+          <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-slate-500">
+            <span>Current lines provided by DraftKings.</span>
+            <span className="hidden sm:inline">•</span>
+            <span>Passing • Rushing • Receiving</span>
           </div>
         </div>
       </section>
@@ -49,13 +55,19 @@ export default async function NflPlayerPropTrendsPage() {
             </p>
           </div>
 
-          <div className="text-sm text-slate-500">
-            Passing • Rushing • Receiving
-          </div>
+          <a
+            href="/pro"
+            className="inline-flex w-fit items-center justify-center rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-2.5 text-sm font-bold text-emerald-400 transition hover:border-emerald-400/50 hover:bg-emerald-500/15"
+          >
+            Unlock KofSports Pro
+          </a>
         </div>
 
         {props.length > 0 ? (
-          <NflPropTrendsExplorer props={props} />
+          <NflPropTrendsExplorer
+  props={props}
+  hasProAccess={hasProAccess}
+/>
         ) : (
           <div className="rounded-2xl border border-slate-800 bg-slate-900 p-10 text-center">
             <h2 className="text-xl font-bold text-white">
@@ -69,49 +81,56 @@ export default async function NflPlayerPropTrendsPage() {
         )}
 
         <div className="mt-12 overflow-hidden rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/10 via-slate-900 to-slate-900">
-  <div className="p-7 md:p-9">
-    <div className="flex flex-col gap-7 lg:flex-row lg:items-center lg:justify-between">
-      <div className="max-w-2xl">
-        <div className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-400">
-          KofSports Premium Picks
+          <div className="p-7 md:p-9">
+            <div className="flex flex-col gap-7 lg:flex-row lg:items-center lg:justify-between">
+              <div className="max-w-2xl">
+                <div className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-400">
+                  KofSports Pro
+                </div>
+
+                <h2 className="mt-3 text-2xl font-black tracking-tight text-white md:text-3xl">
+                  Go deeper than the basic hit rate.
+                </h2>
+
+                <p className="mt-3 max-w-xl leading-7 text-slate-400">
+                  Unlock advanced player prop research including longer-term
+                  trends, averages, matchup history, edge versus the current
+                  sportsbook line, and the full KofSports NFL research suite.
+                </p>
+
+                <div className="mt-5 grid gap-2 text-sm text-slate-300 sm:grid-cols-2">
+                  <span>✓ Last 10 trends</span>
+                  <span>✓ Season trends</span>
+                  <span>✓ Head-to-head history</span>
+                  <span>✓ Average vs current line</span>
+                  <span>✓ Advanced prop research</span>
+                  <span>✓ KOF Over Score Beta</span>
+                </div>
+
+                <p className="mt-5 text-xs leading-5 text-slate-500">
+                  KofSports Pro is also included with an active KofSports
+                  Premium Picks membership.
+                </p>
+              </div>
+
+              <div className="flex shrink-0 flex-col gap-3 sm:flex-row lg:flex-col">
+                <a
+                  href="/pro"
+                  className="rounded-xl bg-emerald-500 px-6 py-3 text-center text-sm font-bold text-slate-950 transition hover:bg-emerald-400"
+                >
+                  Unlock KofSports Pro
+                </a>
+
+                <a
+                  href="/nfl-prop-research"
+                  className="rounded-xl border border-slate-700 bg-slate-950 px-6 py-3 text-center text-sm font-bold text-white transition hover:border-slate-600 hover:bg-slate-800"
+                >
+                  Preview Prop Research
+                </a>
+              </div>
+            </div>
+          </div>
         </div>
-
-        <h2 className="mt-3 text-2xl font-black tracking-tight text-white md:text-3xl">
-          Found a trend you like? See the bets we actually like.
-        </h2>
-
-        <p className="mt-3 max-w-xl leading-7 text-slate-400">
-          Trends are only one part of the handicapping process.
-          KofSports Premium members get access to our actual
-          recommended plays across the NFL, college football, MLB,
-          golf, and more.
-        </p>
-
-        <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-300">
-          <span>✓ Full Premium Picks</span>
-          <span>✓ Analysis with every play</span>
-          <span>✓ Results tracked publicly</span>
-        </div>
-      </div>
-
-      <div className="flex shrink-0 flex-col gap-3 sm:flex-row lg:flex-col">
-        <a
-          href="/premium-picks"
-          className="rounded-xl bg-emerald-500 px-6 py-3 text-center text-sm font-bold text-slate-950 transition hover:bg-emerald-400"
-        >
-          View Premium Picks
-        </a>
-
-        <a
-          href="/plans"
-          className="rounded-xl border border-slate-700 bg-slate-950 px-6 py-3 text-center text-sm font-bold text-white transition hover:border-slate-600 hover:bg-slate-800"
-        >
-          See Premium Plans
-        </a>
-      </div>
-    </div>
-  </div>
-</div>
       </section>
 
       <section className="border-t border-slate-800 bg-slate-900/40">
@@ -150,8 +169,8 @@ export default async function NflPlayerPropTrendsPage() {
               <p className="mt-3 leading-7 text-slate-400">
                 Season hit rates provide a larger sample than recent-game
                 trends. Comparing short-term results with season-long
-                performance can provide additional context when researching
-                NFL player props today.
+                performance can provide additional context when researching NFL
+                player props today.
               </p>
             </div>
 
@@ -170,15 +189,15 @@ export default async function NflPlayerPropTrendsPage() {
 
             <div>
               <h3 className="text-xl font-bold text-white">
-                NFL Player Prop Predictions
+                Edge Versus the Current Line
               </h3>
 
               <p className="mt-3 leading-7 text-slate-400">
-                Historical trends do not guarantee future results, but they can
-                help provide context when evaluating NFL player prop
-                predictions. Use recent performance, season hit rates, and
-                matchup history together rather than relying on a single
-                statistic.
+                Hit rates become more useful when combined with the size of a
+                player&apos;s historical performance relative to today&apos;s
+                sportsbook line. KofSports Pro adds deeper context so you can
+                identify where recent production has meaningfully exceeded the
+                current number.
               </p>
             </div>
           </div>
@@ -198,9 +217,9 @@ export default async function NflPlayerPropTrendsPage() {
               </h3>
 
               <p className="mt-2 leading-7 text-slate-400">
-                KofSports currently tracks NFL passing yards, rushing yards,
-                and receiving yards. Additional player prop markets may be
-                added over time.
+                KofSports currently tracks NFL passing yards, rushing yards, and
+                receiving yards. Additional player prop markets may be added
+                over time.
               </p>
             </div>
 
@@ -210,8 +229,8 @@ export default async function NflPlayerPropTrendsPage() {
               </h3>
 
               <p className="mt-2 leading-7 text-slate-400">
-                The current version of the KofSports NFL player prop trends
-                tool uses DraftKings as its reference sportsbook.
+                The current version of the KofSports NFL player prop trends tool
+                uses DraftKings as its reference sportsbook.
               </p>
             </div>
 
@@ -222,9 +241,22 @@ export default async function NflPlayerPropTrendsPage() {
 
               <p className="mt-2 leading-7 text-slate-400">
                 Each historical game result is compared with the current prop
-                line. A result above the current line is recorded as an over,
-                a result below the line is recorded as an under, and an exact
+                line. A result above the current line is recorded as an over, a
+                result below the line is recorded as an under, and an exact
                 match is recorded as a push.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-bold text-white">
+                What does KofSports Pro unlock?
+              </h3>
+
+              <p className="mt-2 leading-7 text-slate-400">
+                KofSports Pro unlocks deeper NFL research including advanced
+                player prop trends, KOF Scores, matchup and usage research, and
+                additional tools designed to help identify and evaluate betting
+                opportunities.
               </p>
             </div>
 

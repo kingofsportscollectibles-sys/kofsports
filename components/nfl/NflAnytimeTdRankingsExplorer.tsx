@@ -6,6 +6,7 @@ import type { NflAnytimeTdRanking } from "@/lib/nfl/anytime-td-rankings";
 
 type Props = {
   rankings: NflAnytimeTdRanking[];
+  hasProAccess: boolean;
 };
 
 type PositionFilter = "ALL" | "RB" | "WR" | "TE";
@@ -87,6 +88,7 @@ function ScoreBar({
 
 export default function NflAnytimeTdRankingsExplorer({
   rankings,
+  hasProAccess,
 }: Props) {
   const [position, setPosition] = useState<PositionFilter>("ALL");
 
@@ -201,6 +203,33 @@ export default function NflAnytimeTdRankingsExplorer({
         </div>
       </div>
 
+      {!hasProAccess ? (
+        <div className="mb-5 flex flex-col gap-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-400">
+              KofSports Pro
+            </div>
+
+            <div className="mt-1 font-bold text-white">
+              Unlock the intelligence behind the rankings.
+            </div>
+
+            <div className="mt-1 text-sm leading-6 text-slate-400">
+              KOF TD Score, red-zone analysis, usage, recent role,
+              matchup and scoring-environment research are available
+              with KofSports Pro.
+            </div>
+          </div>
+
+          <a
+            href="/pro"
+            className="shrink-0 rounded-xl bg-emerald-500 px-5 py-3 text-center text-sm font-bold text-slate-950 transition hover:bg-emerald-400"
+          >
+            Unlock KofSports Pro
+          </a>
+        </div>
+      ) : null}
+
       <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[820px]">
@@ -268,18 +297,32 @@ export default function NflAnytimeTdRankingsExplorer({
                         </div>
 
                         <div className="px-5 py-5 text-center">
-                          <div
-                            className={`inline-flex min-w-[76px] flex-col rounded-xl border px-3 py-2 ${scoreClasses(
-                              ranking.kofScore
-                            )}`}
-                          >
-                            <span className="text-xl font-black tabular-nums">
-                              {ranking.kofScore.toFixed(1)}
-                            </span>
-                            <span className="mt-0.5 text-[10px] font-bold uppercase tracking-wider">
-                              {scoreLabel(ranking.kofScore)}
-                            </span>
-                          </div>
+                          {hasProAccess ? (
+                            <div
+                              className={`inline-flex min-w-[76px] flex-col rounded-xl border px-3 py-2 ${scoreClasses(
+                                ranking.kofScore
+                              )}`}
+                            >
+                              <span className="text-xl font-black tabular-nums">
+                                {ranking.kofScore.toFixed(1)}
+                              </span>
+
+                              <span className="mt-0.5 text-[10px] font-bold uppercase tracking-wider">
+                                {scoreLabel(ranking.kofScore)}
+                              </span>
+                            </div>
+                          ) : (
+                            <a
+                              href="/pro"
+                              className="inline-flex min-w-[76px] flex-col items-center rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-slate-400 transition hover:border-emerald-500/40 hover:text-emerald-400"
+                            >
+                              <span className="text-sm">🔒</span>
+
+                              <span className="mt-0.5 text-[10px] font-bold uppercase tracking-wider">
+                                Pro Score
+                              </span>
+                            </a>
+                          )}
                         </div>
 
                         <div className="px-5 py-5 text-center">
@@ -301,19 +344,30 @@ export default function NflAnytimeTdRankingsExplorer({
                         </div>
 
                         <div className="px-5 py-5 text-right">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setExpandedPlayer(expanded ? null : rowKey)
-                            }
-                            className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-bold text-slate-300 transition hover:border-emerald-500/50 hover:text-white"
-                          >
-                            {expanded ? "Close" : "Breakdown"}
-                          </button>
+                          {hasProAccess ? (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setExpandedPlayer(
+                                  expanded ? null : rowKey
+                                )
+                              }
+                              className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-bold text-slate-300 transition hover:border-emerald-500/50 hover:text-white"
+                            >
+                              {expanded ? "Close" : "Breakdown"}
+                            </button>
+                          ) : (
+                            <a
+                              href="/pro"
+                              className="inline-flex rounded-lg border border-slate-700 px-3 py-2 text-xs font-bold text-slate-400 transition hover:border-emerald-500/50 hover:text-emerald-400"
+                            >
+                              🔒 Research
+                            </a>
+                          )}
                         </div>
                       </div>
 
-                      {expanded ? (
+                      {hasProAccess && expanded ? (
                         <div className="border-t border-slate-800 bg-slate-950/60 px-6 py-6">
                           <div className="grid gap-7 lg:grid-cols-[1fr_280px]">
                             <div>

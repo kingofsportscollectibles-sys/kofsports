@@ -7,8 +7,6 @@ import type {
   NflPropMarket,
 } from "@/lib/nfl/prop-trends";
 
-type SampleType = "l5" | "l10" | "season" | "h2h";
-
 type TrendFilter =
   | "all"
   | "60"
@@ -25,16 +23,15 @@ type SortOption =
 
 type Props = {
   props: NflPlayerPropTrend[];
+  hasProAccess: boolean;
 };
 
 function marketLabel(market: NflPropMarket) {
   switch (market) {
     case "player_pass_yds":
       return "Passing Yards";
-
     case "player_rush_yds":
       return "Rushing Yards";
-
     case "player_reception_yds":
       return "Receiving Yards";
   }
@@ -64,74 +61,12 @@ function formatOdds(value: number | null) {
   return value > 0 ? `+${value}` : `${value}`;
 }
 
-function getSamplePercentage(
-  prop: NflPlayerPropTrend,
-  sample: SampleType,
-) {
-  switch (sample) {
-    case "l5":
-      return prop.l5OverPct;
-
-    case "l10":
-      return prop.l10OverPct;
-
-    case "season":
-      return prop.seasonOverPct;
-
-    case "h2h":
-      return prop.h2hOverPct;
-  }
-}
-
-function getSampleGames(
-  prop: NflPlayerPropTrend,
-  sample: SampleType,
-) {
-  switch (sample) {
-    case "l5":
-      return prop.l5Games;
-
-    case "l10":
-      return prop.l10Games;
-
-    case "season":
-      return prop.seasonGames;
-
-    case "h2h":
-      return prop.h2hGames;
-  }
-}
-
-function getSampleAverage(
-  prop: NflPlayerPropTrend,
-  sample: SampleType,
-) {
-  switch (sample) {
-    case "l5":
-      return prop.avgL5;
-
-    case "l10":
-      return prop.avgL10;
-
-    case "season":
-      return null;
-
-    case "h2h":
-      return prop.avgH2h;
-  }
-}
-
-function getAverageEdge(
-  prop: NflPlayerPropTrend,
-  sample: SampleType,
-) {
-  const average = getSampleAverage(prop, sample);
-
-  if (average === null) {
+function getAverageEdge(prop: NflPlayerPropTrend) {
+  if (prop.avgL5 === null) {
     return null;
   }
 
-  return average - prop.line;
+  return prop.avgL5 - prop.line;
 }
 
 function getTrendClass(value: number | null) {
@@ -160,10 +95,8 @@ function getResultClass(
   switch (result) {
     case "over":
       return "border-emerald-500/40 bg-emerald-500/10";
-
     case "under":
       return "border-rose-500/30 bg-rose-500/10";
-
     case "push":
       return "border-slate-700 bg-slate-800/40";
   }
@@ -175,10 +108,8 @@ function getResultTextClass(
   switch (result) {
     case "over":
       return "text-emerald-400";
-
     case "under":
       return "text-rose-400";
-
     case "push":
       return "text-slate-400";
   }
@@ -218,11 +149,51 @@ function TrendStat({
   );
 }
 
+function LockedTrendStat({
+  label,
+}: {
+  label: string;
+}) {
+  return (
+    <a
+      href="/pro"
+      className="group rounded-xl border border-slate-800 bg-slate-950 p-4 transition hover:border-emerald-500/30"
+    >
+      <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+        {label}
+      </div>
+
+      <div className="mt-2 flex items-center justify-between gap-3">
+        <div className="text-sm font-bold text-slate-400">
+          🔒 Pro
+        </div>
+
+        <div className="text-xs font-semibold text-emerald-500 opacity-80 transition group-hover:opacity-100">
+          Unlock →
+        </div>
+      </div>
+    </a>
+  );
+}
+
 function PlayerPropCard({
   prop,
+  hasProAccess,
 }: {
   prop: NflPlayerPropTrend;
+  hasProAccess: boolean;
 }) {
+  const visibleGames = hasProAccess
+    ? prop.lastTen
+    : prop.lastTen.slice(0, 5);
+
+  const lockedGameCount = hasProAccess
+    ? 0
+    : Math.min(
+        5,
+        Math.max(prop.lastTen.length - 5, 0),
+      );
+
   return (
     <article className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900">
       <div className="border-b border-slate-800 p-5">
@@ -274,66 +245,117 @@ function PlayerPropCard({
           percentage={prop.l5OverPct}
         />
 
-        <TrendStat
-          label="Last 10"
-          overs={prop.l10Overs}
-          games={prop.l10Games}
-          percentage={prop.l10OverPct}
-        />
+        {hasProAccess ? (
+          <TrendStat
+            label="Last 10"
+            overs={prop.l10Overs}
+            games={prop.l10Games}
+            percentage={prop.l10OverPct}
+          />
+        ) : (
+          <LockedTrendStat label="Last 10" />
+        )}
 
-        <TrendStat
-          label="Season"
-          overs={prop.seasonOvers}
-          games={prop.seasonGames}
-          percentage={prop.seasonOverPct}
-        />
+        {hasProAccess ? (
+          <TrendStat
+            label="Season"
+            overs={prop.seasonOvers}
+            games={prop.seasonGames}
+            percentage={prop.seasonOverPct}
+          />
+        ) : (
+          <LockedTrendStat label="Season" />
+        )}
 
-        <TrendStat
-          label={
-            prop.upcomingOpponent
-              ? `vs ${prop.upcomingOpponent}`
-              : "Head to Head"
-          }
-          overs={prop.h2hOvers}
-          games={prop.h2hGames}
-          percentage={prop.h2hOverPct}
-        />
+        {hasProAccess ? (
+          <TrendStat
+            label={
+              prop.upcomingOpponent
+                ? `vs ${prop.upcomingOpponent}`
+                : "Head to Head"
+            }
+            overs={prop.h2hOvers}
+            games={prop.h2hGames}
+            percentage={prop.h2hOverPct}
+          />
+        ) : (
+          <LockedTrendStat
+            label={
+              prop.upcomingOpponent
+                ? `vs ${prop.upcomingOpponent}`
+                : "Head to Head"
+            }
+          />
+        )}
       </div>
 
       {prop.lastTen.length > 0 ? (
         <div className="border-t border-slate-800 px-5 py-4">
-          <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
-            Last 10 Results
+          <div className="mb-3 flex items-center justify-between gap-4">
+            <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+              Recent Results
+            </div>
+
+            {!hasProAccess ? (
+              <a
+                href="/pro"
+                className="text-xs font-bold text-emerald-400 transition hover:text-emerald-300"
+              >
+                Unlock Last 10 →
+              </a>
+            ) : null}
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            {prop.lastTen.map((game) => (
-              <div
-                key={`${game.game_date}-${game.opponent}-${game.value}`}
-                className={`min-w-14 rounded-lg border px-3 py-2 text-center ${getResultClass(
-                  game.result,
-                )}`}
-                title={`${game.game_date} vs ${
-                  game.opponent ?? "Opponent"
-                }`}
-              >
-                <div className="text-sm font-bold text-white">
-                  {game.value}
-                </div>
-
+          <div className="overflow-x-auto pb-1 lg:overflow-x-visible">
+            <div className="flex min-w-max gap-2 lg:grid lg:min-w-0 lg:grid-cols-10 lg:gap-1.5">
+              {visibleGames.map((game) => (
                 <div
-                  className={`mt-1 text-[10px] font-bold uppercase ${getResultTextClass(
+                  key={`${game.game_date}-${game.opponent}-${game.value}`}
+                  className={`min-w-14 rounded-lg border px-2 py-2 text-center lg:min-w-0 lg:px-1.5 ${getResultClass(
                     game.result,
                   )}`}
+                  title={`${game.game_date} vs ${
+                    game.opponent ?? "Opponent"
+                  }`}
                 >
-                  {game.result === "over"
-                    ? "O"
-                    : game.result === "under"
-                      ? "U"
-                      : "P"}
+                  <div className="text-sm font-bold text-white">
+                    {game.value}
+                  </div>
+
+                  <div
+                    className={`mt-1 text-[10px] font-bold uppercase ${getResultTextClass(
+                      game.result,
+                    )}`}
+                  >
+                    {game.result === "over"
+                      ? "O"
+                      : game.result === "under"
+                        ? "U"
+                        : "P"}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+
+              {!hasProAccess
+                ? Array.from({
+                    length: lockedGameCount,
+                  }).map((_, index) => (
+                    <a
+                      key={`locked-${index}`}
+                      href="/pro"
+                      className="flex min-w-14 flex-col items-center justify-center rounded-lg border border-slate-800 bg-slate-950 px-2 py-2 text-center transition hover:border-emerald-500/30 lg:min-w-0 lg:px-1.5"
+                    >
+                      <div className="text-sm">
+                        🔒
+                      </div>
+
+                      <div className="mt-1 text-[9px] font-bold uppercase text-slate-500">
+                        Pro
+                      </div>
+                    </a>
+                  ))
+                : null}
+            </div>
           </div>
         </div>
       ) : (
@@ -341,22 +363,36 @@ function PlayerPropCard({
           No NFL game history available.
         </div>
       )}
+
+      {!hasProAccess ? (
+        <div className="border-t border-slate-800 bg-slate-950/50 px-5 py-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="text-xs leading-5 text-slate-500">
+              Unlock L10, season, H2H and deeper prop research.
+            </div>
+
+            <a
+              href="/pro"
+              className="shrink-0 text-xs font-bold text-emerald-400 transition hover:text-emerald-300"
+            >
+              KofSports Pro →
+            </a>
+          </div>
+        </div>
+      ) : null}
     </article>
   );
 }
 
 export default function NflPropTrendsExplorer({
   props,
+  hasProAccess,
 }: Props) {
   const [search, setSearch] = useState("");
   const [game, setGame] = useState("all");
   const [market, setMarket] = useState("all");
   const [trend, setTrend] =
     useState<TrendFilter>("all");
-
-  const [sample, setSample] =
-    useState<SampleType>("l10");
-
   const [sort, setSort] =
     useState<SortOption>("default");
 
@@ -403,15 +439,8 @@ export default function NflPropTrendsExplorer({
         return false;
       }
 
-      const pct = getSamplePercentage(
-        prop,
-        sample,
-      );
-
-      const gamesPlayed = getSampleGames(
-        prop,
-        sample,
-      );
+      const pct = prop.l5OverPct;
+      const gamesPlayed = prop.l5Games;
 
       if (trend !== "all") {
         if (
@@ -468,17 +497,8 @@ export default function NflPropTrendsExplorer({
         sort === "hit-desc" ||
         sort === "hit-asc"
       ) {
-        const aPct =
-          getSamplePercentage(a, sample);
-
-        const bPct =
-          getSamplePercentage(b, sample);
-
-        const aGames =
-          getSampleGames(a, sample);
-
-        const bGames =
-          getSampleGames(b, sample);
+        const aPct = a.l5OverPct;
+        const bPct = b.l5OverPct;
 
         if (
           aPct === null &&
@@ -501,15 +521,8 @@ export default function NflPropTrendsExplorer({
             : aPct - bPct;
         }
 
-        /*
-         * If the percentages tie, prefer the
-         * larger sample.
-         *
-         * Example:
-         * 5/5 ranks ahead of 1/1.
-         */
-        if (aGames !== bGames) {
-          return bGames - aGames;
+        if (a.l5Games !== b.l5Games) {
+          return b.l5Games - a.l5Games;
         }
 
         return a.playerName.localeCompare(
@@ -518,21 +531,8 @@ export default function NflPropTrendsExplorer({
       }
 
       if (sort === "edge-desc") {
-        const aEdge = getAverageEdge(
-          a,
-          sample,
-        );
-
-        const bEdge = getAverageEdge(
-          b,
-          sample,
-        );
-
-        const aGames =
-          getSampleGames(a, sample);
-
-        const bGames =
-          getSampleGames(b, sample);
+        const aEdge = getAverageEdge(a);
+        const bEdge = getAverageEdge(b);
 
         if (
           aEdge === null &&
@@ -553,8 +553,8 @@ export default function NflPropTrendsExplorer({
           return bEdge - aEdge;
         }
 
-        if (aGames !== bGames) {
-          return bGames - aGames;
+        if (a.l5Games !== b.l5Games) {
+          return b.l5Games - a.l5Games;
         }
 
         return a.playerName.localeCompare(
@@ -570,26 +570,8 @@ export default function NflPropTrendsExplorer({
     game,
     market,
     trend,
-    sample,
     sort,
   ]);
-
-  function handleSampleChange(
-    value: SampleType,
-  ) {
-    setSample(value);
-
-    /*
-     * We do not currently calculate a
-     * season-long average in the DB view.
-     */
-    if (
-      value === "season" &&
-      sort === "edge-desc"
-    ) {
-      setSort("hit-desc");
-    }
-  }
 
   return (
     <div>
@@ -627,16 +609,14 @@ export default function NflPropTrendsExplorer({
                 All Games
               </option>
 
-              {games.map(
-                ([value, label]) => (
-                  <option
-                    key={value}
-                    value={value}
-                  >
-                    {label}
-                  </option>
-                ),
-              )}
+              {games.map(([value, label]) => (
+                <option
+                  key={value}
+                  value={value}
+                >
+                  {label}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -672,7 +652,7 @@ export default function NflPropTrendsExplorer({
 
           <div>
             <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Trend
+              L5 Trend
             </label>
 
             <select
@@ -727,18 +707,20 @@ export default function NflPropTrendsExplorer({
               </option>
 
               <option value="hit-desc">
-                Highest Hit Rate
+                Highest L5 Hit Rate
               </option>
 
               <option value="hit-asc">
-                Lowest Hit Rate
+                Lowest L5 Hit Rate
               </option>
 
               <option
                 value="edge-desc"
-                disabled={sample === "season"}
+                disabled={!hasProAccess}
               >
-                Highest Avg vs Line
+                {hasProAccess
+                  ? "Highest L5 Avg vs Line"
+                  : "🔒 Highest Avg vs Line"}
               </option>
 
               <option value="player-asc">
@@ -748,44 +730,10 @@ export default function NflPropTrendsExplorer({
           </div>
         </div>
 
-        <div className="mt-5 flex flex-col gap-4 border-t border-slate-800 pt-5 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Trend Sample
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              {(
-                [
-                  ["l5", "Last 5"],
-                  ["l10", "Last 10"],
-                  ["season", "Season"],
-                  ["h2h", "H2H"],
-                ] as const
-              ).map(([value, label]) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() =>
-                    handleSampleChange(value)
-                  }
-                  className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${
-                    sample === value
-                      ? "border-emerald-500 bg-emerald-500/10 text-emerald-400"
-                      : "border-slate-700 bg-slate-950 text-slate-400 hover:border-slate-600 hover:text-white"
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-
-            {sample === "season" ? (
-              <div className="mt-2 text-xs text-slate-600">
-                Average-vs-line sorting is
-                available for L5, L10, and H2H.
-              </div>
-            ) : null}
+        <div className="mt-5 flex flex-col gap-3 border-t border-slate-800 pt-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="text-sm text-slate-400">
+            Trend filtering and hit-rate sorting use
+            each player&apos;s Last 5 results.
           </div>
 
           <div className="text-sm text-slate-400">
@@ -808,6 +756,7 @@ export default function NflPropTrendsExplorer({
             <PlayerPropCard
               key={prop.propId}
               prop={prop}
+              hasProAccess={hasProAccess}
             />
           ))}
         </div>
@@ -818,8 +767,8 @@ export default function NflPropTrendsExplorer({
           </h2>
 
           <p className="mt-2 text-sm text-slate-400">
-            Try changing the game, market,
-            trend, or sample filters.
+            Try changing the game, market, trend,
+            or search filters.
           </p>
         </div>
       )}

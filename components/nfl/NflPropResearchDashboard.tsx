@@ -325,19 +325,28 @@ export function NflPropResearchDashboard({
   return (
     <div className="space-y-6">
       {!hasProAccess ? (
-        <div className="rounded-xl border border-amber-400/30 bg-amber-400/5 px-4 py-3">
-          <div className="text-xs font-bold uppercase tracking-[0.16em] text-amber-400">
-            KofSports Pro Preview
+        <div className="flex flex-col gap-4 rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-400">
+              KofSports Pro Preview
+            </div>
+            <div className="mt-1 text-sm text-zinc-400">
+              Free access is active. Pro research features are locked.
+            </div>
           </div>
-          <div className="mt-1 text-sm text-zinc-400">
-            Free access is active. Pro research features are locked.
-          </div>
+
+          <a
+            href="/pro"
+            className="inline-flex shrink-0 items-center justify-center rounded-lg bg-emerald-500 px-4 py-2.5 text-sm font-extrabold text-slate-950 transition hover:bg-emerald-400"
+          >
+            Unlock KofSports Pro
+          </a>
         </div>
       ) : null}
       <div className="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4 md:p-5">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>
-            <div className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-400">
+            <div className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-400">
               KOF Over Score Beta
             </div>
 
@@ -362,7 +371,7 @@ export function NflPropResearchDashboard({
                   className={[
                     "rounded-lg border px-4 py-2 text-sm font-semibold transition",
                     active
-                      ? "border-amber-400 bg-amber-400 text-black"
+                      ? "border-emerald-500 bg-emerald-500 text-slate-950"
                       : "border-zinc-700 bg-zinc-900 text-zinc-300 hover:border-zinc-500 hover:text-white",
                   ].join(" ")}
                 >
@@ -388,7 +397,7 @@ export function NflPropResearchDashboard({
                 setSearch(event.target.value)
               }
               placeholder="Search player or team..."
-              className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-amber-400"
+              className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-emerald-500"
             />
           </label>
 
@@ -405,7 +414,7 @@ export function NflPropResearchDashboard({
                     .value as MarketFilter,
                 )
               }
-              className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm text-white outline-none focus:border-amber-400"
+              className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500"
             >
               <option value="ALL">
                 All Props
@@ -432,7 +441,7 @@ export function NflPropResearchDashboard({
             <select
               value={game}
               onChange={(event) => setGame(event.target.value)}
-              className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm text-white outline-none focus:border-amber-400"
+              className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500"
             >
               <option value="ALL">All Games</option>
               {games.map((item) => (
@@ -456,7 +465,7 @@ export function NflPropResearchDashboard({
                   event.target.value as SortKey,
                 )
               }
-              className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm text-white outline-none focus:border-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
+              className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <option value="kof">
                 KOF Score
@@ -519,7 +528,9 @@ export function NflPropResearchDashboard({
                   Matchup
                 </th>
 
-                <th className="px-4 py-3" />
+                <th className="px-4 py-3 text-right">
+                  Research
+                </th>
               </tr>
             </thead>
 

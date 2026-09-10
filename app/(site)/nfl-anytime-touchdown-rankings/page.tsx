@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import NflAnytimeTdRankingsExplorer from "@/components/nfl/NflAnytimeTdRankingsExplorer";
 
 import { getNflAnytimeTdRankings } from "@/lib/nfl/anytime-td-rankings";
+import { hasKofSportsProAccess } from "@/lib/auth/entitlements";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -15,7 +16,10 @@ export const metadata: Metadata = {
 };
 
 export default async function NflAnytimeTouchdownRankingsPage() {
-  const rankings = await getNflAnytimeTdRankings();
+  const [rankings, hasProAccess] = await Promise.all([
+    getNflAnytimeTdRankings(),
+    hasKofSportsProAccess(),
+  ]);
 
   const faqSchema = {
   "@context": "https://schema.org",
@@ -124,7 +128,10 @@ export default async function NflAnytimeTouchdownRankingsPage() {
         </div>
 
         {rankings.length > 0 ? (
-          <NflAnytimeTdRankingsExplorer rankings={rankings} />
+          <NflAnytimeTdRankingsExplorer
+            rankings={rankings}
+            hasProAccess={hasProAccess}
+          />
         ) : (
           <div className="rounded-2xl border border-slate-800 bg-slate-900 p-10 text-center">
             <h2 className="text-xl font-bold text-white">
@@ -143,44 +150,54 @@ export default async function NflAnytimeTouchdownRankingsPage() {
             <div className="flex flex-col gap-7 lg:flex-row lg:items-center lg:justify-between">
               <div className="max-w-2xl">
                 <div className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-400">
-                  KofSports Premium
+                  KofSports Pro
                 </div>
 
                 <h2 className="mt-3 text-2xl font-black tracking-tight text-white md:text-3xl">
-                  See the bets we actually like.
+                  See what&apos;s driving every KOF TD ranking.
                 </h2>
 
                 <p className="mt-3 max-w-xl leading-7 text-slate-400">
-                  KOF Score is a research tool, not an automatic betting
-                  recommendation. Premium members get access to the actual
-                  plays selected by KofSports with analysis behind every pick.
+                  Unlock each player&apos;s KOF TD Score and the research
+                  behind it, including red-zone opportunity, usage,
+                  recent role, matchup, market strength and team
+                  scoring environment.
                 </p>
 
                 <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-300">
-                  <span>✓ Full Premium Picks</span>
-                  <span>✓ Analysis with every play</span>
-                  <span>✓ Results tracked publicly</span>
+                  <span>✓ KOF TD Score</span>
+                  <span>✓ Full score breakdown</span>
+                  <span>✓ Red-zone intelligence</span>
+                  <span>✓ Usage and role analysis</span>
+                  <span>✓ Matchup research</span>
+                  <span>✓ Full KofSports Pro suite</span>
                 </div>
+
+                <p className="mt-4 text-xs leading-5 text-slate-500">
+                  KofSports Premium Picks members receive KofSports Pro
+                  access at no additional cost.
+                </p>
               </div>
 
               <div className="flex shrink-0 flex-col gap-3 sm:flex-row lg:flex-col">
                 <a
-                  href="/free-week?source=td-rankings"
+                  href="/pro"
                   className="rounded-xl bg-emerald-500 px-6 py-3 text-center text-sm font-bold text-slate-950 transition hover:bg-emerald-400"
                 >
-                  Try Premium Free for 7 Days
+                  Unlock KofSports Pro
                 </a>
 
                 <a
-                  href="/premium-picks"
+                  href="/nfl-prop-research"
                   className="rounded-xl border border-slate-700 bg-slate-950 px-6 py-3 text-center text-sm font-bold text-white transition hover:border-slate-600 hover:bg-slate-800"
                 >
-                  View Premium Picks
+                  Explore Pro Research
                 </a>
               </div>
             </div>
           </div>
         </div>
+
       </section>
 
       <section className="border-t border-slate-800 bg-slate-900/40">
