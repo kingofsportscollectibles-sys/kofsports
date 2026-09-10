@@ -12,7 +12,7 @@ const proPlans = [
   {
     name: "KofSports Pro Monthly",
     duration: "Monthly",
-    price: "$19.99",
+    price: "$9.99",
     billingLabel: "per month",
     description:
       "Full access to KofSports Pro research tools with flexible monthly billing.",
@@ -34,7 +34,7 @@ const proPlans = [
   {
     name: "KofSports Pro Annual",
     duration: "Annual",
-    price: "$149",
+    price: "$79",
     billingLabel: "per year",
     description:
       "Our best value for bettors who want year-round access to the KofSports research platform.",

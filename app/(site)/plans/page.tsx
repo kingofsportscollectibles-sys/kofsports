@@ -111,7 +111,7 @@ const proPlans: Plan[] = [
   {
     name: "Pro Monthly",
     duration: "Monthly",
-    price: "$19.99",
+    price: "$9.99",
     billingLabel: "Renews monthly",
     description:
       "Get the KofSports research platform without a Premium Picks subscription.",
@@ -132,7 +132,7 @@ const proPlans: Plan[] = [
   {
     name: "Pro Annual",
     duration: "Annual",
-    price: "$149",
+    price: "$79",
     billingLabel: "Renews annually",
     description:
       "Year-round access to the KofSports research platform at our best Pro value.",
