@@ -2,15 +2,9 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import {
-  PortableText,
-  type PortableTextComponents,
-} from "@portabletext/react";
+import { PortableText, type PortableTextComponents } from "@portabletext/react";
 
-import {
-  getArticleBySlug,
-  getArticleSlugs,
-} from "@/sanity/lib/articles";
+import { getArticleBySlug, getArticleSlugs } from "@/sanity/lib/articles";
 import { urlForImage } from "@/sanity/lib/image";
 import type {
   Article,
@@ -64,14 +58,27 @@ function getArticleLabel(article: Article) {
 function getImageUrl(
   image: ArticleImage | null | undefined,
   width: number,
-  height?: number
+  height?: number,
 ) {
-  if (!image) {
+  const imageWithAsset = image as unknown as
+    | {
+        asset?: {
+          _ref?: string;
+        };
+        alt?: string;
+        caption?: string;
+      }
+    | null
+    | undefined;
+
+  if (!imageWithAsset?.asset?._ref) {
     return null;
   }
 
   try {
-    let builder = urlForImage(image).width(width);
+    let builder = urlForImage(
+      imageWithAsset as Parameters<typeof urlForImage>[0],
+    ).width(width);
 
     if (height) {
       builder = builder.height(height);
@@ -87,9 +94,7 @@ function getImageUrl(
 const portableTextComponents: PortableTextComponents = {
   block: {
     normal: ({ children }) => (
-      <p className="my-6 text-lg leading-8 text-zinc-300">
-        {children}
-      </p>
+      <p className="my-6 text-lg leading-8 text-zinc-300">{children}</p>
     ),
 
     h2: ({ children }) => (
@@ -132,14 +137,10 @@ const portableTextComponents: PortableTextComponents = {
 
   marks: {
     strong: ({ children }) => (
-      <strong className="font-extrabold text-white">
-        {children}
-      </strong>
+      <strong className="font-extrabold text-white">{children}</strong>
     ),
 
-    em: ({ children }) => (
-      <em className="italic text-zinc-200">{children}</em>
-    ),
+    em: ({ children }) => <em className="italic text-zinc-200">{children}</em>,
 
     underline: ({ children }) => (
       <span className="underline decoration-brand underline-offset-4">
@@ -222,27 +223,16 @@ export async function generateMetadata({
     };
   }
 
-  const imageUrl = getImageUrl(
-    article.featuredImage,
-    1200,
-    630
-  );
+  const imageUrl = getImageUrl(article.featuredImage, 1200, 630);
 
   return {
-    title:
-      article.metaTitle ||
-      article.seoTitle ||
-      article.title,
+    title: article.metaTitle || article.seoTitle || article.title,
 
     description:
-      article.metaDescription ||
-      article.seoDescription ||
-      article.excerpt,
+      article.metaDescription || article.seoDescription || article.excerpt,
 
     alternates: {
-      canonical:
-        article.canonicalUrl ||
-        `/blog/${article.slug}`,
+      canonical: article.canonicalUrl || `/blog/${article.slug}`,
     },
 
     robots: article.noIndex
@@ -257,21 +247,14 @@ export async function generateMetadata({
 
     openGraph: {
       type: "article",
-      title:
-        article.metaTitle ||
-        article.seoTitle ||
-        article.title,
+      title: article.metaTitle || article.seoTitle || article.title,
 
       description:
-        article.metaDescription ||
-        article.seoDescription ||
-        article.excerpt,
+        article.metaDescription || article.seoDescription || article.excerpt,
 
       publishedTime: article.publishedAt,
       authors: [article.author],
-      url:
-        article.canonicalUrl ||
-        `/blog/${article.slug}`,
+      url: article.canonicalUrl || `/blog/${article.slug}`,
 
       images: imageUrl
         ? [
@@ -279,37 +262,26 @@ export async function generateMetadata({
               url: imageUrl,
               width: 1200,
               height: 630,
-              alt:
-                article.featuredImage?.alt ||
-                article.title,
+              alt: article.featuredImage?.alt || article.title,
             },
           ]
         : [],
     },
 
     twitter: {
-      card: imageUrl
-        ? "summary_large_image"
-        : "summary",
+      card: imageUrl ? "summary_large_image" : "summary",
 
-      title:
-        article.metaTitle ||
-        article.seoTitle ||
-        article.title,
+      title: article.metaTitle || article.seoTitle || article.title,
 
       description:
-        article.metaDescription ||
-        article.seoDescription ||
-        article.excerpt,
+        article.metaDescription || article.seoDescription || article.excerpt,
 
       images: imageUrl ? [imageUrl] : [],
     },
   };
 }
 
-export default async function ArticlePage({
-  params,
-}: ArticlePageProps) {
+export default async function ArticlePage({ params }: ArticlePageProps) {
   const { slug } = await params;
   const article = await getArticleBySlug(slug);
 
@@ -317,11 +289,7 @@ export default async function ArticlePage({
     notFound();
   }
 
-  const heroImageUrl = getImageUrl(
-    article.featuredImage,
-    1600,
-    900
-  );
+  const heroImageUrl = getImageUrl(article.featuredImage, 1600, 900);
 
   const tags = article.tags ?? [];
   const body = article.body ?? [];
@@ -373,10 +341,7 @@ export default async function ArticlePage({
             <div className="relative aspect-[16/9] overflow-hidden rounded-2xl border border-white/10 bg-zinc-950">
               <Image
                 src={heroImageUrl}
-                alt={
-                  article.featuredImage?.alt ||
-                  article.title
-                }
+                alt={article.featuredImage?.alt || article.title}
                 fill
                 className="object-cover"
                 sizes="(max-width: 1200px) 100vw, 1200px"
@@ -394,10 +359,7 @@ export default async function ArticlePage({
       ) : null}
 
       <div className="mx-auto max-w-3xl px-5 py-14 lg:px-8 lg:py-20">
-        <PortableText
-          value={body}
-          components={portableTextComponents}
-        />
+        <PortableText value={body} components={portableTextComponents} />
 
         {tags.length > 0 ? (
           <div className="mt-14 border-t border-white/10 pt-8">
@@ -428,8 +390,8 @@ export default async function ArticlePage({
           </h2>
 
           <p className="mx-auto mt-4 max-w-xl leading-7 text-zinc-400">
-            Receive the complete betting card, full analysis,
-            transparent results, and direct access for questions.
+            Receive the complete betting card, full analysis, transparent
+            results, and direct access for questions.
           </p>
 
           <Link

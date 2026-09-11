@@ -1,8 +1,4 @@
-import {
-  defineArrayMember,
-  defineField,
-  defineType,
-} from "sanity";
+import { defineArrayMember, defineField, defineType } from "sanity";
 
 const sports = [
   { title: "General", value: "general" },
@@ -131,8 +127,7 @@ export const articleType = defineType({
       title: "Title",
       type: "string",
       group: "content",
-      validation: (rule) =>
-        rule.required().min(5).max(100),
+      validation: (rule) => rule.required().min(5).max(100),
     }),
 
     defineField({
@@ -140,8 +135,7 @@ export const articleType = defineType({
       title: "URL Slug",
       type: "slug",
       group: "content",
-      description:
-        "Click Generate to create the page URL from the title.",
+      description: "Click Generate to create the page URL from the title.",
       options: {
         source: "title",
         maxLength: 96,
@@ -157,8 +151,7 @@ export const articleType = defineType({
       group: "content",
       description:
         "A brief summary displayed on cards, previews, and search results.",
-      validation: (rule) =>
-        rule.required().min(40).max(240),
+      validation: (rule) => rule.required().min(40).max(240),
     }),
 
     defineField({
@@ -176,11 +169,7 @@ export const articleType = defineType({
           type: "string",
           description:
             "Describe the image for accessibility and search engines. Avoid phrases such as “image of” or “picture of.”",
-          validation: (rule) =>
-            rule
-              .required()
-              .min(10)
-              .max(160),
+          validation: (rule) => rule.required().min(10).max(160),
         }),
 
         defineField({
@@ -229,12 +218,7 @@ export const articleType = defineType({
                     validation: (rule) =>
                       rule.uri({
                         allowRelative: true,
-                        scheme: [
-                          "http",
-                          "https",
-                          "mailto",
-                          "tel",
-                        ],
+                        scheme: ["http", "https", "mailto", "tel"],
                       }),
                   },
                   {
@@ -261,38 +245,42 @@ export const articleType = defineType({
               type: "string",
               description:
                 "Describe the image for accessibility and search engines.",
-              validation: (rule) =>
-                rule
-                  .required()
-                  .min(10)
-                  .max(160),
+              validation: (rule) => rule.required().min(10).max(160),
             }),
-
             defineField({
               name: "caption",
               title: "Caption",
               type: "string",
             }),
           ],
+          validation: (rule) =>
+            rule.custom((value) => {
+              if (!value?.asset?._ref) {
+                return "An image must be uploaded before this block can be published.";
+              }
+
+              return true;
+            }),
         }),
       ],
+
       validation: (rule) => rule.required(),
     }),
 
-   defineField({
-  name: "faq",
-  title: "Frequently Asked Questions",
-  type: "array",
-  group: "content",
-  description:
-    "Add questions and answers that may be displayed on the article and used for FAQ structured data.",
-  of: [
-    defineArrayMember({
-      type: "faqItem",
+    defineField({
+      name: "faq",
+      title: "Frequently Asked Questions",
+      type: "array",
+      group: "content",
+      description:
+        "Add questions and answers that may be displayed on the article and used for FAQ structured data.",
+      of: [
+        defineArrayMember({
+          type: "faqItem",
+        }),
+      ],
+      validation: (rule) => rule.max(10),
     }),
-  ],
-  validation: (rule) => rule.max(10),
-}),
 
     defineField({
       name: "author",
@@ -308,8 +296,7 @@ export const articleType = defineType({
       title: "Category",
       type: "string",
       group: "distribution",
-      description:
-        "Primary SEO and editorial category for this article.",
+      description: "Primary SEO and editorial category for this article.",
       options: {
         list: categories,
         layout: "dropdown",
@@ -371,8 +358,7 @@ export const articleType = defineType({
       of: [
         defineArrayMember({
           type: "string",
-          validation: (rule) =>
-            rule.min(2).max(60),
+          validation: (rule) => rule.min(2).max(60),
         }),
       ],
       options: {
@@ -386,8 +372,7 @@ export const articleType = defineType({
       title: "Reading Level",
       type: "string",
       group: "distribution",
-      description:
-        "The intended experience level of the reader.",
+      description: "The intended experience level of the reader.",
       options: {
         list: readingLevels,
         layout: "dropdown",
@@ -408,8 +393,7 @@ export const articleType = defineType({
           to: [{ type: "article" }],
         }),
       ],
-      validation: (rule) =>
-        rule.unique().max(5),
+      validation: (rule) => rule.unique().max(5),
     }),
 
     defineField({
@@ -422,25 +406,24 @@ export const articleType = defineType({
       initialValue: false,
     }),
 
- defineField({
-  name: "publishedAt",
-  title: "Publication Date",
-  type: "datetime",
-  group: "distribution",
-  description:
-    "Future dates can later be used for scheduled publishing.",
-  initialValue: () => new Date().toISOString(),
-  validation: (rule) => rule.required(),
-}),
+    defineField({
+      name: "publishedAt",
+      title: "Publication Date",
+      type: "datetime",
+      group: "distribution",
+      description: "Future dates can later be used for scheduled publishing.",
+      initialValue: () => new Date().toISOString(),
+      validation: (rule) => rule.required(),
+    }),
 
-defineField({
-  name: "hideFromListingsAt",
-  title: "Hide From Listings At",
-  type: "datetime",
-  group: "distribution",
-  description:
-    "Optional. After this time, the article disappears from KofSports listings but remains live and indexable at its URL. Leave blank for evergreen content.",
-}),
+    defineField({
+      name: "hideFromListingsAt",
+      title: "Hide From Listings At",
+      type: "datetime",
+      group: "distribution",
+      description:
+        "Optional. After this time, the article disappears from KofSports listings but remains live and indexable at its URL. Leave blank for evergreen content.",
+    }),
 
     defineField({
       name: "featured",
@@ -457,10 +440,8 @@ defineField({
       title: "Estimated Reading Time",
       type: "number",
       group: "distribution",
-      description:
-        "Estimated reading time in minutes.",
-      validation: (rule) =>
-        rule.integer().min(1).max(60),
+      description: "Estimated reading time in minutes.",
+      validation: (rule) => rule.integer().min(1).max(60),
     }),
 
     defineField({
@@ -501,10 +482,8 @@ defineField({
       title: "Primary Keyword",
       type: "string",
       group: "seo",
-      description:
-        "The main search query this article is intended to target.",
-      validation: (rule) =>
-        rule.required().min(2).max(100),
+      description: "The main search query this article is intended to target.",
+      validation: (rule) => rule.required().min(2).max(100),
     }),
 
     defineField({
@@ -517,8 +496,7 @@ defineField({
       of: [
         defineArrayMember({
           type: "string",
-          validation: (rule) =>
-            rule.min(2).max(100),
+          validation: (rule) => rule.min(2).max(100),
         }),
       ],
       options: {
@@ -596,15 +574,7 @@ defineField({
       media: "featuredImage",
     },
 
-    prepare({
-      title,
-      author,
-      category,
-      sport,
-      contentType,
-      isPremium,
-      media,
-    }) {
+    prepare({ title, author, category, sport, contentType, isPremium, media }) {
       const classification =
         category ??
         sport?.toUpperCase() ??
@@ -612,9 +582,7 @@ defineField({
 
       const subtitle = [
         isPremium ? "VIP" : "FREE",
-        classification
-          ?.replaceAll("-", " ")
-          .toUpperCase(),
+        classification?.replaceAll("-", " ").toUpperCase(),
         author ? `By ${author}` : null,
       ]
         .filter(Boolean)
