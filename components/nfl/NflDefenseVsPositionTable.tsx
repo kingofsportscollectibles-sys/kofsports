@@ -235,19 +235,19 @@ function formatValue(value: number | string, decimals = 1) {
 
 function getRankClass(rank: number) {
   if (rank <= 5) {
-    return "border-red-500/30 bg-red-500/10 text-red-300";
-  }
-
-  if (rank <= 12) {
-    return "border-orange-500/30 bg-orange-500/10 text-orange-300";
-  }
-
-  if (rank >= 28) {
     return "border-emerald-500/30 bg-emerald-500/10 text-emerald-300";
   }
 
-  if (rank >= 21) {
+  if (rank <= 12) {
     return "border-green-500/20 bg-green-500/5 text-green-300";
+  }
+
+  if (rank >= 28) {
+    return "border-red-500/30 bg-red-500/10 text-red-300";
+  }
+
+  if (rank >= 21) {
+    return "border-orange-500/30 bg-orange-500/10 text-orange-300";
   }
 
   return "border-white/10 bg-white/5 text-zinc-300";
@@ -345,7 +345,7 @@ export default function NflDefenseVsPositionTable({
             Position
           </div>
 
-          <div className="inline-flex rounded-xl border border-white/10 bg-zinc-950 p-1">
+          <div className="inline-flex rounded-xl border border-zinc-800 bg-zinc-950/70 p-1">
             {POSITION_ORDER.map((item) => {
               const active = item === position;
 
@@ -386,14 +386,14 @@ export default function NflDefenseVsPositionTable({
             id="dvp-season"
             value={season}
             disabled
-            className="min-w-[110px] rounded-lg border border-white/10 bg-zinc-950 px-3 py-2 text-sm font-semibold text-white outline-none disabled:cursor-default disabled:opacity-100"
+            className="min-w-[110px] rounded-lg border border-zinc-800 bg-zinc-950/70 px-3 py-2 text-sm font-semibold text-white outline-none disabled:cursor-default disabled:opacity-100"
           >
             <option value={season}>{season}</option>
           </select>
         </div>
       </div>
 
-      <div className="mb-4 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-zinc-400">
+      <div className="mb-4 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.05] px-4 py-3 text-sm text-zinc-400">
         <span className="font-semibold text-white">
           Ranking guide:
         </span>{" "}
@@ -403,11 +403,11 @@ export default function NflDefenseVsPositionTable({
         toughest matchup.
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-white/10 bg-zinc-950">
+      <div className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950/70">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[780px] border-collapse text-left">
             <thead>
-              <tr className="border-b border-white/10 bg-white/[0.03]">
+              <tr className="border-b border-zinc-800 bg-zinc-900/70">
                 <th className="sticky left-0 z-20 bg-zinc-950 px-4 py-3 text-xs font-semibold uppercase tracking-wider text-zinc-500">
                   <button
                     type="button"
