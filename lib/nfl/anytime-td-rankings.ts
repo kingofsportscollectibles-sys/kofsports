@@ -135,7 +135,12 @@ export async function getNflAnytimeTdRankings(): Promise<
   }
 
   if (oddsError) {
-    console.error("Failed to load NFL anytime TD sportsbook prices:", oddsError);
+    console.error("Failed to load NFL anytime TD sportsbook prices:", {
+      message: oddsError.message,
+      details: oddsError.details,
+      hint: oddsError.hint,
+      code: oddsError.code,
+    });
   }
 
   const bestBookmakerByPlayer = new Map<

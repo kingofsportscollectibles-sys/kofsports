@@ -231,9 +231,9 @@ export default function NflAnytimeTdRankingsExplorer({
       ) : null}
 
       <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[820px]">
-          <thead className="border-b border-slate-800 bg-slate-950/70">
+        <div className="overflow-visible md:overflow-x-auto">
+          <table className="w-full md:min-w-[820px]">
+          <thead className="hidden border-b border-slate-800 bg-slate-950/70 md:table-header-group">
   <tr>
     <th colSpan={7} className="p-0">
       <div className="grid grid-cols-[76px_minmax(190px,1fr)_140px_130px_120px_120px_110px] items-center text-left text-xs font-bold uppercase tracking-wider text-slate-500">
@@ -278,8 +278,8 @@ export default function NflAnytimeTdRankingsExplorer({
                 return (
                   <tr key={rowKey} className="group">
                     <td colSpan={7} className="p-0">
-                      <div className="grid grid-cols-[76px_minmax(190px,1fr)_140px_130px_120px_120px_110px] items-center">
-                        <div className="px-5 py-5 text-lg font-black tabular-nums text-slate-500">
+                      <div className="grid grid-cols-3 items-center md:grid-cols-[76px_minmax(190px,1fr)_140px_130px_120px_120px_110px]">
+                        <div className="px-4 pb-2 pt-4 text-lg font-black tabular-nums text-slate-500 md:px-5 md:py-5">
                           #{overallRank}
                         </div>
 
@@ -343,7 +343,7 @@ export default function NflAnytimeTdRankingsExplorer({
                           </div>
                         </div>
 
-                        <div className="px-5 py-5 text-right">
+                        <div className="col-span-3 border-t border-slate-800/70 px-4 py-4 text-center md:col-span-1 md:border-t-0 md:px-5 md:py-5 md:text-right">
                           {hasProAccess ? (
                             <button
                               type="button"
@@ -352,14 +352,14 @@ export default function NflAnytimeTdRankingsExplorer({
                                   expanded ? null : rowKey
                                 )
                               }
-                              className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-bold text-slate-300 transition hover:border-emerald-500/50 hover:text-white"
+                              className="w-full rounded-lg border border-slate-700 px-4 py-3 text-center text-sm font-bold text-slate-300 transition hover:border-emerald-500/50 hover:text-white md:w-auto md:px-3 md:py-2 md:text-xs"
                             >
                               {expanded ? "Close" : "Breakdown"}
                             </button>
                           ) : (
                             <a
                               href="/pro"
-                              className="inline-flex rounded-lg border border-slate-700 px-3 py-2 text-xs font-bold text-slate-400 transition hover:border-emerald-500/50 hover:text-emerald-400"
+                              className="inline-flex w-full items-center justify-center rounded-lg border border-slate-700 px-4 py-3 text-sm font-bold text-slate-400 transition hover:border-emerald-500/50 hover:text-emerald-400 md:w-auto md:px-3 md:py-2 md:text-xs"
                             >
                               🔒 Research
                             </a>
