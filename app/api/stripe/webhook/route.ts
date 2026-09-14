@@ -260,6 +260,49 @@ async function recordTransaction({
   }
 }
 
+async function recordStripeSale({
+  eventId,
+  profileId,
+  customerId,
+  subscriptionId,
+  checkoutSessionId,
+  priceId,
+  amount,
+  currency,
+  paymentStatus,
+  purchasedAt,
+}: {
+  eventId: string;
+  profileId: string;
+  customerId: string | null;
+  subscriptionId: string | null;
+  checkoutSessionId: string | null;
+  priceId: string;
+  amount: number;
+  currency: string;
+  paymentStatus: string;
+  purchasedAt: string;
+}): Promise<void> {
+  const supabase = getSupabaseAdmin();
+
+  const { error } = await supabase.rpc("record_stripe_sale", {
+    p_profile_id: profileId,
+    p_stripe_event_id: eventId,
+    p_stripe_customer_id: customerId,
+    p_stripe_subscription_id: subscriptionId,
+    p_stripe_checkout_session_id: checkoutSessionId,
+    p_stripe_price_id: priceId,
+    p_amount_cents: amount,
+    p_currency: currency,
+    p_payment_status: paymentStatus,
+    p_purchased_at: purchasedAt,
+  });
+
+  if (error) {
+    throw new Error(`Unable to record Stripe sale: ${error.message}`);
+  }
+}
+
 async function claimWebhookEvent(event: Stripe.Event): Promise<boolean> {
   const supabase = getSupabaseAdmin();
 
@@ -527,6 +570,31 @@ console.log({
     await syncSubscription(subscription);
 
     if (isProSubscription) {
+      const priceId =
+        getSubscriptionPriceId(subscription) ??
+        metadataPriceId;
+
+      if (!priceId) {
+        throw new Error(
+          `No Stripe Price ID found for Pro Checkout Session ${session.id}.`,
+        );
+      }
+
+      if (session.payment_status === "paid") {
+        await recordStripeSale({
+          eventId: event.id,
+          profileId,
+          customerId: objectId(subscription.customer),
+          subscriptionId: subscription.id,
+          checkoutSessionId: session.id,
+          priceId,
+          amount: session.amount_total ?? 0,
+          currency: session.currency ?? "usd",
+          paymentStatus: session.payment_status,
+          purchasedAt: new Date(event.created * 1000).toISOString(),
+        });
+      }
+
       return;
     }
 
@@ -601,6 +669,45 @@ async function handleInvoicePaid(
   await syncSubscription(subscription);
 
   if (isProSubscription) {
+    /*
+     * The initial Pro payment is recorded by
+     * checkout.session.completed. Record only later paid invoices here.
+     */
+    if (invoice.billing_reason === "subscription_create") {
+      return;
+    }
+
+    const profileId = await findProfileIdByStripeData({
+      profileId: subscription.metadata.profile_id ?? null,
+      customerId: objectId(subscription.customer),
+      subscriptionId: subscription.id,
+    });
+
+    if (!profileId) {
+      throw new Error(`No profile found for paid Pro invoice ${invoice.id}.`);
+    }
+
+    const priceId = getSubscriptionPriceId(subscription);
+
+    if (!priceId) {
+      throw new Error(
+        `No Stripe Price ID found for Pro invoice ${invoice.id}.`,
+      );
+    }
+
+    await recordStripeSale({
+      eventId: event.id,
+      profileId,
+      customerId: objectId(subscription.customer),
+      subscriptionId: subscription.id,
+      checkoutSessionId: null,
+      priceId,
+      amount: invoice.amount_paid,
+      currency: invoice.currency,
+      paymentStatus: invoice.status ?? "paid",
+      purchasedAt: new Date(event.created * 1000).toISOString(),
+    });
+
     return;
   }
 
