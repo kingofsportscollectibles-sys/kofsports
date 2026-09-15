@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { importNflPlayerStats } from "@/lib/nfl/import-player-stats";
 
+import { importNflPlayerGameUsage } from "@/lib/nfl/import-player-game-usage";
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -37,12 +39,14 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const result = await importNflPlayerStats(2026);
+    const playerStats = await importNflPlayerStats(2026);
+const playerGameUsage = await importNflPlayerGameUsage(2026);
 
-    return NextResponse.json({
-      ok: true,
-      ...result,
-    });
+return NextResponse.json({
+  ok: true,
+  playerStats,
+  playerGameUsage,
+});
   } catch (error) {
     console.error("NFL results cron failed:", error);
 
