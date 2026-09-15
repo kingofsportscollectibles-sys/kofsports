@@ -76,18 +76,12 @@ export default async function BlogPage() {
             ))}
           </div>
 
-           {featuredFreeArticle ? (
-            <FeaturedArticle
-              article={featuredFreeArticle}
-              priority
-            />
-          ) : (
-            <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.025] p-8">
-              <p className="text-zinc-400">
-                The first KofSports article is coming soon.
-              </p>
-            </div>
-          )}
+           {featuredFreeArticle && (
+  <FeaturedArticle
+    article={featuredFreeArticle}
+    priority
+  />
+)}
 
           {latestArticles.length > 0 ? (
             <div className="mt-6 grid gap-6 lg:grid-cols-2">
