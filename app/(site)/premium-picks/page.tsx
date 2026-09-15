@@ -235,8 +235,8 @@ function LockedPremiumCard({
 function UnlockedPremiumCard({ pick }: { pick: PremiumPick }) {
   return (
     <article className="overflow-hidden rounded-3xl border border-amber-300 bg-white shadow-sm">
-      <div className="border-b border-amber-200 bg-amber-50 px-6 py-5 sm:px-8">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="border-b border-amber-200 bg-amber-50 px-4 py-3 sm:px-8 sm:py-5">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
           <div className="flex flex-wrap items-center gap-2">
             <span className="rounded-full bg-black px-3 py-1 text-xs font-black uppercase tracking-[0.16em] text-white">
               {pick.sport ?? "Sports"}
@@ -253,23 +253,23 @@ function UnlockedPremiumCard({ pick }: { pick: PremiumPick }) {
             </span>
           </div>
 
-          <p className="text-sm font-semibold text-gray-600">
+          <p className="text-xs font-semibold text-gray-600 sm:text-sm">
             {formatGameTime(pick.game_time)}
           </p>
         </div>
       </div>
 
-      <div className="px-6 py-7 sm:px-8 sm:py-8">
-        <p className="text-sm font-bold uppercase tracking-[0.16em] text-gray-500">
+      <div className="px-4 py-4 sm:px-8 sm:py-8">
+        <p className="text-xs font-bold uppercase tracking-[0.14em] text-gray-500 sm:text-sm sm:tracking-[0.16em]">
           {pick.matchup ?? "Premium matchup"}
         </p>
 
-        <div className="mt-5">
+        <div className="mt-3 sm:mt-5">
           <p className="text-xs font-black uppercase tracking-[0.18em] text-amber-700">
             Official Selection
           </p>
 
-          <h2 className="mt-2 text-3xl font-black tracking-tight text-black">
+          <h2 className="mt-1 text-2xl font-black tracking-tight text-black sm:mt-2 sm:text-3xl">
             {pick.selection}{" "}
             <span className="text-amber-700">
               {formatOdds(pick.odds)}
@@ -277,49 +277,49 @@ function UnlockedPremiumCard({ pick }: { pick: PremiumPick }) {
           </h2>
         </div>
 
-        <div className="mt-7 grid gap-3 sm:grid-cols-3">
-          <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
-            <p className="text-xs font-bold uppercase tracking-[0.14em] text-gray-500">
+        <section className="mt-4 rounded-xl border border-gray-200 bg-gray-50 p-4 sm:mt-7 sm:rounded-2xl sm:p-6">
+          <p className="text-[11px] font-black uppercase tracking-[0.16em] text-amber-700 sm:text-xs sm:tracking-[0.18em]">
+            KofSports Analysis
+          </p>
+
+          <div className="mt-2 whitespace-pre-line text-sm leading-6 text-gray-700 sm:mt-4 sm:text-base sm:leading-8">
+            {pick.analysis ?? "Full analysis will be added shortly."}
+          </div>
+        </section>
+
+              <div className="mt-3 grid grid-cols-2 gap-2 sm:mt-5 sm:grid-cols-3 sm:gap-3">
+          <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 sm:rounded-2xl sm:p-4">
+            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-gray-500 sm:text-xs sm:tracking-[0.14em]">
               Confidence
             </p>
 
-            <p className="mt-2 text-lg tracking-wider text-amber-500">
+            <p className="mt-1 text-base tracking-wider text-amber-500 sm:mt-2 sm:text-lg">
               {confidenceStars(pick.confidence)}
             </p>
 
-            <p className="mt-1 text-sm font-semibold text-gray-600">
+            <p className="text-xs font-semibold text-gray-600 sm:mt-1 sm:text-sm">
               {pick.confidence ?? 3}/5
             </p>
           </div>
 
-          <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
-            <p className="text-xs font-bold uppercase tracking-[0.14em] text-gray-500">
+          <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 sm:rounded-2xl sm:p-4">
+            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-gray-500 sm:text-xs sm:tracking-[0.14em]">
               Recommended Risk
             </p>
 
-            <p className="mt-2 text-lg font-black text-black">
+            <p className="mt-1 text-base font-black text-black sm:mt-2 sm:text-lg">
               {formatUnits(pick.units)}
             </p>
           </div>
         </div>
 
-        <section className="mt-7 rounded-2xl border border-gray-200 bg-gray-50 p-5 sm:p-6">
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-amber-700">
-            KofSports Analysis
-          </p>
-
-          <div className="mt-4 whitespace-pre-line text-base leading-8 text-gray-700">
-            {pick.analysis ?? "Full analysis will be added shortly."}
-          </div>
-        </section>
-
         {pick.game_notes && (
-          <section className="mt-5 rounded-2xl border border-gray-200 p-5 sm:p-6">
+          <section className="mt-4 rounded-xl border border-gray-200 p-4 sm:mt-5 sm:rounded-2xl sm:p-6">
             <p className="text-xs font-black uppercase tracking-[0.18em] text-gray-500">
               Game Notes
             </p>
 
-            <div className="mt-4 whitespace-pre-line text-sm leading-7 text-gray-700">
+            <div className="mt-2 whitespace-pre-line text-sm leading-6 text-gray-700 sm:mt-4 sm:leading-7">
               {pick.game_notes}
             </div>
           </section>
