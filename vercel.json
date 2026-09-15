@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/cron/nfl-prop-lines",
-      "schedule": "0 14 * * 1,4,0"
+      "schedule": "0 14 * * 1,2,4,0"
     },
     {
       "path": "/api/cron/nfl-anytime-td",
