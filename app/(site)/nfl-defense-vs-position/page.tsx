@@ -19,8 +19,9 @@ async function getDefenseVsPositionData() {
   const supabase = await createClient();
 
   const { data, error } = await supabase
-    .from("nfl_defense_vs_position_2025")
+    .from("nfl_defense_vs_position")
     .select("*")
+    .eq("season", 2026)
     .order("position")
     .order("ppr_rank");
 
@@ -61,7 +62,7 @@ export default async function NflDefenseVsPositionPage() {
       <NflDefenseVsPositionTable
         rows={rows}
         initialPosition="QB"
-        season={2025}
+        season={2026}
       />
 
       <section className="mt-12 grid gap-6 lg:grid-cols-2">

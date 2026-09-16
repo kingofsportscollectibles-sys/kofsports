@@ -1,20 +1,19 @@
+import Link from "next/link";
+
+import { ActiveMembersTable } from "@/components/admin/active-members-table";
 import { ActivityFeed } from "@/components/admin/activity-feed";
-import { ConversionCard } from "@/components/admin/conversion-card";
+import { BusinessKpis } from "@/components/admin/business-kpis";
 import { DashboardHeader } from "@/components/admin/dashboard-header";
 import { GoalsBanner } from "@/components/admin/goals-banner";
-import { MarketingFunnel } from "@/components/admin/marketing-funnel";
-import { MemberGrowthChart } from "@/components/admin/member-growth-chart";
-import { MembersCard } from "@/components/admin/members-card";
-import { MRRCard } from "@/components/admin/mrr-card";
-import { NotificationStatus } from "@/components/admin/notification-status";
-import { QuickActions } from "@/components/admin/quick-actions";
-import { RecentSignups } from "@/components/admin/recent-signups";
-import { RetentionCard } from "@/components/admin/retention-card";
+import { RecentlyExpiredMembers } from "@/components/admin/recently-expired-members";
 import { RevenueChart } from "@/components/admin/revenue-chart";
 import { SystemHealth } from "@/components/admin/system-health";
 import { TodaysPriorities } from "@/components/admin/todays-priorities";
 import { TopSports } from "@/components/admin/top-sports";
 import { getAdminDashboardData } from "@/lib/admin/dashboard";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 function formatCurrency(amountInCents: number) {
   return new Intl.NumberFormat("en-US", {
@@ -37,7 +36,9 @@ export default async function AdminDashboardPage() {
       label: "Monthly Revenue",
       current: data.currentMonthRevenueInCents,
       target: data.goals.monthlyRevenueGoalInCents,
-      displayCurrent: formatCurrency(data.currentMonthRevenueInCents),
+      displayCurrent: formatCurrency(
+        data.currentMonthRevenueInCents,
+      ),
       displayTarget: formatCurrency(
         data.goals.monthlyRevenueGoalInCents,
       ),
@@ -50,65 +51,88 @@ export default async function AdminDashboardPage() {
   ];
 
   return (
-    <main className="mx-auto max-w-7xl px-6 py-12">
+    <main className="mx-auto max-w-[1500px] px-4 py-10 sm:px-6">
       <DashboardHeader adminName={data.adminName} />
 
-      <div className="mt-10">
-   <GoalsBanner
-  goals={goals}
-  premiumMembersGoal={data.goals.premiumMembersGoal}
-  monthlyRevenueGoalInCents={
-    data.goals.monthlyRevenueGoalInCents
-  }
-  paidSignupsGoal={data.goals.paidSignupsGoal}
-/>
+      <div className="mt-8 flex flex-col gap-4 rounded-2xl border border-slate-800 bg-slate-950/70 p-5 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-400">
+            KofSports Business Dashboard
+          </p>
+
+          <h1 className="mt-1 text-2xl font-bold text-white">
+            Revenue, memberships and growth
+          </h1>
+
+          <p className="mt-1 text-sm text-slate-400">
+            Stripe and manual sales now roll into one business view.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/admin/sales/new"
+            className="rounded-lg bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400"
+          >
+            Record Sale
+          </Link>
+
+          <Link
+            href="/admin/sales"
+            className="rounded-lg border border-slate-700 bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:border-slate-600 hover:bg-slate-800"
+          >
+            View Sales Ledger
+          </Link>
+        </div>
+      </div>
+
+      <div className="mt-6">
+        <GoalsBanner
+          goals={goals}
+          premiumMembersGoal={data.goals.premiumMembersGoal}
+          monthlyRevenueGoalInCents={
+            data.goals.monthlyRevenueGoalInCents
+          }
+          paidSignupsGoal={data.goals.paidSignupsGoal}
+        />
+      </div>
+
+      <div className="mt-6">
+        <BusinessKpis
+          revenueTodayInCents={data.revenueTodayInCents}
+          currentMonthRevenueInCents={
+            data.currentMonthRevenueInCents
+          }
+          yearToDateRevenueInCents={data.yearToDateRevenueInCents}
+          lifetimeRevenueInCents={data.lifetimeRevenueInCents}
+          stripeRevenueInCents={data.stripeRevenueInCents}
+          manualRevenueInCents={data.manualRevenueInCents}
+          activePremiumMembers={data.activePremiumMembers}
+          activeProMembers={data.activeProMembers}
+        />
+      </div>
+
+      <div className="mt-6">
+        <RevenueChart data={data.revenueByMonth} />
+      </div>
+
+      <div className="mt-6">
+        <ActiveMembersTable members={data.activeMembers} />
+      </div>
+
+      <div className="mt-6">
+        <RecentlyExpiredMembers
+          members={data.recentlyExpiredMembers}
+        />
       </div>
 
       <div className="mt-6">
         <TodaysPriorities items={data.priorities} />
       </div>
 
-      <div className="mt-6 grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
-        <MRRCard
-          amountInCents={data.mrrInCents}
-          revenueChangePercent={data.revenueChangePercent}
-        />
-
-        <MembersCard
-          activeMembers={data.activePremiumMembers}
-          newThisMonth={data.newPremiumMembersThisMonth}
-        />
-
-        <ConversionCard
-          conversionRate={data.accountToPremiumConversion}
-          activeMembers={data.activePremiumMembers}
-          totalAccounts={data.totalAccounts}
-        />
-
-        <RetentionCard
-          renewalRate={data.renewalRate}
-          churnRate={data.churnRate}
-        />
-      </div>
-
-      <div className="mt-6 grid gap-6 lg:grid-cols-2">
-        <RevenueChart data={data.revenueByMonth} />
-        <MemberGrowthChart data={data.memberGrowthByMonth} />
-      </div>
-
-      <div className="mt-6 grid gap-6 lg:grid-cols-[1.35fr_0.65fr]">
-        <RecentSignups signups={data.recentSignups} />
-        <MarketingFunnel stages={data.funnel} />
-      </div>
-
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         <TopSports sports={data.topSports} />
         <ActivityFeed items={data.recentActivity} />
-      </div>
-
-      <div className="mt-6 grid gap-6 lg:grid-cols-2">
-        <NotificationStatus data={data.notifications} />
-        <QuickActions />
       </div>
 
       <div className="mt-6">

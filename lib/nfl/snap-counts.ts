@@ -47,7 +47,7 @@ function toNumber(value: number | string | null): number | null {
 }
 
 export async function getNflSnapCounts(
-  season = 2025,
+  season = 2026,
 ): Promise<NflSnapCountPlayer[]> {
   const supabase = await createClient();
 

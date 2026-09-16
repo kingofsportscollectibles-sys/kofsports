@@ -256,7 +256,7 @@ function getRankClass(rank: number) {
 export default function NflDefenseVsPositionTable({
   rows,
   initialPosition = "QB",
-  season = 2025,
+  season = 2026,
 }: Props) {
   const [position, setPosition] =
     useState<DvpPosition>(initialPosition);
@@ -374,24 +374,17 @@ export default function NflDefenseVsPositionTable({
           </div>
         </div>
 
-        <div>
-          <label
-            htmlFor="dvp-season"
-            className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500"
-          >
-            Season
-          </label>
+<div>
+  <div className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
+    Season Data
+  </div>
 
-          <select
-            id="dvp-season"
-            value={season}
-            disabled
-            className="min-w-[110px] rounded-lg border border-zinc-800 bg-zinc-950/70 px-3 py-2 text-sm font-semibold text-white outline-none disabled:cursor-default disabled:opacity-100"
-          >
-            <option value={season}>{season}</option>
-          </select>
-        </div>
-      </div>
+  <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/[0.06] px-4 py-2 text-sm font-semibold text-white">
+    {season} NFL Season
+  </div>
+</div>
+
+</div>
 
       <div className="mb-4 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.05] px-4 py-3 text-sm text-zinc-400">
         <span className="font-semibold text-white">

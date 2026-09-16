@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 };
 
 export default async function NflRedZoneTargetsPage() {
-  const players = await getNflRedZoneTargets(2025);
+  const players = await getNflRedZoneTargets(2026);
 
   return (
     <main className="min-h-screen bg-slate-950 text-white">

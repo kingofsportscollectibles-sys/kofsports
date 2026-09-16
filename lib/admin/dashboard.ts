@@ -2,6 +2,9 @@ import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
 import { createClient as createServerClient } from "@/lib/supabase/server";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export type DashboardMetric = {
   label: string;
   value: string;
@@ -16,6 +19,27 @@ export type RecentSignup = {
   joinedAt: string;
   expiresAt: string | null;
   amountInCents: number;
+};
+
+
+export type BusinessMember = {
+  id: string;
+  userId: string;
+  name: string;
+  email: string | null;
+  product: "Premium Picks" | "KofSports Pro";
+  plan: string;
+  source: string;
+  paymentMethod: string;
+  amountInCents: number;
+  startedAt: string | null;
+  expiresAt: string | null;
+  status: string;
+};
+
+export type ExpiredMember = BusinessMember & {
+  expiredAt: string;
+  daysSinceExpiration: number;
 };
 
 export type TopSport = {
@@ -76,9 +100,25 @@ export type PriorityItem = {
 export type AdminDashboardData = {
   adminName: string;
   activePremiumMembers: number;
+  activeProMembers: number;
+
+  activeMembers: BusinessMember[];
+
+  recentlyExpiredMembers: ExpiredMember[];
+
   newPremiumMembersThisMonth: number;
   mrrInCents: number;
+  revenueTodayInCents: number;
+
   currentMonthRevenueInCents: number;
+
+  yearToDateRevenueInCents: number;
+
+  lifetimeRevenueInCents: number;
+
+  stripeRevenueInCents: number;
+
+  manualRevenueInCents: number;
   previousMonthRevenueInCents: number;
   revenueChangePercent: number | null;
   renewalRate: number | null;
@@ -130,11 +170,52 @@ type MembershipTransaction = {
 type ProfileRow = {
   id: string;
   display_name: string | null;
+  email: string | null;
   membership: string | null;
   subscription_status: string | null;
   membership_expires_at: string | null;
   created_at: string | null;
   stripe_subscription_id: string | null;
+};
+
+type DashboardOrderItem = {
+  product_id: string | null;
+  product_name: string | null;
+  quantity: number;
+  unit_price: number | string;
+  metadata: Record<string, unknown> | null;
+};
+
+type DashboardPayment = {
+  method: string;
+  processor: string | null;
+  status: string;
+  amount: number | string;
+};
+
+type DashboardOrder = {
+  id: string;
+  user_id: string | null;
+  customer_name: string | null;
+  customer_email: string | null;
+  status: string;
+  source: string;
+  total: number | string;
+  sold_at: string;
+  metadata: Record<string, unknown> | null;
+  order_items: DashboardOrderItem[] | null;
+  payments: DashboardPayment[] | null;
+};
+
+type EntitlementRow = {
+  id: string;
+  user_id: string;
+  product: string;
+  status: string;
+  starts_at: string;
+  expires_at: string | null;
+  stripe_subscription_id: string | null;
+  stripe_price_id: string | null;
 };
 
 type PickRow = {
@@ -174,6 +255,51 @@ function getSupabaseAdmin() {
 
 function normalize(value: string | null | undefined) {
   return value?.trim().toLowerCase() ?? "";
+}
+
+function toNumber(value: number | string | null | undefined) {
+  const parsed = Number(value ?? 0);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function dollarsToCents(value: number | string | null | undefined) {
+  return Math.round(toNumber(value) * 100);
+}
+
+function isPaidOrder(order: DashboardOrder) {
+  const isTest = order.metadata?.is_test === true;
+
+  return (
+    !isTest &&
+    ["paid", "partially_refunded"].includes(normalize(order.status))
+  );
+}
+
+function getOrderPaymentMethod(order: DashboardOrder) {
+  return order.payments?.[0]?.method?.trim() || "unknown";
+}
+
+function getOrderProductName(order: DashboardOrder) {
+  return order.order_items?.[0]?.product_name?.trim() || "Membership";
+}
+
+function getLatestOrderForUser(
+  orders: DashboardOrder[],
+  userId: string,
+  product: "premium" | "pro",
+) {
+  return orders.find((order) => {
+    if (order.user_id !== userId || !isPaidOrder(order)) return false;
+
+    const item = order.order_items?.[0];
+    const name = normalize(item?.product_name);
+
+    if (product === "pro") {
+      return name.includes("kofsports pro");
+    }
+
+    return name.includes("premium");
+  });
 }
 
 function isPaidTransaction(transaction: MembershipTransaction) {
@@ -266,6 +392,7 @@ function monthKey(date: Date) {
 function monthLabel(date: Date) {
   return new Intl.DateTimeFormat("en-US", {
     month: "short",
+    timeZone: "UTC",
   }).format(date);
 }
 
@@ -288,16 +415,25 @@ function isTransactionActive(
 }
 
 function isProfileActive(profile: ProfileRow, now: Date) {
-  if (!profile.membership_expires_at) return false;
-  if (new Date(profile.membership_expires_at) <= now) return false;
-
   const membership = normalize(profile.membership);
   const status = normalize(profile.subscription_status);
 
-  return (
-    membership === "premium" ||
-    ["active", "trialing", "past_due", "one_time_active"].includes(status)
-  );
+  if (membership !== "premium") {
+    return false;
+  }
+
+  if (
+    profile.membership_expires_at &&
+    new Date(profile.membership_expires_at) <= now
+  ) {
+    return false;
+  }
+
+  if (["canceled", "expired"].includes(status)) {
+    return false;
+  }
+
+  return true;
 }
 
 function isGradedStatus(status: string | null) {
@@ -336,6 +472,8 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
     adminProfileResponse,
     profilesResponse,
     transactionsResponse,
+    ordersResponse,
+    entitlementsResponse,
     picksResponse,
     goalsResponse,
   ] = await Promise.all([
@@ -350,7 +488,7 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
     adminSupabase
       .from("profiles")
       .select(
-        "id, display_name, membership, subscription_status, membership_expires_at, created_at, stripe_subscription_id",
+        "id, display_name, email, membership, subscription_status, membership_expires_at, created_at, stripe_subscription_id",
       )
       .order("created_at", { ascending: false }),
 
@@ -373,6 +511,42 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
         `,
       )
       .order("created_at", { ascending: false }),
+
+    adminSupabase
+      .from("orders")
+      .select(`
+        id,
+        user_id,
+        customer_name,
+        customer_email,
+        status,
+        source,
+        total,
+        sold_at,
+        metadata,
+        order_items (
+          product_id,
+          product_name,
+          quantity,
+          unit_price,
+          metadata
+        ),
+        payments (
+          method,
+          processor,
+          status,
+          amount
+        )
+      `)
+      .order("sold_at", { ascending: false }),
+
+    adminSupabase
+      .from("user_entitlements")
+      .select(
+        "id, user_id, product, status, starts_at, expires_at, stripe_subscription_id, stripe_price_id",
+      )
+      .eq("product", "kofsports_pro")
+      .order("starts_at", { ascending: false }),
 
     adminSupabase
       .from("vip_picks")
@@ -401,6 +575,17 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
   if (transactionsResponse.error) {
     console.error("Unable to load transactions:", transactionsResponse.error);
   }
+  if (ordersResponse.error) {
+    console.error("Unable to load orders:", ordersResponse.error);
+  }
+
+  if (entitlementsResponse.error) {
+    console.error(
+      "Unable to load KofSports Pro entitlements:",
+      entitlementsResponse.error,
+    );
+  }
+
   if (picksResponse.error) {
     console.error("Unable to load picks:", picksResponse.error);
   }
@@ -409,6 +594,13 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
   }
 
   const profiles = (profilesResponse.data as ProfileRow[] | null) ?? [];
+
+  const orders =
+    (ordersResponse.data as unknown as DashboardOrder[] | null) ?? [];
+
+  const entitlements =
+    (entitlementsResponse.data as EntitlementRow[] | null) ?? [];
+
   const transactions =
     (transactionsResponse.data as unknown as MembershipTransaction[] | null) ?? [];
   const picks = (picksResponse.data as PickRow[] | null) ?? [];
@@ -437,26 +629,293 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
 
   const activePremiumMembers = profileActiveIds.size;
 
-  const currentMonthTransactions = paidTransactions.filter(
-    (transaction) =>
-      new Date(transaction.purchased_at || transaction.created_at) >=
-      currentMonthStart,
+  const profilesById = new Map(
+    profiles.map((profile) => [profile.id, profile]),
   );
 
-  const previousMonthTransactions = paidTransactions.filter((transaction) => {
-    const date = new Date(transaction.purchased_at || transaction.created_at);
+  const activeProEntitlements = entitlements.filter((entitlement) => {
+    if (!["active", "trialing"].includes(normalize(entitlement.status))) {
+      return false;
+    }
+
+    if (
+      entitlement.expires_at &&
+      new Date(entitlement.expires_at) <= now
+    ) {
+      return false;
+    }
+
+    return true;
+  });
+
+  const activeProMembers = activeProEntitlements.length;
+
+  const premiumActiveMembers: BusinessMember[] = profiles
+    .filter((profile) => profileActiveIds.has(profile.id))
+    .map((profile) => {
+      const order = getLatestOrderForUser(
+        orders,
+        profile.id,
+        "premium",
+      );
+
+      return {
+        id: `premium-${profile.id}`,
+        userId: profile.id,
+        name:
+          profile.display_name?.trim() ||
+          order?.customer_name?.trim() ||
+          profile.email ||
+          order?.customer_email ||
+          "Premium member",
+        email: profile.email || order?.customer_email || null,
+        product: "Premium Picks" as const,
+        plan: order ? getOrderProductName(order) : "Premium Picks",
+        source: order?.source || "website",
+        paymentMethod: order
+          ? getOrderPaymentMethod(order)
+          : "unknown",
+        amountInCents: order
+          ? dollarsToCents(order.total)
+          : 0,
+        startedAt: order?.sold_at || profile.created_at,
+        expiresAt: profile.membership_expires_at,
+        status:
+          profile.subscription_status ||
+          profile.membership ||
+          "active",
+      };
+    });
+
+  const proActiveMembers: BusinessMember[] =
+    activeProEntitlements.map((entitlement) => {
+      const profile = profilesById.get(entitlement.user_id);
+      const order = getLatestOrderForUser(
+        orders,
+        entitlement.user_id,
+        "pro",
+      );
+
+      return {
+        id: `pro-${entitlement.id}`,
+        userId: entitlement.user_id,
+        name:
+          profile?.display_name?.trim() ||
+          order?.customer_name?.trim() ||
+          profile?.email ||
+          order?.customer_email ||
+          "KofSports Pro member",
+        email: profile?.email || order?.customer_email || null,
+        product: "KofSports Pro" as const,
+        plan: order ? getOrderProductName(order) : "KofSports Pro",
+        source: order?.source || "website",
+        paymentMethod: order
+          ? getOrderPaymentMethod(order)
+          : "unknown",
+        amountInCents: order
+          ? dollarsToCents(order.total)
+          : 0,
+        startedAt: entitlement.starts_at,
+        expiresAt: entitlement.expires_at,
+        status: entitlement.status,
+      };
+    });
+
+  const activeMembers = [
+    ...premiumActiveMembers,
+    ...proActiveMembers,
+  ].sort((a, b) => {
+    const aExpiry = a.expiresAt
+      ? new Date(a.expiresAt).getTime()
+      : Number.MAX_SAFE_INTEGER;
+    const bExpiry = b.expiresAt
+      ? new Date(b.expiresAt).getTime()
+      : Number.MAX_SAFE_INTEGER;
+
+    return aExpiry - bExpiry;
+  });
+
+  const thirtyDaysAgo = new Date(
+    now.getTime() - 30 * 86_400_000,
+  );
+
+  const expiredPremiumMembers: ExpiredMember[] = profiles
+    .filter((profile) => {
+      if (!profile.membership_expires_at) return false;
+
+      const expiredAt = new Date(profile.membership_expires_at);
+
+      return expiredAt <= now && expiredAt >= thirtyDaysAgo;
+    })
+    .map((profile) => {
+      const order = getLatestOrderForUser(
+        orders,
+        profile.id,
+        "premium",
+      );
+      const expiredAt = profile.membership_expires_at as string;
+
+      return {
+        id: `expired-premium-${profile.id}`,
+        userId: profile.id,
+        name:
+          profile.display_name?.trim() ||
+          order?.customer_name?.trim() ||
+          profile.email ||
+          order?.customer_email ||
+          "Premium member",
+        email: profile.email || order?.customer_email || null,
+        product: "Premium Picks" as const,
+        plan: order ? getOrderProductName(order) : "Premium Picks",
+        source: order?.source || "website",
+        paymentMethod: order
+          ? getOrderPaymentMethod(order)
+          : "unknown",
+        amountInCents: order
+          ? dollarsToCents(order.total)
+          : 0,
+        startedAt: order?.sold_at || profile.created_at,
+        expiresAt: expiredAt,
+        expiredAt,
+        daysSinceExpiration: Math.floor(
+          (now.getTime() - new Date(expiredAt).getTime()) /
+            86_400_000,
+        ),
+        status: "expired",
+      };
+    });
+
+  const expiredProMembers: ExpiredMember[] = entitlements
+    .filter((entitlement) => {
+      if (!entitlement.expires_at) return false;
+
+      const expiredAt = new Date(entitlement.expires_at);
+
+      return expiredAt <= now && expiredAt >= thirtyDaysAgo;
+    })
+    .map((entitlement) => {
+      const profile = profilesById.get(entitlement.user_id);
+      const order = getLatestOrderForUser(
+        orders,
+        entitlement.user_id,
+        "pro",
+      );
+      const expiredAt = entitlement.expires_at as string;
+
+      return {
+        id: `expired-pro-${entitlement.id}`,
+        userId: entitlement.user_id,
+        name:
+          profile?.display_name?.trim() ||
+          order?.customer_name?.trim() ||
+          profile?.email ||
+          order?.customer_email ||
+          "KofSports Pro member",
+        email: profile?.email || order?.customer_email || null,
+        product: "KofSports Pro" as const,
+        plan: order ? getOrderProductName(order) : "KofSports Pro",
+        source: order?.source || "website",
+        paymentMethod: order
+          ? getOrderPaymentMethod(order)
+          : "unknown",
+        amountInCents: order
+          ? dollarsToCents(order.total)
+          : 0,
+        startedAt: entitlement.starts_at,
+        expiresAt: expiredAt,
+        expiredAt,
+        daysSinceExpiration: Math.floor(
+          (now.getTime() - new Date(expiredAt).getTime()) /
+            86_400_000,
+        ),
+        status: "expired",
+      };
+    });
+
+  const recentlyExpiredMembers = [
+    ...expiredPremiumMembers,
+    ...expiredProMembers,
+  ]
+    .sort(
+      (a, b) =>
+        new Date(b.expiredAt).getTime() -
+        new Date(a.expiredAt).getTime(),
+    )
+    .slice(0, 20);
+
+  const paidOrders = orders.filter(isPaidOrder);
+
+  const todayStart = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+  );
+
+  const currentYearStart = new Date(
+    Date.UTC(now.getUTCFullYear(), 0, 1),
+  );
+
+  const currentMonthOrders = paidOrders.filter(
+    (order) => new Date(order.sold_at) >= currentMonthStart,
+  );
+
+  const previousMonthOrders = paidOrders.filter((order) => {
+    const date = new Date(order.sold_at);
     return date >= previousMonthStart && date < currentMonthStart;
   });
 
-  const currentMonthRevenueInCents = currentMonthTransactions.reduce(
-    (sum, transaction) => sum + (transaction.amount ?? 0),
+  const revenueTodayInCents = paidOrders
+    .filter((order) => new Date(order.sold_at) >= todayStart)
+    .reduce(
+      (sum, order) => sum + dollarsToCents(order.total),
+      0,
+    );
+
+  const currentMonthRevenueInCents = currentMonthOrders.reduce(
+    (sum, order) => sum + dollarsToCents(order.total),
     0,
   );
 
-  const previousMonthRevenueInCents = previousMonthTransactions.reduce(
-    (sum, transaction) => sum + (transaction.amount ?? 0),
+  const previousMonthRevenueInCents = previousMonthOrders.reduce(
+    (sum, order) => sum + dollarsToCents(order.total),
     0,
   );
+
+  const yearToDateRevenueInCents = paidOrders
+    .filter((order) => new Date(order.sold_at) >= currentYearStart)
+    .reduce(
+      (sum, order) => sum + dollarsToCents(order.total),
+      0,
+    );
+
+  const lifetimeRevenueInCents = paidOrders.reduce(
+    (sum, order) => sum + dollarsToCents(order.total),
+    0,
+  );
+
+  const stripeRevenueInCents = paidOrders
+    .filter((order) =>
+      order.payments?.some(
+        (payment) => normalize(payment.processor) === "stripe",
+      ),
+    )
+    .reduce(
+      (sum, order) => sum + dollarsToCents(order.total),
+      0,
+    );
+
+  const manualRevenueInCents = paidOrders
+    .filter(
+      (order) =>
+        normalize(order.source) === "manual" ||
+        !order.payments?.some(
+          (payment) => normalize(payment.processor) === "stripe",
+        ),
+    )
+    .reduce(
+      (sum, order) => sum + dollarsToCents(order.total),
+      0,
+    );
 
   /*
    * Transactions are returned newest first. Keep the newest active recurring
@@ -565,7 +1024,14 @@ console.log(
     renewalRate === null ? null : Math.max(0, 100 - renewalRate);
 
   const newPremiumMembersThisMonth = new Set(
-    currentMonthTransactions.map((transaction) => transaction.profile_id),
+    currentMonthOrders
+      .filter((order) =>
+        order.order_items?.some((item) =>
+          normalize(item.product_name).includes("premium"),
+        ),
+      )
+      .map((order) => order.user_id)
+      .filter((userId): userId is string => Boolean(userId)),
   ).size;
 
   const recentSignups: RecentSignup[] = paidTransactions
@@ -622,8 +1088,8 @@ console.log(
 
   const monthlyRevenueMap = new Map<string, number>();
 
-  for (const transaction of paidTransactions) {
-    const date = new Date(transaction.purchased_at || transaction.created_at);
+  for (const order of paidOrders) {
+    const date = new Date(order.sold_at);
 
     if (date < sixMonthsAgo) continue;
 
@@ -631,7 +1097,8 @@ console.log(
 
     monthlyRevenueMap.set(
       key,
-      (monthlyRevenueMap.get(key) ?? 0) + (transaction.amount ?? 0),
+      (monthlyRevenueMap.get(key) ?? 0) +
+        dollarsToCents(order.total),
     );
   }
 
@@ -639,12 +1106,17 @@ console.log(
     { length: 6 },
     (_, index) => {
       const date = new Date(
-        Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 5 + index, 1),
+        Date.UTC(
+          now.getUTCFullYear(),
+          now.getUTCMonth() - 5 + index,
+          1,
+        ),
       );
 
       return {
         label: monthLabel(date),
-        amountInCents: monthlyRevenueMap.get(monthKey(date)) ?? 0,
+        amountInCents:
+          monthlyRevenueMap.get(monthKey(date)) ?? 0,
       };
     },
   );
@@ -894,9 +1366,17 @@ console.log(
       user?.email?.split("@")[0] ||
       "Admin",
     activePremiumMembers,
+    activeProMembers,
+    activeMembers,
+    recentlyExpiredMembers,
     newPremiumMembersThisMonth,
     mrrInCents,
+    revenueTodayInCents,
     currentMonthRevenueInCents,
+    yearToDateRevenueInCents,
+    lifetimeRevenueInCents,
+    stripeRevenueInCents,
+    manualRevenueInCents,
     previousMonthRevenueInCents,
     revenueChangePercent,
     renewalRate,

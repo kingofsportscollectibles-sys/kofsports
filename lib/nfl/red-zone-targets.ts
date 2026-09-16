@@ -57,7 +57,7 @@ function toNumber(value: number | string | null): number | null {
 }
 
 export async function getNflRedZoneTargets(
-  season = 2025,
+  season = 2026,
 ): Promise<NflRedZonePlayer[]> {
   const supabase = await createClient();
 
