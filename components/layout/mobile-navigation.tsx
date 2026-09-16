@@ -24,6 +24,10 @@ const toolsNavigation = [
     href: "/nfl-player-prop-trends",
   },
   {
+  name: "NFL Player Prop Records",
+  href: "/nfl-player-prop-records",
+},
+  {
     name: "NFL Anytime TD Rankings",
     href: "/nfl-anytime-touchdown-rankings",
   },

@@ -25,6 +25,11 @@ const toolsNavigation = [
     href: "/nfl-player-prop-trends",
   },
   {
+  name: "NFL Player Prop Records",
+  description: "Historical cover rates vs actual pregame lines",
+  href: "/nfl-player-prop-records",
+},
+  {
     name: "NFL Anytime TD Rankings",
     description: "KOF Score, odds and touchdown research",
     href: "/nfl-anytime-touchdown-rankings",

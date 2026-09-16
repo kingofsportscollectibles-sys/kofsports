@@ -48,6 +48,13 @@ const tools = [
     tag: "Trends",
   },
   {
+  title: "Player Prop Records",
+  description:
+    "See how NFL players have performed against their actual DraftKings pregame lines with cover rates and average results versus the line.",
+  href: "/nfl-player-prop-records",
+  tag: "Records",
+},
+  {
     title: "Defense vs Position",
     description:
       "See which NFL defenses allow the most production to quarterbacks, running backs, receivers and tight ends.",

@@ -393,6 +393,56 @@ async function getEventProps(
     `Upcoming NFL events returned: ${upcomingEvents.length}`,
   );
 
+  async function appendDraftKingsHistory(
+  rows: PropRow[],
+): Promise<void> {
+  const draftKingsRows = rows.filter(
+    (row) => row.bookmaker === "draftkings",
+  );
+
+  if (draftKingsRows.length === 0) {
+    return;
+  }
+
+  const historyRows = draftKingsRows.map(
+    ({
+      external_event_id,
+      player_name,
+      market,
+      line,
+      over_price,
+      under_price,
+      bookmaker,
+      home_team,
+      away_team,
+      commence_time,
+      fetched_at,
+    }) => ({
+      external_event_id,
+      player_name,
+      market,
+      line,
+      over_price,
+      under_price,
+      bookmaker,
+      home_team,
+      away_team,
+      commence_time,
+      fetched_at,
+    }),
+  );
+
+  const { error } = await supabase
+    .from("nfl_prop_line_history")
+    .insert(historyRows);
+
+  if (error) {
+    throw new Error(
+      `Could not save DraftKings prop history: ${error.message}`,
+    );
+  }
+}
+
   let eventsProcessed = 0;
   let eventsWithProps = 0;
   let totalRows = 0;
@@ -426,6 +476,8 @@ async function getEventProps(
       event.id,
       rows,
     );
+
+    await appendDraftKingsHistory(rows);
 
     eventsProcessed += 1;
 
