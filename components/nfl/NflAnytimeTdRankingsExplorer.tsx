@@ -9,7 +9,7 @@ type Props = {
   hasProAccess: boolean;
 };
 
-type PositionFilter = "ALL" | "RB" | "WR" | "TE";
+type PositionFilter = "ALL" | "QB" | "RB" | "WR" | "TE";
 
 function formatOdds(price: number | null) {
   if (price === null) return "—";
@@ -147,7 +147,7 @@ export default function NflAnytimeTdRankingsExplorer({
     <div>
       <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-wrap gap-2">
-        {(["ALL", "RB", "WR", "TE"] as PositionFilter[]).map((filter) => {
+        {(["ALL", "QB", "RB", "WR", "TE"] as PositionFilter[]).map((filter) => {
           const active = position === filter;
 
           return (
