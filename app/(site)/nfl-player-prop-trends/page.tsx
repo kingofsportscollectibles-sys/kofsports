@@ -55,12 +55,14 @@ export default async function NflPlayerPropTrendsPage() {
             </p>
           </div>
 
-          <a
-            href="/pro"
-            className="inline-flex w-fit items-center justify-center rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-2.5 text-sm font-bold text-emerald-400 transition hover:border-emerald-400/50 hover:bg-emerald-500/15"
-          >
-            Unlock KofSports Pro
-          </a>
+         {!hasProAccess && (
+  <a
+    href="/pro"
+    className="inline-flex w-fit items-center justify-center rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-2.5 text-sm font-bold text-emerald-400 transition hover:border-emerald-400/50 hover:bg-emerald-500/15"
+  >
+    Unlock KofSports Pro
+  </a>
+)}
         </div>
 
         {props.length > 0 ? (
@@ -113,21 +115,31 @@ export default async function NflPlayerPropTrendsPage() {
                 </p>
               </div>
 
-              <div className="flex shrink-0 flex-col gap-3 sm:flex-row lg:flex-col">
-                <a
-                  href="/pro"
-                  className="rounded-xl bg-emerald-500 px-6 py-3 text-center text-sm font-bold text-slate-950 transition hover:bg-emerald-400"
-                >
-                  Unlock KofSports Pro
-                </a>
-
-                <a
-                  href="/nfl-prop-research"
-                  className="rounded-xl border border-slate-700 bg-slate-950 px-6 py-3 text-center text-sm font-bold text-white transition hover:border-slate-600 hover:bg-slate-800"
-                >
-                  Preview Prop Research
-                </a>
-              </div>
+             <div className="flex shrink-0 flex-col gap-3 sm:flex-row lg:flex-col">
+  {hasProAccess ? (
+    <a
+      href="/nfl-prop-research"
+      className="rounded-xl bg-emerald-500 px-6 py-3 text-center text-sm font-bold text-slate-950 transition hover:bg-emerald-400"
+    >
+      Open Prop Research
+    </a>
+  ) : (
+    <>
+      <a
+        href="/pro"
+        className="rounded-xl bg-emerald-500 px-6 py-3 text-center text-sm font-bold text-slate-950 transition hover:bg-emerald-400"
+      >
+        Unlock KofSports Pro
+      </a>
+      <a
+        href="/nfl-prop-research"
+        className="rounded-xl border border-slate-700 bg-slate-950 px-6 py-3 text-center text-sm font-bold text-white transition hover:border-slate-600 hover:bg-slate-800"
+      >
+        Preview Prop Research
+      </a>
+    </>
+  )}
+</div>
             </div>
           </div>
         </div>
