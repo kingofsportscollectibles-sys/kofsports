@@ -234,6 +234,12 @@ export const articleType = defineType({
         }),
 
         defineArrayMember({
+          type: "articleBodyImage",
+        }),
+
+        // Legacy inline image type.
+        // Keep this for existing published articles that use _type: "image".
+        defineArrayMember({
           type: "image",
           options: {
             hotspot: true,

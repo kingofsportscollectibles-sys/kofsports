@@ -171,6 +171,42 @@ const portableTextComponents: PortableTextComponents = {
   },
 
   types: {
+    articleBodyImage: ({ value }) => {
+      const block = value as {
+        image?: ArticleImage;
+        alt?: string;
+        caption?: string;
+      };
+
+      const imageUrl = getImageUrl(block.image, 1200);
+
+      if (!imageUrl) {
+        return null;
+      }
+
+      return (
+        <figure className="my-10">
+          <div className="overflow-hidden rounded-xl border border-white/10 bg-zinc-950">
+            <Image
+              src={imageUrl}
+              alt={block.alt || "KofSports article image"}
+              width={1200}
+              height={900}
+              className="h-auto w-full"
+              sizes="(max-width: 896px) 100vw, 896px"
+            />
+          </div>
+
+          {block.caption ? (
+            <figcaption className="mt-3 text-center text-sm text-zinc-500">
+              {block.caption}
+            </figcaption>
+          ) : null}
+        </figure>
+      );
+    },
+
+    // Legacy renderer for existing published inline images.
     image: ({ value }) => {
       const image = value as ArticleImage;
       const imageUrl = getImageUrl(image, 1200);
