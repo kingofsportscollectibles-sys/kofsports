@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import AccountForm from "@/components/member/AccountForm";
 import { createClient } from "@/lib/supabase/server";
+import { hasPremiumPicksEntitlement } from "@/lib/auth/entitlements";
 import NotificationPreferencesForm from "@/components/member/NotificationPreferencesForm";
 
 function formatMembershipDate(date: string | null) {
@@ -66,7 +67,9 @@ export default async function AccountPage({
     .eq("id", user.id)
     .maybeSingle();
 
-    const { data: notificationPreferences } = await supabase
+    const hasPremiumAccess = await hasPremiumPicksEntitlement();
+
+  const { data: notificationPreferences } = await supabase
   .from("notification_preferences")
   .select("email_enabled")
   .eq("user_id", user.id)
@@ -134,9 +137,9 @@ export default async function AccountPage({
         </h1>
 
         <p className="mt-3 text-gray-300">
-          {profile?.membership === "premium"
+          {hasPremiumAccess
             ? `Premium Member • Active through ${formatMembershipDate(
-                profile.membership_expires_at,
+                profile?.membership_expires_at ?? null,
               )}`
             : "Free Member • Upgrade anytime for full Premium Picks access."}
         </p>
@@ -152,7 +155,7 @@ export default async function AccountPage({
 
         <StatCard
           title="Membership"
-          value={profile?.membership === "premium" ? "Premium" : "Free"}
+          value={hasPremiumAccess ? "Premium" : "Free"}
           subtitle="Current Plan"
         />
 
@@ -230,7 +233,7 @@ export default async function AccountPage({
             </p>
 
             <h2 className="mt-3 text-2xl font-bold text-black">
-              {profile?.membership === "premium"
+              {hasPremiumAccess
                 ? "⭐ Premium"
                 : "Free Member"}
             </h2>
@@ -282,7 +285,7 @@ export default async function AccountPage({
 
          <NotificationPreferencesForm
   initialEmailEnabled={notificationPreferences?.email_enabled ?? false}
-  isPremiumMember={profile?.membership === "premium"}
+  isPremiumMember={hasPremiumAccess}
 />
 
           <section className="rounded-3xl border border-gray-200 bg-white p-6 text-black shadow-sm">

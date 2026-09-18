@@ -3,7 +3,10 @@ import Link from "next/link";
 import { MobileNavigation } from "@/components/layout/mobile-navigation";
 import { UserMenu } from "@/components/layout/user-menu";
 import { createClient } from "@/lib/supabase/server";
-import { hasKofSportsProAccess } from "@/lib/auth/entitlements";
+import {
+  hasKofSportsProAccess,
+  hasPremiumPicksEntitlement,
+} from "@/lib/auth/entitlements";
 
 const navigation = [
   { name: "Blog", href: "/blog" },
@@ -80,7 +83,10 @@ export async function SiteHeader() {
       console.error("Unable to load header profile:", profileError);
     }
 
-    const hasProAccess = await hasKofSportsProAccess();
+    const [hasPremiumAccess, hasProAccess] = await Promise.all([
+      hasPremiumPicksEntitlement(),
+      hasKofSportsProAccess(),
+    ]);
 
     const metadataDisplayName =
       typeof user.user_metadata?.display_name === "string"
@@ -95,7 +101,7 @@ export async function SiteHeader() {
       email: user.email ?? null,
       displayName: metadataDisplayName ?? emailDisplayName,
       membership:
-        profile?.membership === "premium" ? "premium" : "free",
+        hasPremiumAccess ? "premium" : "free",
       role: profile?.role ?? "user",
       membershipExpiresAt: profile?.membership_expires_at ?? null,
       hasProAccess,

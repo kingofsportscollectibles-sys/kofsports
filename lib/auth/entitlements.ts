@@ -27,7 +27,7 @@ export async function hasProductAccess(
   const { data: profile, error: profileError } =
     await supabase
       .from("profiles")
-      .select("role, membership")
+      .select("role, membership, membership_expires_at")
       .eq("id", user.id)
       .maybeSingle();
 
@@ -43,12 +43,44 @@ export async function hasProductAccess(
     return true;
   }
 
+  const now = Date.now();
+
   /*
-   * Premium Picks includes KofSports Pro at no additional cost.
+   * Legacy/manual Premium memberships may have no expiration.
+   * Paid passes/subscriptions must have a future expiration.
+   */
+  const membershipExpiresAt =
+    profile?.membership_expires_at == null
+      ? null
+      : new Date(profile.membership_expires_at).getTime();
+
+  const hasActivePremiumMembership =
+    profile?.membership === "premium" &&
+    (
+      membershipExpiresAt === null ||
+      (
+        Number.isFinite(membershipExpiresAt) &&
+        membershipExpiresAt > now
+      )
+    );
+
+  /*
+   * Premium Picks currently uses the profile membership system.
+   */
+  if (
+    product === "premium_picks" &&
+    hasActivePremiumMembership
+  ) {
+    return true;
+  }
+
+  /*
+   * Premium Picks includes KofSports Pro at no additional cost,
+   * but only while the Premium membership is active.
    */
   if (
     product === "kofsports_pro" &&
-    profile?.membership === "premium"
+    hasActivePremiumMembership
   ) {
     return true;
   }
@@ -71,8 +103,6 @@ export async function hasProductAccess(
     return false;
   }
 
-  const now = Date.now();
-
   return ((data ?? []) as Entitlement[]).some(
     (entitlement) => {
       const startsAt =
@@ -91,8 +121,10 @@ export async function hasProductAccess(
 
       const hasNotExpired =
         expiresAt === null ||
-        (Number.isFinite(expiresAt) &&
-          expiresAt > now);
+        (
+          Number.isFinite(expiresAt) &&
+          expiresAt > now
+        );
 
       return hasStarted && hasNotExpired;
     },

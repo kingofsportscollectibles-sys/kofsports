@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { createClient } from "@/lib/supabase/server";
+import { hasPremiumPicksEntitlement } from "@/lib/auth/entitlements";
 import PremiumVault from "@/components/premium/PremiumVault";
 
 type PickStatus = "pending" | "won" | "lost" | "push" | "void";
@@ -29,11 +30,6 @@ type PremiumPick = {
   game_notes: string | null;
   status: PickStatus | string | null;
   profit_loss: number | null;
-};
-
-type Profile = {
-  membership: string | null;
-  role: string | null;
 };
 
 function formatOdds(odds: number | null) {
@@ -450,24 +446,9 @@ export default async function PremiumPicksPage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  let profile: Profile | null = null;
-
-  if (user) {
-    const { data: profileData, error: profileError } = await supabase
-      .from("profiles")
-      .select("membership, role")
-      .eq("id", user.id)
-      .maybeSingle();
-
-    if (profileError) {
-      console.error("Unable to load profile:", profileError);
-    }
-
-    profile = profileData as Profile | null;
-  }
-
-  const hasPremiumAccess =
-    profile?.membership === "premium" || profile?.role === "admin";
+  const hasPremiumAccess = user
+    ? await hasPremiumPicksEntitlement()
+    : false;
 
   const pickFields = `
     id,

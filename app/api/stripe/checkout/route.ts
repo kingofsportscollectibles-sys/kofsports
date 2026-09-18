@@ -161,6 +161,7 @@ export async function POST(request: Request) {
         `
           id,
           membership,
+          membership_expires_at,
           stripe_customer_id,
           stripe_subscription_id,
           subscription_status,
@@ -194,7 +195,22 @@ export async function POST(request: Request) {
        * Don't allow an existing Premium member to use the acquisition
        * trial on top of an active Premium membership.
        */
-      if (profile.membership === "premium") {
+      const membershipExpiresAt =
+        profile.membership_expires_at == null
+          ? null
+          : new Date(profile.membership_expires_at).getTime();
+
+      const hasActivePremiumMembership =
+        profile.membership === "premium" &&
+        (
+          membershipExpiresAt === null ||
+          (
+            Number.isFinite(membershipExpiresAt) &&
+            membershipExpiresAt > Date.now()
+          )
+        );
+
+      if (hasActivePremiumMembership) {
         return NextResponse.json(
           {
             error:
