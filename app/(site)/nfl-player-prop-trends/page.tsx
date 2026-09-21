@@ -118,7 +118,7 @@ export default async function NflPlayerPropTrendsPage() {
              <div className="flex shrink-0 flex-col gap-3 sm:flex-row lg:flex-col">
   {hasProAccess ? (
     <a
-      href="/nfl-prop-research"
+      href="/nfl-player-prop-trends"
       className="rounded-xl bg-emerald-500 px-6 py-3 text-center text-sm font-bold text-slate-950 transition hover:bg-emerald-400"
     >
       Open Prop Research
@@ -132,7 +132,7 @@ export default async function NflPlayerPropTrendsPage() {
         Unlock KofSports Pro
       </a>
       <a
-        href="/nfl-prop-research"
+        href="/nfl-player-prop-trends"
         className="rounded-xl border border-slate-700 bg-slate-950 px-6 py-3 text-center text-sm font-bold text-white transition hover:border-slate-600 hover:bg-slate-800"
       >
         Preview Prop Research

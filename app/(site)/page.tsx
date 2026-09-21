@@ -37,7 +37,7 @@ const tools = [
     title: "NFL Prop Research",
     description:
       "Research player props in one place with current lines, recent trends, matchup rankings and KOF Over Score Beta.",
-    href: "/nfl-prop-research",
+    href: "/nfl-player-prop-trends",
     tag: "KOF Score",
   },
   {
@@ -147,7 +147,7 @@ export default async function Home() {
               </Link>
 
               <Link
-                href="/nfl-prop-research"
+                href="/nfl-player-prop-trends"
                 className="rounded-md border border-white/20 bg-white/5 px-7 py-4 text-center text-sm font-extrabold uppercase tracking-wide text-white transition hover:border-white/40 hover:bg-white/10"
               >
                 Explore Betting Tools
@@ -242,7 +242,7 @@ export default async function Home() {
               </div>
 
               <Link
-                href="/nfl-prop-research"
+                href="/nfl-player-prop-trends"
                 className="block bg-brand px-6 py-4 text-center font-display text-lg font-bold uppercase tracking-wide text-black transition hover:bg-brand-light"
               >
                 Open NFL Research →

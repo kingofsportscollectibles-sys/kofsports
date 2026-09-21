@@ -51,12 +51,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.5,
     },
     {
-      url: `${baseUrl}/nfl-prop-research`,
-      lastModified: now,
-      changeFrequency: "daily",
-      priority: 0.9,
-    },
-    {
       url: `${baseUrl}/nfl-player-prop-trends`,
       lastModified: now,
       changeFrequency: "daily",

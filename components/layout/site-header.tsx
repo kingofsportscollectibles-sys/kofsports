@@ -20,7 +20,7 @@ const toolsNavigation = [
   {
     name: "NFL Prop Research",
     description: "KOF Score, trends, matchup and usage research",
-    href: "/nfl-prop-research",
+    href: "/nfl-player-prop-trends",
   },
   {
     name: "NFL Player Prop Trends",

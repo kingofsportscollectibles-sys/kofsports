@@ -201,3 +201,44 @@ if (error) {
 
   return ((data ?? []) as PropTrendRow[]).map(mapPropTrend);
 }
+
+export async function getNflPlayerPropTrendsByPlayer(
+  externalPlayerId: string,
+): Promise<NflPlayerPropTrend[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("nfl_player_prop_trends_with_identity")
+    .select("*")
+    .eq("external_player_id", externalPlayerId)
+    .eq("bookmaker", "draftkings")
+    .in("market", NFL_PROP_MARKETS)
+    .gte("commence_time", new Date().toISOString())
+    .order("commence_time", {
+      ascending: true,
+    })
+    .order("market", {
+      ascending: true,
+    });
+
+  if (error) {
+    console.error(
+      "Failed to load NFL player prop trends by player:",
+      {
+        externalPlayerId,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+      },
+    );
+
+    throw new Error(
+      `Unable to load NFL player prop trends by player: ${error.message}`,
+    );
+  }
+
+  return ((data ?? []) as PropTrendRow[]).map(
+    mapPropTrend,
+  );
+}

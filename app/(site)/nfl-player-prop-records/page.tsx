@@ -129,7 +129,7 @@ export default async function NflPlayerPropRecordsPage() {
                 </a>
 
                 <a
-                  href="/nfl-prop-research"
+                  href="/nfl-player-prop-trends"
                   className="rounded-xl border border-slate-700 bg-slate-950 px-6 py-3 text-center text-sm font-bold text-white transition hover:border-slate-600 hover:bg-slate-800"
                 >
                   Preview Prop Research
