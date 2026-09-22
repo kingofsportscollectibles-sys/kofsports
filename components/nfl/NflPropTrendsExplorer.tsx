@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 
 import { useMemo, useState } from "react";
 
@@ -200,7 +201,16 @@ function PlayerPropCard({
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
           <div>
             <h3 className="text-lg font-bold text-white">
-              {prop.playerName}
+              {prop.playerSlug ? (
+                <Link
+                  href={`/nfl/players/${prop.playerSlug}`}
+                  className="transition hover:text-emerald-400"
+                >
+                  {prop.playerName}
+                </Link>
+              ) : (
+                prop.playerName
+              )}
             </h3>
 
             <div className="mt-1 text-sm text-slate-400">

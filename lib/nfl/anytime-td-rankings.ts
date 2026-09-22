@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 export type NflAnytimeTdRanking = {
   externalEventId: string;
   externalPlayerId: string;
+  playerSlug?: string | null;
   playerName: string;
   position: string;
   team: string;

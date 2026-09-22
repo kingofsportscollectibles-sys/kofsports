@@ -1,7 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
+import { getNflPlayerSlugMap } from "@/lib/nfl/player-pages";
 
 export type NflSnapCountPlayer = {
   externalPlayerId: string;
+  playerSlug?: string | null;
   playerName: string;
   position: string;
   team: string;
@@ -66,7 +68,7 @@ export async function getNflSnapCounts(
     );
   }
 
-  return ((data ?? []) as SnapCountRow[])
+  const players = ((data ?? []) as SnapCountRow[])
     .filter(
       (row) =>
         row.player_name &&
@@ -91,6 +93,15 @@ export async function getNflSnapCounts(
       seasonAvgSnaps: toNumber(row.season_avg_snaps),
       gamesPlayed: row.games_played,
     }));
+
+  const slugMap = await getNflPlayerSlugMap(
+    players.map((player) => player.externalPlayerId),
+  );
+
+  return players.map((player) => ({
+    ...player,
+    playerSlug: slugMap.get(player.externalPlayerId) ?? null,
+  }));
 }
 
 export async function getNflSnapCountsByPlayer(

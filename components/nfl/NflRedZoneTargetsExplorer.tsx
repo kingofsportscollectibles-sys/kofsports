@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import type { NflRedZonePlayer } from "@/lib/nfl/red-zone-targets";
@@ -95,7 +96,16 @@ export default function NflRedZoneTargetsExplorer({
                 >
                   <td className="px-4 py-4">
                     <div className="font-semibold text-white">
-                      {player.playerName}
+                      {player.playerSlug ? (
+                        <Link
+                          href={`/nfl/players/${player.playerSlug}`}
+                          className="transition hover:text-emerald-400"
+                        >
+                          {player.playerName}
+                        </Link>
+                      ) : (
+                        player.playerName
+                      )}
                     </div>
 
                     {player.opponent && (

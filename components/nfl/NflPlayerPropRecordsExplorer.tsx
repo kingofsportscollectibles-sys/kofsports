@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 
 import { useMemo, useState } from "react";
 
@@ -467,7 +468,16 @@ export default function NflPlayerPropRecordsExplorer({
 
                           <td className="px-4 py-4">
                             <div className="font-bold text-white">
-                              {record.playerName}
+                              {record.playerSlug ? (
+                                <Link
+                                  href={`/nfl/players/${record.playerSlug}`}
+                                  className="transition hover:text-emerald-400"
+                                >
+                                  {record.playerName}
+                                </Link>
+                              ) : (
+                                record.playerName
+                              )}
                             </div>
                             <div className="mt-1 text-xs text-slate-500">
                               {record.team ??
@@ -593,7 +603,16 @@ export default function NflPlayerPropRecordsExplorer({
 
                         <div className="min-w-0">
                           <div className="truncate font-bold text-white">
-                            {record.playerName}
+                            {record.playerSlug ? (
+                              <Link
+                                href={`/nfl/players/${record.playerSlug}`}
+                                className="transition hover:text-emerald-400"
+                              >
+                                {record.playerName}
+                              </Link>
+                            ) : (
+                              record.playerName
+                            )}
                           </div>
                           <div className="mt-0.5 text-xs text-slate-500">
                             {record.team ?? "—"} •{" "}

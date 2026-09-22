@@ -448,3 +448,49 @@ export async function getNflPlayerUpcomingGame(
     isHome,
   };
 }
+
+export async function getNflPlayerSlugMap(
+  gsisIds: string[],
+): Promise<Map<string, string>> {
+  const uniqueIds = Array.from(
+    new Set(gsisIds.filter(Boolean)),
+  );
+
+  if (uniqueIds.length === 0) {
+    return new Map();
+  }
+
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("nfl_player_pages")
+    .select("gsis_id,slug")
+    .in("gsis_id", uniqueIds);
+
+  if (error) {
+    console.error(
+      "Failed to load NFL player slug map:",
+      {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+      },
+    );
+
+    throw new Error(
+      `Unable to load NFL player slug map: ${error.message}`,
+    );
+  }
+
+  return new Map(
+    (data ?? [])
+      .filter(
+        (row) =>
+          typeof row.gsis_id === "string" &&
+          typeof row.slug === "string" &&
+          row.slug.length > 0,
+      )
+      .map((row) => [row.gsis_id, row.slug]),
+  );
+}

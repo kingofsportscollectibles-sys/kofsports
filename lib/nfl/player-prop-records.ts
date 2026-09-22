@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 export type NflPlayerPropRecord = {
   season: number;
   externalPlayerId: string;
+  playerSlug?: string | null;
   playerName: string;
   team: string | null;
   position: string | null;

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import type { NflAnytimeTdRanking } from "@/lib/nfl/anytime-td-rankings";
@@ -285,7 +286,16 @@ export default function NflAnytimeTdRankingsExplorer({
 
                         <div className="px-5 py-5">
                           <div className="font-bold text-white">
-                            {ranking.playerName}
+                            {ranking.playerSlug ? (
+                              <Link
+                                href={`/nfl/players/${ranking.playerSlug}`}
+                                className="transition hover:text-emerald-400"
+                              >
+                                {ranking.playerName}
+                              </Link>
+                            ) : (
+                              ranking.playerName
+                            )}
                           </div>
                           <div className="mt-1 text-xs font-semibold text-slate-500">
                             {ranking.team} • {ranking.position}
@@ -377,7 +387,16 @@ export default function NflAnytimeTdRankingsExplorer({
                                     KOF Score Breakdown
                                   </div>
                                   <h3 className="mt-1 text-xl font-black text-white">
-                                    {ranking.playerName}
+                                    {ranking.playerSlug ? (
+                                      <Link
+                                        href={`/nfl/players/${ranking.playerSlug}`}
+                                        className="transition hover:text-emerald-400"
+                                      >
+                                        {ranking.playerName}
+                                      </Link>
+                                    ) : (
+                                      ranking.playerName
+                                    )}
                                   </h3>
                                 </div>
 

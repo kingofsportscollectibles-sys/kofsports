@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import type { NflSnapCountPlayer } from "@/lib/nfl/snap-counts";
@@ -102,7 +103,16 @@ export default function NflSnapCountsExplorer({
                 >
                   <td className="px-4 py-4">
                     <div className="font-semibold text-white">
-                      {player.playerName}
+                      {player.playerSlug ? (
+                        <Link
+                          href={`/nfl/players/${player.playerSlug}`}
+                          className="transition hover:text-emerald-400"
+                        >
+                          {player.playerName}
+                        </Link>
+                      ) : (
+                        player.playerName
+                      )}
                     </div>
                     {player.opponent && (
                       <div className="mt-1 text-xs text-slate-500">

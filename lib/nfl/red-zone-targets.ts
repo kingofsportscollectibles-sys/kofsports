@@ -1,7 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
+import { getNflPlayerSlugMap } from "@/lib/nfl/player-pages";
 
 export type NflRedZonePlayer = {
   externalPlayerId: string;
+  playerSlug?: string | null;
   playerName: string;
   position: string;
   team: string;
@@ -84,7 +86,7 @@ export async function getNflRedZoneTargets(
     );
   }
 
-  return ((data ?? []) as RedZoneRow[])
+  const players = ((data ?? []) as RedZoneRow[])
     .filter(
       (row) =>
         row.player_name &&
@@ -130,6 +132,15 @@ export async function getNflRedZoneTargets(
         row.season_inside_5_opportunities ?? 0,
       gamesPlayed: row.games_played,
     }));
+
+  const slugMap = await getNflPlayerSlugMap(
+    players.map((player) => player.externalPlayerId),
+  );
+
+  return players.map((player) => ({
+    ...player,
+    playerSlug: slugMap.get(player.externalPlayerId) ?? null,
+  }));
 }
 
 export async function getNflRedZoneTargetsByPlayer(

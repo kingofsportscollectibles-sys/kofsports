@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getNflPlayerSlugMap } from "@/lib/nfl/player-pages";
 
 export const NFL_PROP_MARKETS = [
   "player_pass_yds",
@@ -19,6 +20,8 @@ export type NflPropGameResult = {
 export type NflPlayerPropTrend = {
   propId: number;
   externalEventId: string | null;
+  externalPlayerId: string | null;
+  playerSlug: string | null;
 
   playerName: string;
   playerTeam: string | null;
@@ -67,6 +70,7 @@ export type NflPlayerPropTrend = {
 type PropTrendRow = {
   prop_id: number;
   external_event_id: string | null;
+  external_player_id: string | null;
 
   player_name: string;
   player_team: string | null;
@@ -126,6 +130,8 @@ function mapPropTrend(row: PropTrendRow): NflPlayerPropTrend {
   return {
     propId: row.prop_id,
     externalEventId: row.external_event_id,
+    externalPlayerId: row.external_player_id,
+    playerSlug: null,
 
     playerName: row.player_name,
     playerTeam: row.player_team,
