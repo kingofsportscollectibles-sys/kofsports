@@ -398,10 +398,10 @@ export default function NflDefenseVsPositionTable({
 
       <div className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950/70">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[780px] border-collapse text-left">
+          <table className="w-full table-fixed border-collapse text-left md:min-w-[780px] md:table-auto">
             <thead>
               <tr className="border-b border-zinc-800 bg-zinc-900/70">
-                <th className="sticky left-0 z-20 bg-zinc-950 px-4 py-3 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                <th className="w-[64px] bg-zinc-950 px-3 py-3 text-xs font-semibold uppercase tracking-wider text-zinc-500 md:sticky md:left-0 md:z-20 md:w-auto md:px-4">
                   <button
                     type="button"
                     onClick={() =>
@@ -414,7 +414,7 @@ export default function NflDefenseVsPositionTable({
                   </button>
                 </th>
 
-                <th className="sticky left-[78px] z-20 bg-zinc-950 px-4 py-3 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                <th className="bg-zinc-950 px-2 py-3 text-xs font-semibold uppercase tracking-wider text-zinc-500 md:sticky md:left-[78px] md:z-20 md:px-4">
                   <button
                     type="button"
                     onClick={() =>
@@ -430,7 +430,12 @@ export default function NflDefenseVsPositionTable({
                 {columns.map((column) => (
                   <th
                     key={column.key}
-                    className="whitespace-nowrap px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500"
+                    className={[
+                      "whitespace-nowrap px-3 py-3 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500 md:px-4",
+                      column.key === "ppr_fantasy_points_per_game"
+                        ? "w-[92px]"
+                        : "hidden md:table-cell",
+                    ].join(" ")}
                   >
                     <button
                       type="button"
@@ -453,7 +458,7 @@ export default function NflDefenseVsPositionTable({
                   key={`${row.defense}-${row.position}`}
                   className="border-b border-white/[0.06] transition last:border-0 hover:bg-white/[0.035]"
                 >
-                  <td className="sticky left-0 z-10 bg-zinc-950 px-4 py-3">
+                  <td className="w-[64px] bg-zinc-950 px-3 py-3 md:sticky md:left-0 md:z-10 md:w-auto md:px-4">
                     <span
                       className={[
                         "inline-flex h-8 min-w-8 items-center justify-center rounded-lg border px-2 text-sm font-bold",
@@ -464,7 +469,7 @@ export default function NflDefenseVsPositionTable({
                     </span>
                   </td>
 
-                  <td className="sticky left-[78px] z-10 bg-zinc-950 px-4 py-3">
+                  <td className="bg-zinc-950 px-2 py-3 md:sticky md:left-[78px] md:z-10 md:px-4">
                     <div className="flex items-center gap-3">
                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-xs font-black text-white">
                         {row.defense}
@@ -492,10 +497,10 @@ export default function NflDefenseVsPositionTable({
                       <td
                         key={column.key}
                         className={[
-                          "whitespace-nowrap px-4 py-3 text-right text-sm tabular-nums",
+                          "whitespace-nowrap px-3 py-3 text-right text-sm tabular-nums md:px-4",
                           isFantasyPoints
-                            ? "font-bold text-white"
-                            : "text-zinc-300",
+                            ? "w-[92px] font-bold text-white"
+                            : "hidden text-zinc-300 md:table-cell",
                         ].join(" ")}
                       >
                         {formatValue(
