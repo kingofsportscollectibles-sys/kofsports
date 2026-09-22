@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getNflPlayerSlugMap } from "@/lib/nfl/player-pages";
 
 export type NflPlayerPropRecord = {
   season: number;
@@ -181,10 +182,21 @@ export async function getNflPlayerPropRecords(
     );
   }
 
-  return (
+  const records = (
     (data ?? []) as PlayerPropRecordRow[]
   ).map(mapPlayerPropRecord);
+
+  const slugMap = await getNflPlayerSlugMap(
+    records.map((record) => record.externalPlayerId),
+  );
+
+  return records.map((record) => ({
+    ...record,
+    playerSlug: slugMap.get(record.externalPlayerId) ?? null,
+  }));
+
 }
+
 
 export async function getNflPlayerPropRecordByPlayer(
   externalPlayerId: string,

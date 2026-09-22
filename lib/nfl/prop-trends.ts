@@ -184,7 +184,7 @@ export async function getNflPlayerPropTrends(): Promise<
   const supabase = await createClient();
 
   const { data, error } = await supabase
-    .from("nfl_player_prop_trends")
+    .from("nfl_player_prop_trends_with_identity")
     .select("*")
     .eq("bookmaker", "draftkings")
     .in("market", NFL_PROP_MARKETS)
@@ -205,7 +205,20 @@ if (error) {
   );
 }
 
-  return ((data ?? []) as PropTrendRow[]).map(mapPropTrend);
+  const trends = ((data ?? []) as PropTrendRow[]).map(mapPropTrend);
+
+  const slugMap = await getNflPlayerSlugMap(
+    trends
+      .map((trend) => trend.externalPlayerId)
+      .filter((id): id is string => Boolean(id)),
+  );
+
+  return trends.map((trend) => ({
+    ...trend,
+    playerSlug: trend.externalPlayerId
+      ? slugMap.get(trend.externalPlayerId) ?? null
+      : null,
+  }));
 }
 
 export async function getNflPlayerPropTrendsByPlayer(

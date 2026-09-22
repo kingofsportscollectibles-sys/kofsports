@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getNflPlayerSlugMap } from "@/lib/nfl/player-pages";
 
 export type NflAnytimeTdRanking = {
   externalEventId: string;
@@ -170,7 +171,7 @@ export async function getNflAnytimeTdRankings(): Promise<
     });
   }
 
-  return ((scoreData ?? []) as unknown as NflAnytimeTdScoreRow[])
+  const rankings = ((scoreData ?? []) as unknown as NflAnytimeTdScoreRow[])
     .map((row) => {
       const marketScore = numberOrNull(row.market_score);
       const redZoneScore = numberOrNull(row.red_zone_score);
@@ -229,6 +230,15 @@ export async function getNflAnytimeTdRankings(): Promise<
     .filter(
       (ranking): ranking is NflAnytimeTdRanking => ranking !== null
     );
+
+  const slugMap = await getNflPlayerSlugMap(
+    rankings.map((ranking) => ranking.externalPlayerId),
+  );
+
+  return rankings.map((ranking) => ({
+    ...ranking,
+    playerSlug: slugMap.get(ranking.externalPlayerId) ?? null,
+  }));
 }
 
 export async function getNflAnytimeTdRankingByPlayer(
