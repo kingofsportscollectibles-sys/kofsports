@@ -18,6 +18,14 @@ import {
   getNflDefenseVsPositionMatchup,
 } from "@/lib/nfl/defense-vs-position";
 
+import { getNflSnapCountsByPlayer } from "@/lib/nfl/snap-counts";
+
+import { getNflRedZoneTargetsByPlayer } from "@/lib/nfl/red-zone-targets";
+
+import { getNflAnytimeTdRankingByPlayer } from "@/lib/nfl/anytime-td-rankings";
+
+import { getNflPlayerPropRecordByPlayer } from "@/lib/nfl/player-prop-records";
+
 type PlayerPageProps = {
   params: Promise<{
     slug: string;
@@ -87,6 +95,27 @@ const [
     player.season,
   ),
 ]);
+
+const snapCounts = await getNflSnapCountsByPlayer(
+  player.gsisId,
+  player.season,
+);
+
+const redZoneUsage = await getNflRedZoneTargetsByPlayer(
+  player.gsisId,
+  player.season,
+);
+
+const anytimeTdRanking = await getNflAnytimeTdRankingByPlayer(
+  player.gsisId,
+);
+
+const playerPropRecord = await getNflPlayerPropRecordByPlayer(
+  player.gsisId,
+  player.season,
+);
+
+
 
 const matchup = upcomingGame
   ? await getNflDefenseVsPositionMatchup(
@@ -196,15 +225,23 @@ const matchup = upcomingGame
       <section className="border-b border-slate-800 bg-slate-950">
         <div className="mx-auto max-w-7xl px-6 py-12 md:py-16">
           <div className="flex flex-col gap-8 md:flex-row md:items-center">
-            <div className="flex h-36 w-36 shrink-0 items-center justify-center overflow-hidden rounded-3xl border border-slate-700 bg-slate-900 md:h-44 md:w-44">
-              <div className="text-center">
-                <div className="text-4xl font-black text-slate-600">
-                  {player.position}
+            <div className="flex h-36 w-36 shrink-0 items-end justify-center overflow-hidden rounded-3xl border border-slate-700 bg-slate-900 md:h-44 md:w-44">
+              {player.headshotUrl ? (
+                <img
+                  src={player.headshotUrl}
+                  alt={`${player.playerName} headshot`}
+                  className="h-full w-full -translate-y-5 scale-125 object-contain object-bottom"
+                />
+              ) : (
+                <div className="self-center text-center">
+                  <div className="text-4xl font-black text-slate-600">
+                    {player.position}
+                  </div>
+                  <div className="mt-1 text-xs font-bold uppercase tracking-[0.2em] text-slate-500">
+                    Player
+                  </div>
                 </div>
-                <div className="mt-1 text-xs font-bold uppercase tracking-[0.2em] text-slate-500">
-                  Player
-                </div>
-              </div>
+              )}
             </div>
 
             <div>
@@ -570,12 +607,6 @@ const matchup = upcomingGame
               </p>
             </div>
 
-            <a
-              href="/nfl-player-prop-trends"
-              className="text-sm font-bold text-emerald-400 transition hover:text-emerald-300"
-            >
-              View All Player Prop Trends →
-            </a>
           </div>
 
           <div className="grid gap-5">
@@ -905,6 +936,15 @@ const matchup = upcomingGame
               );
             })}
           </div>
+
+          <div className="mt-5">
+            <a
+              href="/nfl-player-prop-trends"
+              className="text-sm font-bold text-emerald-400 transition hover:text-emerald-300"
+            >
+              View All Player Prop Trends →
+            </a>
+          </div>
         </section>
       ) : null}
 
@@ -1121,6 +1161,712 @@ const matchup = upcomingGame
               </tbody>
             </table>
           </div>
+        </div>
+      </section>
+      {snapCounts ? (
+        <section className="mx-auto max-w-7xl px-6 pb-12">
+          <div className="mb-6">
+            <div className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-400">
+              Playing Time
+            </div>
+
+            <h2 className="mt-2 text-2xl font-black text-white md:text-3xl">
+              Usage & Snap Counts
+            </h2>
+
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">
+              Track {player.playerName}&apos;s offensive playing time and snap share.
+            </p>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+              <div className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                Week {snapCounts.latestWeek}
+              </div>
+              <div className="mt-2 text-3xl font-black text-white">
+                {snapCounts.latestSnapPct !== null
+                  ? `${(snapCounts.latestSnapPct * 100).toFixed(1)}%`
+                  : "—"}
+              </div>
+              <div className="mt-1 text-xs text-slate-500">
+                Snap Share
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+              <div className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                L3
+              </div>
+              <div className="mt-2 text-3xl font-black text-white">
+                {snapCounts.l3SnapPct !== null
+                  ? `${(snapCounts.l3SnapPct * 100).toFixed(1)}%`
+                  : "—"}
+              </div>
+              <div className="mt-1 text-xs text-slate-500">
+                Avg Snap Share
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+              <div className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                L5
+              </div>
+              <div className="mt-2 text-3xl font-black text-white">
+                {snapCounts.l5SnapPct !== null
+                  ? `${(snapCounts.l5SnapPct * 100).toFixed(1)}%`
+                  : "—"}
+              </div>
+              <div className="mt-1 text-xs text-slate-500">
+                Avg Snap Share
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+              <div className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                Season
+              </div>
+              <div className="mt-2 text-3xl font-black text-white">
+                {snapCounts.seasonSnapPct !== null
+                  ? `${(snapCounts.seasonSnapPct * 100).toFixed(1)}%`
+                  : "—"}
+              </div>
+              <div className="mt-1 text-xs text-slate-500">
+                Avg Snap Share
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+              <div className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                Week {snapCounts.latestWeek}
+              </div>
+              <div className="mt-2 text-3xl font-black text-white">
+                {snapCounts.latestOffensiveSnaps ?? "—"}
+              </div>
+              <div className="mt-1 text-xs text-slate-500">
+                Offensive Snaps
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+              <div className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                Trend
+              </div>
+
+              <div
+                className={`mt-2 text-3xl font-black ${
+                  snapCounts.snapPctChange === null
+                    ? "text-white"
+                    : snapCounts.snapPctChange > 0
+                      ? "text-emerald-400"
+                      : snapCounts.snapPctChange < 0
+                        ? "text-red-400"
+                        : "text-white"
+                }`}
+              >
+                {snapCounts.snapPctChange !== null
+                  ? `${snapCounts.snapPctChange > 0 ? "+" : ""}${(
+                      snapCounts.snapPctChange * 100
+                    ).toFixed(1)}%`
+                  : "—"}
+              </div>
+
+              <div className="mt-1 text-xs text-slate-500">
+                vs Previous Week
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 text-sm text-slate-500">
+            {snapCounts.gamesPlayed}{" "}
+            {snapCounts.gamesPlayed === 1 ? "game" : "games"} tracked
+            {" • "}
+            {snapCounts.seasonAvgSnaps !== null
+              ? `${snapCounts.seasonAvgSnaps.toFixed(1)} offensive snaps per game`
+              : "Season snap average unavailable"}
+          </div>
+        </section>
+      ) : null}
+
+      {redZoneUsage ? (
+        <section className="mx-auto max-w-7xl px-6 pb-12">
+          <div className="mb-6">
+            <div className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-400">
+              Scoring Opportunity
+            </div>
+
+            <h2 className="mt-2 text-2xl font-black text-white md:text-3xl">
+              Red Zone Usage
+            </h2>
+
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">
+              Track {player.playerName}&apos;s opportunities near the goal
+              line, including red-zone carries, targets and high-value
+              touches inside the 10 and 5-yard lines.
+            </p>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+              <div className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                Week {redZoneUsage.latestWeek}
+              </div>
+              <div className="mt-2 text-3xl font-black text-white">
+                {redZoneUsage.latestRedZoneOpportunities}
+              </div>
+              <div className="mt-1 text-xs text-slate-500">
+                RZ Opportunities
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+              <div className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                L3
+              </div>
+              <div className="mt-2 text-3xl font-black text-white">
+                {redZoneUsage.l3RedZoneOpportunities !== null
+                  ? redZoneUsage.l3RedZoneOpportunities.toFixed(1)
+                  : "—"}
+              </div>
+              <div className="mt-1 text-xs text-slate-500">
+                RZ Opps / Game
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+              <div className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                L5
+              </div>
+              <div className="mt-2 text-3xl font-black text-white">
+                {redZoneUsage.l5RedZoneOpportunities !== null
+                  ? redZoneUsage.l5RedZoneOpportunities.toFixed(1)
+                  : "—"}
+              </div>
+              <div className="mt-1 text-xs text-slate-500">
+                RZ Opps / Game
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+              <div className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                Season
+              </div>
+              <div className="mt-2 text-3xl font-black text-white">
+                {redZoneUsage.seasonRedZoneOpportunitiesPerGame !== null
+                  ? redZoneUsage.seasonRedZoneOpportunitiesPerGame.toFixed(1)
+                  : "—"}
+              </div>
+              <div className="mt-1 text-xs text-slate-500">
+                RZ Opps / Game
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+              <div className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                Inside 10
+              </div>
+              <div className="mt-2 text-3xl font-black text-white">
+                {redZoneUsage.seasonInside10Opportunities}
+              </div>
+              <div className="mt-1 text-xs text-slate-500">
+                Season Opportunities
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+              <div className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                Inside 5
+              </div>
+              <div className="mt-2 text-3xl font-black text-white">
+                {redZoneUsage.seasonInside5Opportunities}
+              </div>
+              <div className="mt-1 text-xs text-slate-500">
+                Season Opportunities
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate-500">
+            <span>
+              <strong className="font-semibold text-slate-300">
+                {redZoneUsage.seasonRedZoneOpportunities}
+              </strong>{" "}
+              total red-zone opportunities
+            </span>
+
+            <span>
+              <strong className="font-semibold text-slate-300">
+                {redZoneUsage.seasonRedZoneCarries}
+              </strong>{" "}
+              carries
+            </span>
+
+            <span>
+              <strong className="font-semibold text-slate-300">
+                {redZoneUsage.seasonRedZoneTargets}
+              </strong>{" "}
+              targets
+            </span>
+
+            <span>
+              {redZoneUsage.gamesPlayed}{" "}
+              {redZoneUsage.gamesPlayed === 1 ? "game" : "games"} tracked
+            </span>
+          </div>
+        </section>
+      ) : null}
+
+      {anytimeTdRanking ? (
+        <section className="mx-auto max-w-7xl px-6 pb-12">
+          <div className="mb-6">
+            <div className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-400">
+              Touchdown Research
+            </div>
+
+            <h2 className="mt-2 text-2xl font-black text-white md:text-3xl">
+              Anytime TD & KOF Score
+            </h2>
+
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">
+              KOF Score combines touchdown market expectations, red-zone
+              opportunity, playing time, recent production, matchup and
+              scoring environment into a 0–100 research score.
+            </p>
+          </div>
+
+          <div className="grid gap-4 lg:grid-cols-[1.25fr_3fr]">
+            <div className="rounded-2xl border border-emerald-500/30 bg-slate-900 p-6">
+              <div className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-400">
+                KOF TD Score
+              </div>
+
+              <div className="mt-3 text-6xl font-black text-white">
+                {anytimeTdRanking.kofScore.toFixed(1)}
+              </div>
+
+              <div className="mt-2 text-sm text-slate-400">
+                out of 100
+              </div>
+
+              <div className="mt-6 border-t border-slate-800 pt-5">
+                <div className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                  Next Matchup
+                </div>
+
+                <div className="mt-2 text-lg font-bold text-white">
+                  {anytimeTdRanking.team} vs{" "}
+                  {anytimeTdRanking.opponent}
+                </div>
+
+                <div className="mt-1 text-sm text-slate-500">
+                  {new Date(
+                    anytimeTdRanking.commenceTime,
+                  ).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                  })}
+                </div>
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+                <div className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                  Market
+                </div>
+                <div className="mt-2 text-3xl font-black text-white">
+                  {anytimeTdRanking.marketScore.toFixed(1)}
+                </div>
+                <div className="mt-1 text-xs text-slate-500">
+                  TD Market Strength
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+                <div className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                  Red Zone
+                </div>
+                <div className="mt-2 text-3xl font-black text-white">
+                  {anytimeTdRanking.redZoneScore.toFixed(1)}
+                </div>
+                <div className="mt-1 text-xs text-slate-500">
+                  Scoring Opportunity
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+                <div className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                  Usage
+                </div>
+                <div className="mt-2 text-3xl font-black text-white">
+                  {anytimeTdRanking.usageScore.toFixed(1)}
+                </div>
+                <div className="mt-1 text-xs text-slate-500">
+                  Playing-Time Role
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+                <div className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                  Recent Form
+                </div>
+                <div className="mt-2 text-3xl font-black text-white">
+                  {anytimeTdRanking.recentScore.toFixed(1)}
+                </div>
+                <div className="mt-1 text-xs text-slate-500">
+                  Recent TD Production
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+                <div className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                  Matchup
+                </div>
+                <div className="mt-2 text-3xl font-black text-white">
+                  {anytimeTdRanking.matchupScore.toFixed(1)}
+                </div>
+                <div className="mt-1 text-xs text-slate-500">
+                  Opponent Profile
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+                <div className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                  Environment
+                </div>
+                <div className="mt-2 text-3xl font-black text-white">
+                  {anytimeTdRanking.environmentScore.toFixed(1)}
+                </div>
+                <div className="mt-1 text-xs text-slate-500">
+                  Team Scoring Context
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-center gap-x-8 gap-y-3 rounded-2xl border border-slate-800 bg-slate-900/60 px-5 py-4 text-sm">
+            <div>
+              <span className="text-slate-500">Best Anytime TD: </span>
+              <strong className="text-white">
+                {anytimeTdRanking.bestPrice !== null
+                  ? anytimeTdRanking.bestPrice > 0
+                    ? `+${anytimeTdRanking.bestPrice}`
+                    : anytimeTdRanking.bestPrice
+                  : "—"}
+              </strong>
+              {anytimeTdRanking.bestBookmaker ? (
+                <span className="text-slate-500">
+                  {" "}
+                  at {anytimeTdRanking.bestBookmaker}
+                </span>
+              ) : null}
+            </div>
+
+            {anytimeTdRanking.consensusProbability !== null ? (
+              <div>
+                <span className="text-slate-500">
+                  Consensus TD Probability:{" "}
+                </span>
+                <strong className="text-white">
+                  {(anytimeTdRanking.consensusProbability * 100).toFixed(1)}%
+                </strong>
+              </div>
+            ) : null}
+
+            <a
+              href="/nfl-anytime-touchdown-rankings"
+              className="font-bold text-emerald-400 transition hover:text-emerald-300"
+            >
+              View Anytime TD Rankings →
+            </a>
+          </div>
+
+          <p className="mt-3 text-xs leading-5 text-slate-600">
+            KOF Score is a research metric and does not automatically represent
+            an official KofSports Premium Pick.
+          </p>
+        </section>
+      ) : null}
+
+      {playerPropRecord ? (
+        <section className="mx-auto max-w-7xl px-6 pb-12">
+          <div className="mb-6">
+            <div className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-400">
+              Historical Performance
+            </div>
+
+            <h2 className="mt-2 text-2xl font-black text-white md:text-3xl">
+              Player Prop Record
+            </h2>
+
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">
+              {player.playerName}&apos;s {player.season} results against
+              tracked historical player prop lines.
+            </p>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-2xl border border-emerald-500/30 bg-slate-900 p-5">
+              <div className="text-xs font-bold uppercase tracking-wider text-emerald-400">
+                Overall
+              </div>
+
+              <div className="mt-2 text-3xl font-black text-white">
+                {playerPropRecord.wins}-{playerPropRecord.losses}
+                {playerPropRecord.pushes > 0
+                  ? `-${playerPropRecord.pushes}`
+                  : ""}
+              </div>
+
+              <div className="mt-1 text-xs text-slate-500">
+                W-L{playerPropRecord.pushes > 0 ? "-P" : ""}
+              </div>
+
+              <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm">
+                <div>
+                  <span className="text-slate-500">Over Rate </span>
+                  <strong className="text-white">
+                    {playerPropRecord.coverPct !== null
+                      ? `${playerPropRecord.coverPct.toFixed(1)}%`
+                      : "—"}
+                  </strong>
+                </div>
+
+                <div>
+                  <span className="text-slate-500">Avg vs Line </span>
+                  <strong
+                    className={
+                      playerPropRecord.avgDelta === null
+                        ? "text-white"
+                        : playerPropRecord.avgDelta > 0
+                          ? "text-emerald-400"
+                          : playerPropRecord.avgDelta < 0
+                            ? "text-rose-400"
+                            : "text-white"
+                    }
+                  >
+                    {playerPropRecord.avgDelta !== null
+                      ? `${playerPropRecord.avgDelta > 0 ? "+" : ""}${playerPropRecord.avgDelta.toFixed(
+                          1,
+                        )}`
+                      : "—"}
+                  </strong>
+                </div>
+              </div>
+
+              <div className="mt-4 text-xs text-slate-500">
+                {playerPropRecord.gradedProps} graded{" "}
+                {playerPropRecord.gradedProps === 1 ? "prop" : "props"}
+              </div>
+            </div>
+
+            {playerPropRecord.passGradedProps > 0 ? (
+              <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+                <div className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                  Passing Yards
+                </div>
+
+                <div className="mt-2 text-3xl font-black text-white">
+                  {playerPropRecord.passWins}-{playerPropRecord.passLosses}
+                  {playerPropRecord.passPushes > 0
+                    ? `-${playerPropRecord.passPushes}`
+                    : ""}
+                </div>
+
+                <div className="mt-1 text-xs text-slate-500">
+                  W-L{playerPropRecord.passPushes > 0 ? "-P" : ""}
+                </div>
+
+                <div className="mt-4 text-sm">
+                  <span className="text-slate-500">Over Rate </span>
+                  <strong className="text-white">
+                    {playerPropRecord.passCoverPct !== null
+                      ? `${playerPropRecord.passCoverPct.toFixed(1)}%`
+                      : "—"}
+                  </strong>
+                </div>
+
+                <div className="mt-2 text-xs text-slate-500">
+                  {playerPropRecord.passGradedProps} graded{" "}
+                  {playerPropRecord.passGradedProps === 1 ? "prop" : "props"}
+                </div>
+              </div>
+            ) : null}
+
+            {playerPropRecord.rushGradedProps > 0 ? (
+              <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+                <div className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                  Rushing Yards
+                </div>
+
+                <div className="mt-2 text-3xl font-black text-white">
+                  {playerPropRecord.rushWins}-{playerPropRecord.rushLosses}
+                  {playerPropRecord.rushPushes > 0
+                    ? `-${playerPropRecord.rushPushes}`
+                    : ""}
+                </div>
+
+                <div className="mt-1 text-xs text-slate-500">
+                  W-L{playerPropRecord.rushPushes > 0 ? "-P" : ""}
+                </div>
+
+                <div className="mt-4 text-sm">
+                  <span className="text-slate-500">Over Rate </span>
+                  <strong className="text-white">
+                    {playerPropRecord.rushCoverPct !== null
+                      ? `${playerPropRecord.rushCoverPct.toFixed(1)}%`
+                      : "—"}
+                  </strong>
+                </div>
+
+                <div className="mt-2 text-xs text-slate-500">
+                  {playerPropRecord.rushGradedProps} graded{" "}
+                  {playerPropRecord.rushGradedProps === 1 ? "prop" : "props"}
+                </div>
+              </div>
+            ) : null}
+
+            {playerPropRecord.receivingGradedProps > 0 ? (
+              <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+                <div className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                  Receiving Yards
+                </div>
+
+                <div className="mt-2 text-3xl font-black text-white">
+                  {playerPropRecord.receivingWins}-
+                  {playerPropRecord.receivingLosses}
+                  {playerPropRecord.receivingPushes > 0
+                    ? `-${playerPropRecord.receivingPushes}`
+                    : ""}
+                </div>
+
+                <div className="mt-1 text-xs text-slate-500">
+                  W-L{playerPropRecord.receivingPushes > 0 ? "-P" : ""}
+                </div>
+
+                <div className="mt-4 text-sm">
+                  <span className="text-slate-500">Over Rate </span>
+                  <strong className="text-white">
+                    {playerPropRecord.receivingCoverPct !== null
+                      ? `${playerPropRecord.receivingCoverPct.toFixed(1)}%`
+                      : "—"}
+                  </strong>
+                </div>
+
+                <div className="mt-2 text-xs text-slate-500">
+                  {playerPropRecord.receivingGradedProps} graded{" "}
+                  {playerPropRecord.receivingGradedProps === 1
+                    ? "prop"
+                    : "props"}
+                </div>
+              </div>
+            ) : null}
+          </div>
+
+          <div className="mt-5">
+            <a
+              href="/nfl-player-prop-records"
+              className="text-sm font-bold text-emerald-400 transition hover:text-emerald-300"
+            >
+              View All Player Prop Records →
+            </a>
+          </div>
+        </section>
+      ) : null}
+
+      <section className="mx-auto max-w-7xl px-6 pb-16">
+        <div className="mb-6">
+          <div className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-400">
+            KofSports NFL Tools
+          </div>
+
+          <h2 className="mt-2 text-2xl font-black text-white md:text-3xl">
+            Explore More NFL Research
+          </h2>
+
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">
+            Dig deeper with KofSports NFL betting research, player usage data,
+            matchup analysis and historical trends.
+          </p>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <a
+            href="/nfl-player-prop-trends"
+            className="group rounded-2xl border border-slate-800 bg-slate-900 p-5 transition hover:border-emerald-500/40"
+          >
+            <div className="text-sm font-bold text-white transition group-hover:text-emerald-400">
+              Player Prop Trends →
+            </div>
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              Compare current NFL prop lines with Last 5, Last 10, season and
+              opponent trends.
+            </p>
+          </a>
+
+          <a
+            href="/nfl-player-prop-records"
+            className="group rounded-2xl border border-slate-800 bg-slate-900 p-5 transition hover:border-emerald-500/40"
+          >
+            <div className="text-sm font-bold text-white transition group-hover:text-emerald-400">
+              Player Prop Records →
+            </div>
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              Track historical NFL player results against archived prop lines.
+            </p>
+          </a>
+
+          <a
+            href="/nfl-anytime-touchdown-rankings"
+            className="group rounded-2xl border border-slate-800 bg-slate-900 p-5 transition hover:border-emerald-500/40"
+          >
+            <div className="text-sm font-bold text-white transition group-hover:text-emerald-400">
+              Anytime TD Rankings →
+            </div>
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              Compare touchdown candidates using KOF Score, odds, usage and
+              scoring opportunity.
+            </p>
+          </a>
+
+          <a
+            href="/nfl-snap-counts"
+            className="group rounded-2xl border border-slate-800 bg-slate-900 p-5 transition hover:border-emerald-500/40"
+          >
+            <div className="text-sm font-bold text-white transition group-hover:text-emerald-400">
+              NFL Snap Counts →
+            </div>
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              Analyze playing time, snap-share trends and changing offensive
+              roles.
+            </p>
+          </a>
+
+          <a
+            href="/nfl-red-zone-targets"
+            className="group rounded-2xl border border-slate-800 bg-slate-900 p-5 transition hover:border-emerald-500/40"
+          >
+            <div className="text-sm font-bold text-white transition group-hover:text-emerald-400">
+              Red Zone Targets →
+            </div>
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              Find players earning carries, targets and opportunities near the
+              goal line.
+            </p>
+          </a>
+
+          <a
+            href="/nfl-defense-vs-position"
+            className="group rounded-2xl border border-slate-800 bg-slate-900 p-5 transition hover:border-emerald-500/40"
+          >
+            <div className="text-sm font-bold text-white transition group-hover:text-emerald-400">
+              Defense vs Position →
+            </div>
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              Compare NFL defenses by the production they allow to each
+              position.
+            </p>
+          </a>
         </div>
       </section>
     </main>

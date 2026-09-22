@@ -9,6 +9,7 @@ export type NflPlayerPage = {
   status: string | null;
   season: number;
   sleeperId: string | null;
+  headshotUrl: string | null;
 };
 
 type NflPlayerPageRow = {
@@ -20,6 +21,7 @@ type NflPlayerPageRow = {
   status: string | null;
   season: number;
   sleeper_id: string | null;
+  headshot_url: string | null;
 };
 
 function mapPlayerPage(
@@ -34,6 +36,7 @@ function mapPlayerPage(
     status: row.status,
     season: row.season,
     sleeperId: row.sleeper_id,
+    headshotUrl: row.headshot_url,
   };
 }
 
@@ -53,7 +56,8 @@ export async function getNflPlayerBySlug(
         position,
         status,
         season,
-        sleeper_id
+        sleeper_id,
+        headshot_url
       `,
     )
     .eq("slug", slug)

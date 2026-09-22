@@ -229,3 +229,146 @@ export async function getNflAnytimeTdRankings(): Promise<
       (ranking): ranking is NflAnytimeTdRanking => ranking !== null
     );
 }
+
+export async function getNflAnytimeTdRankingByPlayer(
+  externalPlayerId: string,
+): Promise<NflAnytimeTdRanking | null> {
+  const supabase = await createClient();
+  const now = new Date().toISOString();
+
+  const { data: scoreData, error: scoreError } = await supabase
+    .from("nfl_kof_td_scores")
+    .select(
+      [
+        "external_event_id",
+        "external_player_id",
+        "player_name",
+        "position",
+        "team",
+        "opponent",
+        "home_team",
+        "away_team",
+        "commence_time",
+        "books",
+        "best_price",
+        "consensus_probability",
+        "median_probability",
+        "historical_games",
+        "market_score",
+        "red_zone_score",
+        "usage_score",
+        "recent_score",
+        "matchup_score",
+        "environment_score",
+        "kof_score",
+      ].join(",")
+    )
+    .eq("external_player_id", externalPlayerId)
+    .gt("commence_time", now)
+    .not("kof_score", "is", null)
+    .order("commence_time", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (scoreError) {
+    console.error("Failed to load NFL player anytime TD ranking:", {
+      externalPlayerId,
+      message: scoreError.message,
+      details: scoreError.details,
+      hint: scoreError.hint,
+      code: scoreError.code,
+    });
+
+    return null;
+  }
+
+  const row = scoreData as unknown as NflAnytimeTdScoreRow | null;
+
+  if (!row || !row.external_player_id) {
+    return null;
+  }
+
+  const [
+    marketScore,
+    redZoneScore,
+    usageScore,
+    recentScore,
+    matchupScore,
+    environmentScore,
+    kofScore,
+  ] = [
+    numberOrNull(row.market_score),
+    numberOrNull(row.red_zone_score),
+    numberOrNull(row.usage_score),
+    numberOrNull(row.recent_score),
+    numberOrNull(row.matchup_score),
+    numberOrNull(row.environment_score),
+    numberOrNull(row.kof_score),
+  ];
+
+  if (
+    marketScore === null ||
+    redZoneScore === null ||
+    usageScore === null ||
+    recentScore === null ||
+    matchupScore === null ||
+    environmentScore === null ||
+    kofScore === null
+  ) {
+    return null;
+  }
+
+  const { data: oddsData, error: oddsError } = await supabase
+    .from("nfl_anytime_td_best_prices")
+    .select(
+      "external_event_id,external_player_id,best_bookmaker,best_price"
+    )
+    .eq("external_event_id", row.external_event_id)
+    .eq("external_player_id", externalPlayerId)
+    .maybeSingle();
+
+  if (oddsError) {
+    console.error("Failed to load NFL player anytime TD price:", {
+      externalPlayerId,
+      externalEventId: row.external_event_id,
+      message: oddsError.message,
+      details: oddsError.details,
+      hint: oddsError.hint,
+      code: oddsError.code,
+    });
+  }
+
+  const oddsRow = oddsData as AnytimeTdBestPriceRow | null;
+  const bestOddsPrice = numberOrNull(oddsRow?.best_price);
+
+  return {
+    externalEventId: row.external_event_id,
+    externalPlayerId: row.external_player_id,
+    playerName: row.player_name,
+    position: row.position,
+    team: row.team,
+    opponent: row.opponent,
+    homeTeam: row.home_team,
+    awayTeam: row.away_team,
+    commenceTime: row.commence_time,
+    books: numberOrNull(row.books) ?? 0,
+    bestPrice:
+      bestOddsPrice ??
+      numberOrNull(row.best_price),
+    bestBookmaker:
+      oddsRow?.best_bookmaker ?? null,
+    consensusProbability:
+      numberOrNull(row.consensus_probability),
+    medianProbability:
+      numberOrNull(row.median_probability),
+    historicalGames:
+      numberOrNull(row.historical_games),
+    marketScore,
+    redZoneScore,
+    usageScore,
+    recentScore,
+    matchupScore,
+    environmentScore,
+    kofScore,
+  };
+}

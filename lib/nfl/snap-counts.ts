@@ -92,3 +92,60 @@ export async function getNflSnapCounts(
       gamesPlayed: row.games_played,
     }));
 }
+
+export async function getNflSnapCountsByPlayer(
+  externalPlayerId: string,
+  season = 2026,
+): Promise<NflSnapCountPlayer | null> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("nfl_player_snap_summary")
+    .select("*")
+    .eq("external_player_id", externalPlayerId)
+    .eq("season", season)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Failed to load NFL player snap counts:", {
+      externalPlayerId,
+      season,
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+      code: error.code,
+    });
+
+    return null;
+  }
+
+  const row = data as SnapCountRow | null;
+
+  if (
+    !row ||
+    !row.player_name ||
+    !row.position ||
+    !row.team
+  ) {
+    return null;
+  }
+
+  return {
+    externalPlayerId: row.external_player_id,
+    playerName: row.player_name,
+    position: row.position,
+    team: row.team,
+    opponent: row.opponent,
+    season: row.season,
+    latestWeek: row.latest_week,
+    latestOffensiveSnaps: row.latest_offensive_snaps,
+    latestSnapPct: toNumber(row.latest_snap_pct),
+    previousSnapPct: toNumber(row.previous_snap_pct),
+    snapPctChange: toNumber(row.snap_pct_change),
+    l3SnapPct: toNumber(row.l3_snap_pct),
+    l5SnapPct: toNumber(row.l5_snap_pct),
+    seasonSnapPct: toNumber(row.season_snap_pct),
+    seasonAvgSnaps: toNumber(row.season_avg_snaps),
+    gamesPlayed: row.games_played,
+  };
+}

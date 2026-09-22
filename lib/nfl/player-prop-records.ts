@@ -184,3 +184,42 @@ export async function getNflPlayerPropRecords(
     (data ?? []) as PlayerPropRecordRow[]
   ).map(mapPlayerPropRecord);
 }
+
+export async function getNflPlayerPropRecordByPlayer(
+  externalPlayerId: string,
+  season = 2026,
+): Promise<NflPlayerPropRecord | null> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("nfl_player_prop_leaderboard")
+    .select("*")
+    .eq("external_player_id", externalPlayerId)
+    .eq("season", season)
+    .gt("graded_props", 0)
+    .maybeSingle();
+
+  if (error) {
+    console.error(
+      "Failed to load NFL player prop record:",
+      {
+        externalPlayerId,
+        season,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+      },
+    );
+
+    return null;
+  }
+
+  const row = data as PlayerPropRecordRow | null;
+
+  if (!row) {
+    return null;
+  }
+
+  return mapPlayerPropRecord(row);
+}

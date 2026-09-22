@@ -131,3 +131,81 @@ export async function getNflRedZoneTargets(
       gamesPlayed: row.games_played,
     }));
 }
+
+export async function getNflRedZoneTargetsByPlayer(
+  externalPlayerId: string,
+  season = 2026,
+): Promise<NflRedZonePlayer | null> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("nfl_player_red_zone_summary")
+    .select("*")
+    .eq("external_player_id", externalPlayerId)
+    .eq("season", season)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Failed to load NFL player red zone usage:", {
+      externalPlayerId,
+      season,
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+      code: error.code,
+    });
+
+    return null;
+  }
+
+  const row = data as RedZoneRow | null;
+
+  if (
+    !row ||
+    !row.player_name ||
+    !row.position ||
+    !row.team
+  ) {
+    return null;
+  }
+
+  return {
+    externalPlayerId: row.external_player_id,
+    playerName: row.player_name,
+    position: row.position,
+    team: row.team,
+    opponent: row.opponent,
+    season: row.season,
+    latestWeek: row.latest_week,
+    latestRedZoneOpportunities:
+      row.latest_red_zone_opportunities ?? 0,
+    latestRedZoneCarries:
+      row.latest_red_zone_carries ?? 0,
+    latestRedZoneTargets:
+      row.latest_red_zone_targets ?? 0,
+    latestInside10Opportunities:
+      row.latest_inside_10_opportunities ?? 0,
+    latestInside5Opportunities:
+      row.latest_inside_5_opportunities ?? 0,
+    l3RedZoneOpportunities: toNumber(
+      row.l3_red_zone_opportunities,
+    ),
+    l5RedZoneOpportunities: toNumber(
+      row.l5_red_zone_opportunities,
+    ),
+    seasonRedZoneOpportunitiesPerGame: toNumber(
+      row.season_red_zone_opportunities_per_game,
+    ),
+    seasonRedZoneOpportunities:
+      row.season_red_zone_opportunities ?? 0,
+    seasonRedZoneCarries:
+      row.season_red_zone_carries ?? 0,
+    seasonRedZoneTargets:
+      row.season_red_zone_targets ?? 0,
+    seasonInside10Opportunities:
+      row.season_inside_10_opportunities ?? 0,
+    seasonInside5Opportunities:
+      row.season_inside_5_opportunities ?? 0,
+    gamesPlayed: row.games_played,
+  };
+}
