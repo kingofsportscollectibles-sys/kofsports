@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 
 import { getArticleSlugs } from "@/sanity/lib/articles";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = "https://www.kofsports.com";
@@ -117,5 +118,27 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })
   );
 
-  return [...staticRoutes, ...articleRoutes];
+  const supabase = createAdminClient();
+
+  const { data: players, error: playersError } = await supabase
+    .from("nfl_player_pages")
+    .select("slug")
+    .order("slug", { ascending: true });
+
+  if (playersError) {
+    throw new Error(
+      `Failed to load NFL player pages for sitemap: ${playersError.message}`,
+    );
+  }
+
+  const playerRoutes: MetadataRoute.Sitemap = (players ?? []).map(
+    ({ slug }) => ({
+      url: `${baseUrl}/nfl/players/${slug}`,
+      lastModified: now,
+      changeFrequency: "daily",
+      priority: 0.7,
+    }),
+  );
+
+  return [...staticRoutes, ...articleRoutes, ...playerRoutes];
 }
