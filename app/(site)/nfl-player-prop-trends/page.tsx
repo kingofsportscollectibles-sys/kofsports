@@ -12,9 +12,9 @@ export const metadata: Metadata = {
 
 export default async function NflPlayerPropTrendsPage() {
   const [props, hasProAccess] = await Promise.all([
-  getNflPlayerPropTrends(),
-  hasKofSportsProAccess(),
-]);
+    getNflPlayerPropTrends(),
+    hasKofSportsProAccess(),
+  ]);
 
   return (
     <main className="min-h-screen bg-slate-950">
@@ -38,7 +38,7 @@ export default async function NflPlayerPropTrendsPage() {
           <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-slate-500">
             <span>Current lines provided by DraftKings.</span>
             <span className="hidden sm:inline">•</span>
-            <span>Passing • Rushing • Receiving</span>
+            <span>Passing • Rushing • Receiving • Receptions</span>
           </div>
         </div>
       </section>
@@ -229,9 +229,9 @@ export default async function NflPlayerPropTrendsPage() {
               </h3>
 
               <p className="mt-2 leading-7 text-slate-400">
-                KofSports currently tracks NFL passing yards, rushing yards, and
-                receiving yards. Additional player prop markets may be added
-                over time.
+                KofSports tracks NFL passing yards, rushing yards, receiving
+                yards, and receptions. All users can access L5 trends, while
+                KofSports Pro unlocks deeper L10, season, and matchup research.
               </p>
             </div>
 

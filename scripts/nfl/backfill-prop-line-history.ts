@@ -6,6 +6,7 @@ const MARKETS = [
   "player_pass_yds",
   "player_rush_yds",
   "player_reception_yds",
+  "player_receptions",
 ] as const;
 
 const BOOKMAKER = "draftkings";

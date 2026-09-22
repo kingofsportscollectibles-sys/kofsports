@@ -35,6 +35,8 @@ function marketLabel(market: NflPropMarket) {
       return "Rushing Yards";
     case "player_reception_yds":
       return "Receiving Yards";
+    case "player_receptions":
+      return "Receptions";
   }
 }
 
@@ -656,6 +658,10 @@ export default function NflPropTrendsExplorer({
 
               <option value="player_reception_yds">
                 Receiving Yards
+              </option>
+
+              <option value="player_receptions">
+                Receptions
               </option>
             </select>
           </div>

@@ -6,6 +6,7 @@ const MARKETS = [
   "player_pass_yds",
   "player_rush_yds",
   "player_reception_yds",
+  "player_receptions",
 ] as const;
 
 type Event = {
@@ -303,23 +304,59 @@ async function getEventProps(
     eventId: string,
     rows: PropRow[],
   ): Promise<void> {
-    const { error: deleteError } =
-      await supabase
-        .from("nfl_prop_lines")
-        .delete()
-        .eq(
-          "external_event_id",
-          eventId,
-        );
+    // Preserve existing lines when the Odds API temporarily returns
+    // no usable player props for an event.
+    if (rows.length === 0) {
+      console.log(
+        `No usable prop rows returned for ${eventId}; preserving existing lines.`,
+      );
+      return;
+    }
 
-    if (deleteError) {
-      throw new Error(
-        `Could not clear old prop lines for event ${eventId}: ${deleteError.message}`,
+    // Refresh only bookmaker/market combinations that are present in
+    // this response. If a market is temporarily omitted by a book,
+    // its last valid current lines remain available.
+    const combinations = new Map<
+      string,
+      {
+        bookmaker: string;
+        market: string;
+      }
+    >();
+
+    for (const row of rows) {
+      combinations.set(
+        `${row.bookmaker}|||${row.market}`,
+        {
+          bookmaker: row.bookmaker,
+          market: row.market,
+        },
       );
     }
 
-    if (rows.length === 0) {
-      return;
+    for (const combination of combinations.values()) {
+      const { error: deleteError } =
+        await supabase
+          .from("nfl_prop_lines")
+          .delete()
+          .eq(
+            "external_event_id",
+            eventId,
+          )
+          .eq(
+            "bookmaker",
+            combination.bookmaker,
+          )
+          .eq(
+            "market",
+            combination.market,
+          );
+
+      if (deleteError) {
+        throw new Error(
+          `Could not clear old ${combination.bookmaker} ${combination.market} lines for event ${eventId}: ${deleteError.message}`,
+        );
+      }
     }
 
     const { error: insertError } =
