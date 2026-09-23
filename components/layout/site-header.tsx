@@ -3,6 +3,7 @@ import Link from "next/link";
 import { MobileNavigation } from "@/components/layout/mobile-navigation";
 import { UserMenu } from "@/components/layout/user-menu";
 import { createClient } from "@/lib/supabase/server";
+import { toolNavigationGroups } from "@/lib/navigation/tools";
 import {
   hasKofSportsProAccess,
   hasPremiumPicksEntitlement,
@@ -11,42 +12,8 @@ import {
 const navigation = [
   { name: "Blog", href: "/blog" },
   { name: "Premium Picks", href: "/premium-picks" },
-  { name: "Results", href: "/results" },
   { name: "Plans", href: "/plans" },
   { name: "About", href: "/about" },
-];
-
-const toolsNavigation = [
-  {
-    name: "NFL Player Prop Trends",
-    description: "L5, L10, season and matchup trends",
-    href: "/nfl-player-prop-trends",
-  },
-  {
-  name: "NFL Player Prop Records",
-  description: "Historical cover rates vs actual pregame lines",
-  href: "/nfl-player-prop-records",
-},
-  {
-    name: "NFL Anytime TD Rankings",
-    description: "KOF Score, odds and touchdown research",
-    href: "/nfl-anytime-touchdown-rankings",
-  },
-  {
-    name: "NFL Snap Counts",
-    description: "Player snap shares and recent usage trends",
-    href: "/nfl-snap-counts",
-  },
-  {
-    name: "NFL Red Zone Targets",
-    description: "Red zone carries, targets and scoring opportunities",
-    href: "/nfl-red-zone-targets",
-  },
-  {
-    name: "NFL Defense vs Position",
-    description: "QB, RB, WR and TE matchup rankings",
-    href: "/nfl-defense-vs-position",
-  },
 ];
 
 export type HeaderUser = {
@@ -152,22 +119,32 @@ export async function SiteHeader() {
               </svg>
             </button>
 
-            <div className="invisible absolute left-1/2 top-full z-50 w-80 -translate-x-1/2 pt-4 opacity-0 transition duration-150 group-hover:visible group-hover:opacity-100">
-              <div className="overflow-hidden rounded-xl border border-white/10 bg-zinc-950 p-2 shadow-2xl shadow-black/50">
-                {toolsNavigation.map((tool) => (
-                  <Link
-                    key={tool.href}
-                    href={tool.href}
-                    className="block rounded-lg px-4 py-3 transition hover:bg-white/[0.06]"
-                  >
-                    <div className="text-sm font-bold text-white">
-                      {tool.name}
+            <div className="invisible absolute left-1/2 top-full z-50 w-[640px] -translate-x-1/2 pt-4 opacity-0 transition duration-150 group-hover:visible group-hover:opacity-100">
+              <div className="grid grid-cols-2 gap-2 overflow-hidden rounded-xl border border-white/10 bg-zinc-950 p-3 shadow-2xl shadow-black/50">
+                {toolNavigationGroups.map((group) => (
+                  <div key={group.sport} className="rounded-lg p-1">
+                    <div className="px-3 pb-2 pt-1 text-[11px] font-black uppercase tracking-[0.2em] text-brand">
+                      {group.sport}
                     </div>
 
-                    <div className="mt-1 text-xs leading-5 text-zinc-500">
-                      {tool.description}
+                    <div className="space-y-1">
+                      {group.tools.map((tool) => (
+                        <Link
+                          key={tool.href}
+                          href={tool.href}
+                          className="block rounded-lg px-3 py-2.5 transition hover:bg-white/[0.06]"
+                        >
+                          <div className="text-sm font-bold text-white">
+                            {tool.name}
+                          </div>
+
+                          <div className="mt-1 text-xs leading-5 text-zinc-500">
+                            {tool.description}
+                          </div>
+                        </Link>
+                      ))}
                     </div>
-                  </Link>
+                  </div>
                 ))}
               </div>
             </div>

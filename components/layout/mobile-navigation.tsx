@@ -5,40 +5,13 @@ import { useState } from "react";
 
 import type { HeaderUser } from "@/components/layout/site-header";
 import { SignOutButton } from "@/components/layout/sign-out-button";
+import { toolNavigationGroups } from "@/lib/navigation/tools";
 
 const navigation = [
   { name: "Blog", href: "/blog" },
   { name: "Premium Picks", href: "/premium-picks" },
-  { name: "Results", href: "/results" },
   { name: "Plans", href: "/plans" },
   { name: "About", href: "/about" },
-];
-
-const toolsNavigation = [
-  {
-    name: "NFL Player Prop Trends",
-    href: "/nfl-player-prop-trends",
-  },
-  {
-  name: "NFL Player Prop Records",
-  href: "/nfl-player-prop-records",
-},
-  {
-    name: "NFL Anytime TD Rankings",
-    href: "/nfl-anytime-touchdown-rankings",
-  },
-  {
-    name: "NFL Snap Counts",
-    href: "/nfl-snap-counts",
-  },
-  {
-    name: "NFL Red Zone Targets",
-    href: "/nfl-red-zone-targets",
-  },
-  {
-    name: "NFL Defense vs Position",
-    href: "/nfl-defense-vs-position",
-  },
 ];
 
 type MobileNavigationProps = {
@@ -203,16 +176,29 @@ export function MobileNavigation({ user }: MobileNavigationProps) {
                   </button>
 
                   {toolsOpen && (
-                    <div className="mb-4 flex flex-col gap-1 border-l-2 border-brand/30 pl-4">
-                      {toolsNavigation.map((tool) => (
-                        <Link
-                          key={tool.href}
-                          href={tool.href}
-                          onClick={closeMenu}
-                          className="py-2 text-sm font-bold text-zinc-400 transition hover:text-brand"
+                    <div className="mb-4 border-l-2 border-brand/30 pl-4">
+                      {toolNavigationGroups.map((group) => (
+                        <div
+                          key={group.sport}
+                          className="mb-4 last:mb-0"
                         >
-                          {tool.name}
-                        </Link>
+                          <div className="mb-1 text-[11px] font-black uppercase tracking-[0.2em] text-brand">
+                            {group.sport}
+                          </div>
+
+                          <div className="flex flex-col gap-1">
+                            {group.tools.map((tool) => (
+                              <Link
+                                key={tool.href}
+                                href={tool.href}
+                                onClick={closeMenu}
+                                className="py-2 text-sm font-bold text-zinc-400 transition hover:text-brand"
+                              >
+                                {tool.name}
+                              </Link>
+                            ))}
+                          </div>
+                        </div>
                       ))}
                     </div>
                   )}
