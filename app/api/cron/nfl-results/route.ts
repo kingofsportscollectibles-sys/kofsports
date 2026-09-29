@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { importNflPlayerStats } from "@/lib/nfl/import-player-stats";
 
 import { importNflPlayerGameUsage } from "@/lib/nfl/import-player-game-usage";
+import { importNflSchedule } from "@/lib/nfl/import-schedule";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -38,29 +39,64 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  try {
-    const playerStats = await importNflPlayerStats(2026);
-const playerGameUsage = await importNflPlayerGameUsage(2026);
+  const runImport = async <T>(
+    name: string,
+    importer: () => Promise<T>,
+  ) => {
+    try {
+      const result = await importer();
 
-return NextResponse.json({
-  ok: true,
-  playerStats,
-  playerGameUsage,
-});
-  } catch (error) {
-    console.error("NFL results cron failed:", error);
+      return {
+        ok: true as const,
+        result,
+      };
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : String(error);
 
-    return NextResponse.json(
-      {
-        ok: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : "Unknown NFL results import error",
-      },
-      {
-        status: 500,
-      },
-    );
-  }
+      console.error(
+        `NFL results cron: ${name} failed:`,
+        error,
+      );
+
+      return {
+        ok: false as const,
+        error: message,
+      };
+    }
+  };
+
+  const schedule = await runImport(
+    "schedule",
+    () => importNflSchedule(2026),
+  );
+
+  const playerStats = await runImport(
+    "player stats",
+    () => importNflPlayerStats(2026),
+  );
+
+  const playerGameUsage = await runImport(
+    "player game usage",
+    () => importNflPlayerGameUsage(2026),
+  );
+
+  const ok =
+    schedule.ok &&
+    playerStats.ok &&
+    playerGameUsage.ok;
+
+  return NextResponse.json(
+    {
+      ok,
+      schedule,
+      playerStats,
+      playerGameUsage,
+    },
+    {
+      status: ok ? 200 : 207,
+    },
+  );
 }
