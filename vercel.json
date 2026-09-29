@@ -15,22 +15,6 @@
     {
       "path": "/api/cron/nfl-results",
       "schedule": "0 14 * * 2"
-    },
-    {
-      "path": "/api/cron/nfl-ats-grading-lines",
-      "schedule": "30 12,13,16,17,19,20,23 * * 0"
-    },
-    {
-      "path": "/api/cron/nfl-ats-grading-lines",
-      "schedule": "30 0 * * 1"
-    },
-    {
-      "path": "/api/cron/nfl-ats-grading-lines",
-      "schedule": "30 23 * * 1,4"
-    },
-    {
-      "path": "/api/cron/nfl-ats-grading-lines",
-      "schedule": "30 0 * * 2,5"
     }
   ]
 }

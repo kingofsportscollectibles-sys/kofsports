@@ -1,10 +1,21 @@
+"use client";
+
 import Image from "next/image";
+import { useMemo, useState } from "react";
 
 import type { NflBettingPowerRanking } from "@/lib/nfl/betting-power-rankings";
 
 type Props = {
   rankings: NflBettingPowerRanking[];
 };
+
+type SortKey =
+  | "rank"
+  | "atsPct"
+  | "avgCoverMargin"
+  | "totalCoverMargin";
+
+type SortDirection = "asc" | "desc";
 
 const TEAM_NAMES: Record<string, string> = {
   ARI: "Arizona Cardinals",
@@ -125,23 +136,128 @@ function marginClass(value: number | null): string {
 export default function NflBettingPowerRankings({
   rankings,
 }: Props) {
+  const [sortKey, setSortKey] = useState<SortKey>("rank");
+  const [sortDirection, setSortDirection] =
+    useState<SortDirection>("asc");
+
+  const sortedRankings = useMemo(() => {
+    return [...rankings].sort((a, b) => {
+      const aValue = a[sortKey];
+      const bValue = b[sortKey];
+
+      if (aValue === null && bValue === null) return 0;
+      if (aValue === null) return 1;
+      if (bValue === null) return -1;
+
+      return sortDirection === "asc"
+        ? aValue - bValue
+        : bValue - aValue;
+    });
+  }, [rankings, sortKey, sortDirection]);
+
+  function handleSort(key: SortKey) {
+    if (sortKey === key) {
+      setSortDirection((current) =>
+        current === "asc" ? "desc" : "asc",
+      );
+      return;
+    }
+
+    setSortKey(key);
+    setSortDirection(key === "rank" ? "asc" : "desc");
+  }
+
+  function sortIndicator(key: SortKey) {
+    if (sortKey !== key) {
+      return "";
+    }
+
+    return sortDirection === "asc" ? " ↑" : " ↓";
+  }
+
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900">
+      <div className="flex items-center justify-between gap-3 border-b border-slate-800 bg-slate-950/70 px-4 py-3 lg:hidden">
+        <span className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">
+          Sort by
+        </span>
+
+        <select
+          value={sortKey}
+          onChange={(event) => {
+            const key = event.target.value as SortKey;
+            setSortKey(key);
+            setSortDirection(key === "rank" ? "asc" : "desc");
+          }}
+          className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm font-semibold text-white outline-none"
+          aria-label="Sort NFL betting power rankings"
+        >
+          <option value="rank">Power Ranking</option>
+          <option value="atsPct">ATS %</option>
+          <option value="avgCoverMargin">
+            Avg Cover Margin
+          </option>
+          <option value="totalCoverMargin">
+            Total Cover Margin
+          </option>
+        </select>
+
+        <button
+          type="button"
+          onClick={() =>
+            setSortDirection((current) =>
+              current === "asc" ? "desc" : "asc",
+            )
+          }
+          className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm font-bold text-slate-300 transition hover:border-slate-600 hover:text-white"
+          aria-label="Reverse sort direction"
+        >
+          {sortDirection === "asc" ? "↑" : "↓"}
+        </button>
+      </div>
+
       <div className="hidden grid-cols-[72px_minmax(260px,1fr)_120px_120px_150px_150px] items-center gap-4 border-b border-slate-800 bg-slate-950/70 px-5 py-4 text-xs font-bold uppercase tracking-[0.12em] text-slate-500 lg:grid">
-        <div className="text-center">Rank</div>
+        <button
+          type="button"
+          onClick={() => handleSort("rank")}
+          className="text-center transition hover:text-white"
+        >
+          Rank{sortIndicator("rank")}
+        </button>
+
         <div>Team</div>
+
         <div className="text-center">ATS</div>
-        <div className="text-center">ATS %</div>
-        <div className="text-right">
+
+        <button
+          type="button"
+          onClick={() => handleSort("atsPct")}
+          className="text-center transition hover:text-white"
+        >
+          ATS %{sortIndicator("atsPct")}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => handleSort("avgCoverMargin")}
+          className="text-right transition hover:text-white"
+        >
           Avg Cover Margin
-        </div>
-        <div className="text-right">
+          {sortIndicator("avgCoverMargin")}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => handleSort("totalCoverMargin")}
+          className="text-right transition hover:text-white"
+        >
           Total Cover Margin
-        </div>
+          {sortIndicator("totalCoverMargin")}
+        </button>
       </div>
 
       <div className="divide-y divide-slate-800">
-        {rankings.map((ranking) => (
+        {sortedRankings.map((ranking) => (
           <div
             key={ranking.team}
             className="grid grid-cols-[52px_minmax(0,1fr)] gap-x-3 gap-y-4 px-4 py-5 transition hover:bg-slate-800/40 sm:grid-cols-[64px_minmax(0,1fr)] sm:px-5 lg:grid-cols-[72px_minmax(260px,1fr)_120px_120px_150px_150px] lg:items-center lg:gap-4 lg:py-4"
