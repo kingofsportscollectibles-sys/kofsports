@@ -54,6 +54,8 @@ type ScheduleRow = {
   commence_time: string | null;
   home_team: string;
   away_team: string;
+  home_score: number | null;
+  away_score: number | null;
   game_type: "REG" | "POST";
 };
 
@@ -207,16 +209,89 @@ function buildCommenceTime(
     return null;
   }
 
-  // nflverse game times are represented in US/Eastern.
-  //
-  // For the trend engine the exact kickoff timestamp is
-  // useful, but the game_date remains our primary historical
-  // matching key.
-  //
-  // We intentionally leave this null for now rather than
-  // risk incorrectly converting DST/timezones during the
-  // historical import.
-  return null;
+  const date = normalizeDate(gameday);
+
+  const timeMatch = gametime.match(
+    /^(\d{1,2}):(\d{2})$/,
+  );
+
+  if (!timeMatch) {
+    throw new Error(
+      `Unsupported schedule time: ${gametime}`,
+    );
+  }
+
+  const hour = Number(timeMatch[1]);
+  const minute = Number(timeMatch[2]);
+
+  if (
+    !Number.isInteger(hour) ||
+    hour < 0 ||
+    hour > 23 ||
+    !Number.isInteger(minute) ||
+    minute < 0 ||
+    minute > 59
+  ) {
+    throw new Error(
+      `Invalid schedule time: ${gametime}`,
+    );
+  }
+
+  const [year, month, day] = date
+    .split("-")
+    .map(Number);
+
+  const desiredLocalAsUtc = Date.UTC(
+    year,
+    month - 1,
+    day,
+    hour,
+    minute,
+  );
+
+  let candidate = desiredLocalAsUtc;
+
+  for (let i = 0; i < 3; i++) {
+    const parts = new Intl.DateTimeFormat(
+      "en-US",
+      {
+        timeZone: "America/New_York",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hourCycle: "h23",
+      },
+    ).formatToParts(new Date(candidate));
+
+    const values = Object.fromEntries(
+      parts.map((part) => [
+        part.type,
+        part.value,
+      ]),
+    );
+
+    const representedLocalAsUtc = Date.UTC(
+      Number(values.year),
+      Number(values.month) - 1,
+      Number(values.day),
+      Number(values.hour),
+      Number(values.minute),
+    );
+
+    const difference =
+      desiredLocalAsUtc -
+      representedLocalAsUtc;
+
+    candidate += difference;
+
+    if (difference === 0) {
+      break;
+    }
+  }
+
+  return new Date(candidate).toISOString();
 }
 
 function normalizeScheduleRow(
@@ -287,6 +362,8 @@ function normalizeScheduleRow(
 
     home_team: homeTeam,
     away_team: awayTeam,
+    home_score: toNumber(row.home_score),
+    away_score: toNumber(row.away_score),
 
     game_type: gameType,
   };
@@ -460,6 +537,10 @@ async function main() {
 
             game_type:
               game.game_type,
+            home_score:
+              game.home_score,
+            away_score:
+              game.away_score,
 
             updated_at:
               new Date().toISOString(),

@@ -24,6 +24,11 @@ export const toolNavigationGroups: ToolNavigationGroup[] = [
         href: "/nfl-player-prop-records",
       },
       {
+        name: "Betting Power Rankings",
+        description: "ATS records, cover rates and margin vs spread",
+        href: "/nfl-betting-power-rankings",
+      },
+      {
         name: "Anytime TD Rankings",
         description: "KOF Score, odds and touchdown research",
         href: "/nfl-anytime-touchdown-rankings",
