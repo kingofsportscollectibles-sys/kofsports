@@ -292,6 +292,12 @@ async function fetchDailyFaceoff(
 
   const html = await response.text();
 
+  return parseDailyFaceoffHtml(html);
+}
+
+function parseDailyFaceoffHtml(
+  html: string,
+): DfoGame[] {
   const match = html.match(
     /<script[^>]+id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/,
   );
@@ -437,6 +443,7 @@ function buildGoalieRow(args: {
 
 export async function importNhlStartingGoalies(
   gameDate?: string,
+  dailyFaceoffHtml?: string,
 ): Promise<void> {
   const requestedDate =
     gameDate ??
@@ -456,7 +463,11 @@ export async function importNhlStartingGoalies(
     await Promise.all([
       getPlayerMap(),
       getGames(requestedDate),
-      fetchDailyFaceoff(requestedDate),
+      dailyFaceoffHtml
+        ? Promise.resolve(
+            parseDailyFaceoffHtml(dailyFaceoffHtml),
+          )
+        : fetchDailyFaceoff(requestedDate),
     ]);
 
   const playerIdentityCount = Array.from(
