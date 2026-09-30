@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Script from "next/script";
+import { Analytics } from "@vercel/analytics/next";
 import { Inter, Oswald } from "next/font/google";
 import "./globals.css";
 import GrowthTracker from "@/components/growth/GrowthTracker";
@@ -60,6 +61,7 @@ export default function RootLayout({
       >
         {children}
         <GrowthTracker />
+        <Analytics />
       </body>
     </html>
   );
