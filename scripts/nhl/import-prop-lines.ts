@@ -379,7 +379,13 @@ async function replaceReturnedLines(
   }
 }
 
-async function main(): Promise<void> {
+export type NhlPropImportResult = {
+  eventsProcessed: number;
+  eventsWithProps: number;
+  totalRows: number;
+};
+
+export async function importNhlPropLines(): Promise<NhlPropImportResult> {
   const playerMap = await getPlayerMap();
 
   const playerIdentityCount = Array.from(
@@ -485,9 +491,10 @@ console.log(
   console.log(`Events processed: ${events.length}`);
   console.log(`Events with props: ${eventsWithProps}`);
   console.log(`Rows inserted: ${totalRows}`);
-}
 
-main().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});
+  return {
+    eventsProcessed: events.length,
+    eventsWithProps,
+    totalRows,
+  };
+}
