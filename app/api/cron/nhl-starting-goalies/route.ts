@@ -121,9 +121,15 @@ export async function POST(request: NextRequest) {
   try {
     const startedAt = new Date().toISOString();
     const gameDate = getEasternDate();
-    const dailyFaceoffHtml = await request.text();
+    const body = (await request.json()) as {
+      html?: string;
+    };
+    const dailyFaceoffHtml = body.html;
 
-    if (!dailyFaceoffHtml.includes("__NEXT_DATA__")) {
+    if (
+      !dailyFaceoffHtml ||
+      !dailyFaceoffHtml.includes("__NEXT_DATA__")
+    ) {
       return NextResponse.json(
         {
           ok: false,
