@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import NflRedZoneTargetsExplorer from "@/components/nfl/NflRedZoneTargetsExplorer";
 import { getNflRedZoneTargets } from "@/lib/nfl/red-zone-targets";
@@ -7,9 +8,9 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export const metadata: Metadata = {
-  title: "NFL Red Zone Targets & Usage Stats | KofSports",
+  title: "NFL Red Zone Targets & Carries 2026: RZ Usage Stats",
   description:
-    "View NFL red zone targets, carries, inside-10 opportunities, inside-5 opportunities, and recent usage trends for running backs, wide receivers, and tight ends.",
+    "2026 NFL red zone targets and carries by player. Compare weekly red zone opportunities, inside-10 and inside-5 usage, plus L3, L5 and season averages.",
   alternates: {
     canonical: "/nfl-red-zone-targets",
   },
@@ -17,6 +18,10 @@ export const metadata: Metadata = {
 
 export default async function NflRedZoneTargetsPage() {
   const players = await getNflRedZoneTargets(2026);
+  const latestWeek =
+    players.length > 0
+      ? Math.max(...players.map((player) => player.latestWeek))
+      : null;
 
   return (
     <main className="min-h-screen bg-slate-950 text-white">
@@ -27,17 +32,27 @@ export default async function NflRedZoneTargetsPage() {
           </p>
 
           <h1 className="mt-3 text-4xl font-bold tracking-tight sm:text-5xl">
-            NFL Red Zone Targets, Carries & Usage
+            NFL Red Zone Targets & Carries 2026
           </h1>
 
           <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-300">
-            Track NFL red zone targets and carries for running backs, wide
-            receivers, and tight ends. Compare recent red zone opportunities
-            with season-long usage to identify players earning valuable scoring
-            chances near the goal line.
+            Track 2026 NFL red zone targets, red zone carries and scoring
+            opportunities by player. Compare weekly red zone usage, inside-10
+            and inside-5 opportunities, plus L3, L5 and season averages for
+            running backs, wide receivers, and tight ends.
           </p>
 
-          <div className="mt-6 flex flex-wrap gap-3 text-sm text-slate-400">
+          <div className="mt-6 flex flex-wrap items-center gap-2 text-sm font-medium text-slate-300">
+            <span>2026 Season</span>
+            {latestWeek !== null && (
+              <>
+                <span className="text-slate-600">•</span>
+                <span>Updated through Week {latestWeek}</span>
+              </>
+            )}
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-3 text-sm text-slate-400">
             <span>Red Zone Opportunities</span>
             <span>•</span>
             <span>Red Zone Carries</span>
@@ -101,9 +116,61 @@ export default async function NflRedZoneTargetsPage() {
             <p>
               Red zone usage can be useful when researching anytime touchdown
               scorers, receiving props, rushing props, and player role changes.
-              It becomes even more valuable when combined with snap counts,
-              defensive matchup data, team scoring environment, and current
-              sportsbook odds.
+              It becomes even more valuable when combined with{" "}
+              <Link
+                href="/nfl-snap-counts"
+                className="font-medium text-emerald-400 transition hover:text-emerald-300"
+              >
+                NFL snap counts
+              </Link>
+              , defensive matchup data, team scoring environment, and current
+              sportsbook odds. For deeper player research, compare usage with{" "}
+              <Link
+                href="/nfl-player-prop-trends"
+                className="font-medium text-emerald-400 transition hover:text-emerald-300"
+              >
+                NFL player prop trends
+              </Link>{" "}
+              and the{" "}
+              <Link
+                href="/nfl-prop-research"
+                className="font-medium text-emerald-400 transition hover:text-emerald-300"
+              >
+                NFL prop research dashboard
+              </Link>
+              .
+            </p>
+          </div>
+
+          <h2 className="mt-12 text-3xl font-bold">
+            NFL Red Zone Carries, Goal-Line Carries & Touches
+          </h2>
+
+          <div className="mt-6 space-y-5 text-slate-300">
+            <p>
+              NFL red zone carries measure rushing attempts inside the
+              opponent&apos;s 20-yard line. For running backs, these attempts
+              can help identify which players are consistently receiving
+              valuable rushing opportunities when their offense gets close to
+              the end zone.
+            </p>
+
+            <p>
+              Carries inside the 10-yard line and 5-yard line provide an even
+              closer look at goal-line usage. A running back with a high number
+              of red zone carries, especially opportunities inside the 5, may
+              have a different touchdown-scoring role than a back whose workload
+              comes primarily between the 20s.
+            </p>
+
+            <p>
+              Red zone touches is also a common way to describe player usage
+              near the goal line, but KofSports uses Red Zone Opportunities as
+              the broader metric. Red Zone Opportunities combines carries and
+              targets, while a target does not necessarily result in a reception
+              or an actual touch. The Season view above can be used to compare
+              full-season red zone carries, targets, opportunities, and
+              opportunities per game.
             </p>
           </div>
 
