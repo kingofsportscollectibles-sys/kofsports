@@ -23,10 +23,13 @@ const supabase = createClient(
   }
 );
 
+const CURRENT_SEASON = 20262027;
+
 const DEFAULT_SEASONS = [
   20232024,
   20242025,
   20252026,
+  CURRENT_SEASON,
 ] as const;
 
 type NhlPlayer = {
@@ -114,16 +117,61 @@ async function fetchGameLog(
   return (await response.json()) as NhlGameLogResponse;
 }
 
+export async function getRecentNhlPropPlayerIds(
+  hours = 24
+): Promise<number[]> {
+  if (!Number.isFinite(hours) || hours <= 0) {
+    throw new Error(
+      "Recent prop player window must be positive"
+    );
+  }
+
+  const cutoff = new Date(
+    Date.now() - hours * 60 * 60 * 1000
+  ).toISOString();
+
+  const { data, error } = await supabase
+    .from("nhl_prop_lines")
+    .select("player_id")
+    .gte("fetched_at", cutoff)
+    .not("player_id", "is", null);
+
+  if (error) {
+    throw new Error(
+      `Unable to load recent NHL prop players: ` +
+        error.message
+    );
+  }
+
+  return Array.from(
+    new Set(
+      (data ?? [])
+        .map((row) => row.player_id)
+        .filter(
+          (id): id is number =>
+            typeof id === "number"
+        )
+    )
+  );
+}
+
 async function getPlayers(
-  playerId?: number
+  playerId?: number,
+  playerIds?: number[]
 ): Promise<NhlPlayer[]> {
   let query = supabase
     .from("nhl_players")
     .select("id,player_name,position")
     .order("id");
 
-  if (playerId) {
+  if (playerId !== undefined) {
     query = query.eq("id", playerId);
+  } else if (playerIds !== undefined) {
+    if (playerIds.length === 0) {
+      return [];
+    }
+
+    query = query.in("id", playerIds);
   }
 
   const { data, error } = await query;
@@ -246,6 +294,159 @@ async function importPlayerSeason(
   return rows.length;
 }
 
+export async function importNhlPlayerGameStats(options?: {
+  playerId?: number;
+  playerIds?: number[];
+  seasons?: number[];
+}) {
+  const playerId = options?.playerId;
+  const playerIds = options?.playerIds;
+  const seasons = options?.seasons ?? [...DEFAULT_SEASONS];
+
+  if (
+    playerId !== undefined &&
+    !Number.isFinite(playerId)
+  ) {
+    throw new Error("Invalid playerId value");
+  }
+
+  if (
+    playerIds !== undefined &&
+    playerIds.some((id) => !Number.isFinite(id))
+  ) {
+    throw new Error("Invalid playerIds value");
+  }
+
+  if (
+    playerId !== undefined &&
+    playerIds !== undefined
+  ) {
+    throw new Error(
+      "Use either playerId or playerIds, not both"
+    );
+  }
+
+  if (
+    seasons.some(
+      (season) => !Number.isFinite(season)
+    )
+  ) {
+    throw new Error("Invalid season value");
+  }
+
+  const players = await getPlayers(
+    playerId,
+    playerIds
+  );
+
+  console.log(
+    `Importing ${players.length} NHL players ` +
+      `across ${seasons.length} season(s)...`
+  );
+
+  let totalRows = 0;
+  let completed = 0;
+
+  const concurrency = 8;
+
+  for (
+    let start = 0;
+    start < players.length;
+    start += concurrency
+  ) {
+    const batch = players.slice(
+      start,
+      start + concurrency
+    );
+
+    const results = await Promise.all(
+      batch.map(async (player) => {
+        let playerRows = 0;
+
+        for (const season of seasons) {
+          try {
+            const rows = await importPlayerSeason(
+              player,
+              season
+            );
+
+            playerRows += rows;
+          } catch (error) {
+            console.error(
+              `Failed ${player.player_name} (${player.id}) ` +
+                `season ${season}:`,
+              error
+            );
+          }
+        }
+
+        return {
+          player,
+          playerRows,
+        };
+      })
+    );
+
+    for (const result of results) {
+      completed += 1;
+      totalRows += result.playerRows;
+
+      console.log(
+        `[${completed}/${players.length}] ` +
+          `${result.player.player_name} ` +
+          `(${result.player.id}): ` +
+          `${result.playerRows} games`
+      );
+    }
+
+    if (start + concurrency < players.length) {
+      await new Promise((resolve) =>
+        setTimeout(resolve, 100)
+      );
+    }
+  }
+
+  console.log(
+    `\nNHL player game stat import complete: ` +
+      `${totalRows} rows`
+  );
+
+  return {
+    playersProcessed: completed,
+    totalRows,
+  };
+}
+
+export async function refreshRecentNhlPropPlayerStats(
+  options?: {
+    hours?: number;
+    seasons?: number[];
+  }
+) {
+  const hours = options?.hours ?? 24;
+  const seasons =
+    options?.seasons ?? [CURRENT_SEASON];
+
+  const playerIds =
+    await getRecentNhlPropPlayerIds(hours);
+
+  console.log(
+    `Refreshing NHL stats for ` +
+      `${playerIds.length} recent prop players...`
+  );
+
+  const result =
+    await importNhlPlayerGameStats({
+      playerIds,
+      seasons,
+    });
+
+  return {
+    targetPlayers: playerIds.length,
+    ...result,
+  };
+}
+
 async function main() {
   const playerArg = process.argv.find(
     (arg) => arg.startsWith("--player=")
@@ -261,74 +462,17 @@ async function main() {
 
   const seasons = seasonArg
     ? [Number(seasonArg.split("=")[1])]
-    : [...DEFAULT_SEASONS];
+    : undefined;
 
-  if (
-    playerId !== undefined &&
-    !Number.isFinite(playerId)
-  ) {
-    throw new Error("Invalid --player value");
-  }
-
-  if (
-    seasons.some(
-      (season) => !Number.isFinite(season)
-    )
-  ) {
-    throw new Error("Invalid --season value");
-  }
-
-  const players = await getPlayers(playerId);
-
-  console.log(
-    `Importing ${players.length} NHL players ` +
-      `across ${seasons.length} season(s)...`
-  );
-
-  let totalRows = 0;
-  let completed = 0;
-
-  for (const player of players) {
-    let playerRows = 0;
-
-    for (const season of seasons) {
-      try {
-        const rows = await importPlayerSeason(
-          player,
-          season
-        );
-
-        playerRows += rows;
-        totalRows += rows;
-      } catch (error) {
-        console.error(
-          `Failed ${player.player_name} (${player.id}) ` +
-            `season ${season}:`,
-          error
-        );
-      }
-
-      await new Promise((resolve) =>
-        setTimeout(resolve, 100)
-      );
-    }
-
-    completed += 1;
-
-    console.log(
-      `[${completed}/${players.length}] ` +
-        `${player.player_name} (${player.id}): ` +
-        `${playerRows} games`
-    );
-  }
-
-  console.log(
-    `\nNHL player game stat import complete: ` +
-      `${totalRows} rows`
-  );
+  await importNhlPlayerGameStats({
+    playerId,
+    seasons,
+  });
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main().catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });
+}
