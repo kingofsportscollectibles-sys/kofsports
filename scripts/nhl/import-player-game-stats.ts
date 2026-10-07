@@ -423,7 +423,7 @@ export async function refreshRecentNhlPropPlayerStats(
     seasons?: number[];
   }
 ) {
-  const hours = options?.hours ?? 24;
+  const hours = options?.hours ?? 24 * 7;
   const seasons =
     options?.seasons ?? [CURRENT_SEASON];
 
