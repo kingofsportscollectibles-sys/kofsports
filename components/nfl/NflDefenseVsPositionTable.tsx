@@ -266,6 +266,11 @@ export default function NflDefenseVsPositionTable({
     direction: "asc",
   });
 
+  const [rankMetric, setRankMetric] =
+    useState<keyof DefenseVsPositionRow>(
+      "ppr_fantasy_points_per_game"
+    );
+
   const columns = POSITION_COLUMNS[position];
 
   const filteredRows = useMemo(() => {
@@ -304,6 +309,34 @@ export default function NflDefenseVsPositionTable({
         : -comparison;
     });
   }, [rows, position, sortConfig]);
+
+  const rankedRows = useMemo(() => {
+    return [...rows]
+      .filter((row) => row.position === position)
+      .sort(
+        (a, b) =>
+          toNumber(b[rankMetric] as number | string) -
+          toNumber(a[rankMetric] as number | string)
+      );
+  }, [rows, position, rankMetric]);
+
+  function getDisplayRank(row: DefenseVsPositionRow) {
+    return (
+      rankedRows.findIndex(
+        (candidate) => candidate.defense === row.defense
+      ) + 1
+    );
+  }
+
+  function handleRankMetricChange(
+    key: keyof DefenseVsPositionRow
+  ) {
+    setRankMetric(key);
+    setSortConfig({
+      key,
+      direction: "desc",
+    });
+  }
 
   function handleSort(key: keyof DefenseVsPositionRow) {
     setSortConfig((current) => {
@@ -355,6 +388,9 @@ export default function NflDefenseVsPositionTable({
                   href={POSITION_URLS[item]}
                   onClick={() => {
                     setPosition(item);
+                    setRankMetric(
+                      "ppr_fantasy_points_per_game"
+                    );
                     setSortConfig({
                       key: "ppr_rank",
                       direction: "asc",
@@ -386,14 +422,42 @@ export default function NflDefenseVsPositionTable({
 
 </div>
 
+      <div className="mb-4">
+        <div className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
+          Rank By
+        </div>
+
+        <select
+          value={String(rankMetric)}
+          onChange={(event) =>
+            handleRankMetricChange(
+              event.target
+                .value as keyof DefenseVsPositionRow
+            )
+          }
+          className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm font-semibold text-white outline-none transition focus:border-emerald-500/50 sm:w-auto sm:min-w-[240px]"
+        >
+          {columns.map((column) => (
+            <option
+              key={column.key}
+              value={column.key}
+            >
+              {column.label === "Fantasy Pts"
+                ? "Fantasy Points Allowed"
+                : `${column.label} Allowed`}
+            </option>
+          ))}
+        </select>
+      </div>
+
       <div className="mb-4 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.05] px-4 py-3 text-sm text-zinc-400">
         <span className="font-semibold text-white">
-          Ranking guide:
+          How to read the rankings:
         </span>{" "}
-        #1 allows the most fantasy production to{" "}
-        {position}s and represents the most favorable
-        matchup. #32 allows the least and represents the
-        toughest matchup.
+        #1 allows the most production in the selected
+        category. #32 allows the least. Higher-ranked
+        defenses represent more favorable matchups for
+        opposing {position}s.
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950/70">
@@ -459,14 +523,20 @@ export default function NflDefenseVsPositionTable({
                   className="border-b border-white/[0.06] transition last:border-0 hover:bg-white/[0.035]"
                 >
                   <td className="w-[64px] bg-zinc-950 px-3 py-3 md:sticky md:left-0 md:z-10 md:w-auto md:px-4">
-                    <span
-                      className={[
-                        "inline-flex h-8 min-w-8 items-center justify-center rounded-lg border px-2 text-sm font-bold",
-                        getRankClass(row.ppr_rank),
-                      ].join(" ")}
-                    >
-                      {row.ppr_rank}
-                    </span>
+                    {(() => {
+                      const displayRank = getDisplayRank(row);
+
+                      return (
+                        <span
+                          className={[
+                            "inline-flex h-8 min-w-8 items-center justify-center rounded-lg border px-2 text-sm font-bold",
+                            getRankClass(displayRank),
+                          ].join(" ")}
+                        >
+                          {displayRank}
+                        </span>
+                      );
+                    })()}
                   </td>
 
                   <td className="bg-zinc-950 px-2 py-3 md:sticky md:left-[78px] md:z-10 md:px-4">
