@@ -496,7 +496,7 @@ export default function NflDefenseVsPositionTable({
                     key={column.key}
                     className={[
                       "whitespace-nowrap px-3 py-3 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500 md:px-4",
-                      column.key === "ppr_fantasy_points_per_game"
+                      column.key === rankMetric
                         ? "w-[92px]"
                         : "hidden md:table-cell",
                     ].join(" ")}
@@ -559,16 +559,15 @@ export default function NflDefenseVsPositionTable({
                   </td>
 
                   {columns.map((column) => {
-                    const isFantasyPoints =
-                      column.key ===
-                      "ppr_fantasy_points_per_game";
+                    const isSelectedMetric =
+                      column.key === rankMetric;
 
                     return (
                       <td
                         key={column.key}
                         className={[
                           "whitespace-nowrap px-3 py-3 text-right text-sm tabular-nums md:px-4",
-                          isFantasyPoints
+                          isSelectedMetric
                             ? "w-[92px] font-bold text-white"
                             : "hidden text-zinc-300 md:table-cell",
                         ].join(" ")}
