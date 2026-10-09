@@ -4,6 +4,9 @@ import NhlPropTrendsExplorer from "@/components/nhl/NhlPropTrendsExplorer";
 import { getNhlPlayerPropTrends } from "@/lib/nhl/prop-trends";
 import { hasKofSportsProAccess } from "@/lib/auth/entitlements";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export const metadata: Metadata = {
   title: "NHL Player Props Today: Trends & Hit Rates | KofSports",
   description:
