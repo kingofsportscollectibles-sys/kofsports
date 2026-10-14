@@ -72,6 +72,48 @@ function getAverageEdge(prop: NflPlayerPropTrend) {
   return prop.avgL5 - prop.line;
 }
 
+function getModelProjection(
+  prop: NflPlayerPropTrend,
+): number | null {
+  switch (prop.market) {
+    case "player_pass_yds":
+      return prop.passingProjection?.projectedPassingYards ?? null;
+
+    case "player_rush_yds":
+      return prop.rushingProjection?.projectedRushingYards ?? null;
+
+    case "player_reception_yds":
+      return prop.receivingProjection?.projectedReceivingYards ?? null;
+
+    case "player_receptions":
+      return prop.receptionsProjection?.projectedReceptions ?? null;
+  }
+}
+
+function getModelEdge(
+  prop: NflPlayerPropTrend,
+): number | null {
+  const projection = getModelProjection(prop);
+
+  if (projection === null) {
+    return null;
+  }
+
+  return projection - prop.line;
+}
+
+function getModelEdgePercent(
+  prop: NflPlayerPropTrend,
+): number | null {
+  const edge = getModelEdge(prop);
+
+  if (edge === null || prop.line === 0) {
+    return null;
+  }
+
+  return (edge / prop.line) * 100;
+}
+
 function getTrendClass(value: number | null) {
   if (value === null) {
     return "border-slate-800 bg-slate-950";
@@ -248,6 +290,91 @@ function PlayerPropCard({
           </span>
         </div>
       </div>
+
+      {hasProAccess ? (
+        <div className="border-t border-slate-800 px-5 py-4">
+          {(() => {
+            const projection = getModelProjection(prop);
+            const edge = getModelEdge(prop);
+            const edgePercent = getModelEdgePercent(prop);
+
+            return (
+              <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                <div className="min-w-0 rounded-xl border border-slate-800 bg-slate-950 p-2.5 sm:p-3">
+                  <div className="text-[10px] font-semibold uppercase leading-tight tracking-wide text-slate-500 sm:text-[11px] sm:tracking-wider">
+                    👑 KOF Projection
+                  </div>
+                  <div className="mt-1 text-xl font-black text-white">
+                    {projection !== null
+                      ? projection.toFixed(1)
+                      : "—"}
+                  </div>
+                </div>
+
+                <div className="min-w-0 rounded-xl border border-slate-800 bg-slate-950 p-2.5 sm:p-3">
+                  <div className="text-[10px] font-semibold uppercase leading-tight tracking-wide text-slate-500 sm:text-[11px] sm:tracking-wider">
+                    Model Edge
+                  </div>
+                  <div
+                    className={`mt-1 text-xl font-black ${
+                      edge === null
+                        ? "text-slate-400"
+                        : edge > 0
+                          ? "text-emerald-400"
+                          : edge < 0
+                            ? "text-rose-400"
+                            : "text-white"
+                    }`}
+                  >
+                    {edge !== null
+                      ? `${edge > 0 ? "+" : ""}${edge.toFixed(1)}`
+                      : "—"}
+                  </div>
+                </div>
+
+                <div className="min-w-0 rounded-xl border border-slate-800 bg-slate-950 p-2.5 sm:p-3">
+                  <div className="text-[10px] font-semibold uppercase leading-tight tracking-wide text-slate-500 sm:text-[11px] sm:tracking-wider">
+                    Edge %
+                  </div>
+                  <div
+                    className={`mt-1 text-xl font-black ${
+                      edgePercent === null
+                        ? "text-slate-400"
+                        : edgePercent > 0
+                          ? "text-emerald-400"
+                          : edgePercent < 0
+                            ? "text-rose-400"
+                            : "text-white"
+                    }`}
+                  >
+                    {edgePercent !== null
+                      ? `${edgePercent > 0 ? "+" : ""}${edgePercent.toFixed(1)}%`
+                      : "—"}
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+      ) : (
+        <div className="border-t border-slate-800 px-5 py-4">
+          <a
+            href="/pro"
+            className="flex items-center justify-between rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3 transition hover:border-emerald-500/40"
+          >
+            <div>
+              <div className="text-xs font-bold uppercase tracking-wider text-emerald-400">
+                KOF Projection
+              </div>
+              <div className="mt-1 text-sm text-slate-400">
+                Unlock model projections and edge vs the current line.
+              </div>
+            </div>
+
+            <div className="ml-4 text-lg">🔒</div>
+          </a>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-3 p-5 lg:grid-cols-4">
         <TrendStat

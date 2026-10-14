@@ -1,5 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getNflPlayerSlugMap } from "@/lib/nfl/player-pages";
+import {
+  getNflPassingYardsProjections,
+  getNflQbRushYardsProjections,
+  getNflReceptionsProjections,
+  getNflReceivingYardsProjections,
+  getNflRushYardsProjections,
+} from "@/lib/nfl/player-projections";
 
 export const NFL_PROP_MARKETS = [
   "player_pass_yds",
@@ -66,6 +74,34 @@ export type NflPlayerPropTrend = {
   avgH2h: number | null;
 
   lastTen: NflPropGameResult[];
+
+  passingProjection: {
+    projectedPassingYards: number;
+    projectedAttempts: number;
+    expectedYardsPerAttempt: number;
+    modelVersion: string;
+  } | null;
+
+  rushingProjection: {
+    projectedRushingYards: number;
+    projectedCarries: number | null;
+    expectedYpc: number | null;
+    modelVersion: string;
+  } | null;
+
+  receivingProjection: {
+    projectedReceivingYards: number;
+    projectedTargets: number;
+    expectedYardsPerTarget: number;
+    modelVersion: string;
+  } | null;
+
+  receptionsProjection: {
+    projectedReceptions: number;
+    projectedTargets: number;
+    expectedCatchRate: number;
+    modelVersion: string;
+  } | null;
 };
 
 type PropTrendRow = {
@@ -127,6 +163,147 @@ function nullableNumber(value: number | string | null): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+type NflPropScheduleRow = {
+  season: number;
+  week: number;
+  home_team: string;
+  away_team: string;
+  commence_time: string;
+};
+
+async function getEligibleProjectionIds(
+  externalPlayerIds: string[],
+  season: number,
+  positions: string[],
+): Promise<Set<string>> {
+  const uniquePlayerIds = Array.from(
+    new Set(externalPlayerIds.filter(Boolean)),
+  );
+
+  if (
+    uniquePlayerIds.length === 0 ||
+    positions.length === 0
+  ) {
+    return new Set();
+  }
+
+  const supabase = createAdminClient();
+
+  const { data, error } = await supabase
+    .from("nfl_player_current_teams")
+    .select("gsis_id")
+    .in("gsis_id", uniquePlayerIds)
+    .eq("season", season)
+    .eq("game_type", "REG")
+    .in("position", positions);
+
+  if (error) {
+    console.error(
+      "Failed to load NFL projection eligibility:",
+      {
+        positions,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+      },
+    );
+
+    throw new Error(
+      `Unable to load NFL projection eligibility: ${error.message}`,
+    );
+  }
+
+  return new Set(
+    (data ?? [])
+      .map((row) => row.gsis_id)
+      .filter(
+        (id): id is string =>
+          typeof id === "string" && id.length > 0,
+      ),
+  );
+}
+
+async function resolvePropSeasonAndWeek(
+  trends: NflPlayerPropTrend[],
+): Promise<{ season: number; week: number } | null> {
+  if (trends.length === 0) {
+    return null;
+  }
+
+  const supabase = await createClient();
+
+  const earliestCommenceTime = trends.reduce(
+    (earliest, trend) =>
+      trend.commenceTime < earliest
+        ? trend.commenceTime
+        : earliest,
+    trends[0].commenceTime,
+  );
+
+  const latestCommenceTime = trends.reduce(
+    (latest, trend) =>
+      trend.commenceTime > latest
+        ? trend.commenceTime
+        : latest,
+    trends[0].commenceTime,
+  );
+
+  const { data, error } = await supabase
+    .from("nfl_games")
+    .select(
+      "season, week, home_team, away_team, commence_time",
+    )
+    .eq("game_type", "REG")
+    .gte("commence_time", earliestCommenceTime)
+    .lte("commence_time", latestCommenceTime);
+
+  if (error) {
+    console.error("Failed to resolve NFL prop season/week:", {
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+      code: error.code,
+    });
+
+    throw new Error(
+      `Unable to resolve NFL prop season/week: ${error.message}`,
+    );
+  }
+
+  const scheduleRows = (data ?? []) as NflPropScheduleRow[];
+
+  const matchedWeeks = new Map<string, {
+    season: number;
+    week: number;
+  }>();
+
+  for (const trend of trends) {
+    const match = scheduleRows.find(
+      (game) =>
+        game.home_team === trend.homeTeam &&
+        game.away_team === trend.awayTeam &&
+        game.commence_time === trend.commenceTime,
+    );
+
+    if (match) {
+      matchedWeeks.set(
+        `${match.season}-${match.week}`,
+        {
+          season: match.season,
+          week: match.week,
+        },
+      );
+    }
+  }
+
+  if (matchedWeeks.size !== 1) {
+    return null;
+  }
+
+  return matchedWeeks.values().next().value ?? null;
+}
+
 function mapPropTrend(row: PropTrendRow): NflPlayerPropTrend {
   return {
     propId: row.prop_id,
@@ -176,6 +353,11 @@ function mapPropTrend(row: PropTrendRow): NflPlayerPropTrend {
     avgH2h: nullableNumber(row.avg_h2h),
 
     lastTen: Array.isArray(row.last_ten) ? row.last_ten : [],
+
+    passingProjection: null,
+    rushingProjection: null,
+    receivingProjection: null,
+    receptionsProjection: null,
   };
 }
 
@@ -208,18 +390,250 @@ if (error) {
 
   const trends = ((data ?? []) as PropTrendRow[]).map(mapPropTrend);
 
-  const slugMap = await getNflPlayerSlugMap(
-    trends
-      .map((trend) => trend.externalPlayerId)
-      .filter((id): id is string => Boolean(id)),
-  );
+  const externalPlayerIds = trends
+    .map((trend) => trend.externalPlayerId)
+    .filter((id): id is string => Boolean(id));
 
-  return trends.map((trend) => ({
-    ...trend,
-    playerSlug: trend.externalPlayerId
-      ? slugMap.get(trend.externalPlayerId) ?? null
-      : null,
-  }));
+  const [slugMap, schedule] = await Promise.all([
+    getNflPlayerSlugMap(externalPlayerIds),
+    resolvePropSeasonAndWeek(trends),
+  ]);
+
+  const playerIdsByMarket = {
+    passing: trends
+      .filter(
+        (trend) =>
+          trend.market === "player_pass_yds" &&
+          trend.externalPlayerId,
+      )
+      .map((trend) => trend.externalPlayerId as string),
+
+    rushing: trends
+      .filter(
+        (trend) =>
+          trend.market === "player_rush_yds" &&
+          trend.externalPlayerId,
+      )
+      .map((trend) => trend.externalPlayerId as string),
+
+    receiving: trends
+      .filter(
+        (trend) =>
+          trend.market === "player_reception_yds" &&
+          trend.externalPlayerId,
+      )
+      .map((trend) => trend.externalPlayerId as string),
+
+    receptions: trends
+      .filter(
+        (trend) =>
+          trend.market === "player_receptions" &&
+          trend.externalPlayerId,
+      )
+      .map((trend) => trend.externalPlayerId as string),
+  };
+
+  const [
+    eligiblePassingIds,
+    eligibleRushingIds,
+    eligibleQbRushingIds,
+    eligibleReceivingIds,
+    eligibleReceptionsIds,
+  ] = schedule
+    ? await Promise.all([
+        getEligibleProjectionIds(
+          playerIdsByMarket.passing,
+          schedule.season,
+          ["QB"],
+        ),
+        getEligibleProjectionIds(
+          playerIdsByMarket.rushing,
+          schedule.season,
+          ["RB"],
+        ),
+        getEligibleProjectionIds(
+          playerIdsByMarket.rushing,
+          schedule.season,
+          ["QB"],
+        ),
+        getEligibleProjectionIds(
+          playerIdsByMarket.receiving,
+          schedule.season,
+          ["RB", "WR", "TE"],
+        ),
+        getEligibleProjectionIds(
+          playerIdsByMarket.receptions,
+          schedule.season,
+          ["RB", "WR", "TE"],
+        ),
+      ])
+    : [
+        new Set<string>(),
+        new Set<string>(),
+        new Set<string>(),
+        new Set<string>(),
+        new Set<string>(),
+      ];
+
+  const [
+    passingProjections,
+    rushProjections,
+    qbRushProjections,
+    receivingProjections,
+    receptionsProjections,
+  ] = schedule
+    ? await Promise.all([
+        getNflPassingYardsProjections(
+          playerIdsByMarket.passing.filter((id) =>
+            eligiblePassingIds.has(id),
+          ),
+          schedule.season,
+          schedule.week,
+        ),
+        getNflRushYardsProjections(
+          playerIdsByMarket.rushing.filter((id) =>
+            eligibleRushingIds.has(id),
+          ),
+          schedule.season,
+          schedule.week,
+        ),
+        getNflQbRushYardsProjections(
+          trends
+            .filter(
+              (trend) =>
+                trend.market === "player_rush_yds" &&
+                trend.externalPlayerId &&
+                trend.upcomingOpponent &&
+                eligibleQbRushingIds.has(
+                  trend.externalPlayerId,
+                ),
+            )
+            .map((trend) => ({
+              externalPlayerId:
+                trend.externalPlayerId as string,
+              opponent:
+                trend.upcomingOpponent as string,
+            })),
+          schedule.season,
+          schedule.week,
+        ),
+        getNflReceivingYardsProjections(
+          playerIdsByMarket.receiving.filter((id) =>
+            eligibleReceivingIds.has(id),
+          ),
+          schedule.season,
+          schedule.week,
+        ),
+        getNflReceptionsProjections(
+          playerIdsByMarket.receptions.filter((id) =>
+            eligibleReceptionsIds.has(id),
+          ),
+          schedule.season,
+          schedule.week,
+        ),
+      ])
+    : [
+        new Map(),
+        new Map(),
+        new Map(),
+        new Map(),
+        new Map(),
+      ];
+
+  return trends.map((trend) => {
+    const passingProjection =
+      trend.market === "player_pass_yds" &&
+      trend.externalPlayerId
+        ? passingProjections.get(trend.externalPlayerId) ?? null
+        : null;
+
+    const rbRushingProjection =
+      trend.market === "player_rush_yds" &&
+      trend.externalPlayerId
+        ? rushProjections.get(trend.externalPlayerId) ?? null
+        : null;
+
+    const qbRushingProjection =
+      trend.market === "player_rush_yds" &&
+      trend.externalPlayerId
+        ? qbRushProjections.get(trend.externalPlayerId) ?? null
+        : null;
+
+    const receivingProjection =
+      trend.market === "player_reception_yds" &&
+      trend.externalPlayerId
+        ? receivingProjections.get(trend.externalPlayerId) ?? null
+        : null;
+
+    const receptionsProjection =
+      trend.market === "player_receptions" &&
+      trend.externalPlayerId
+        ? receptionsProjections.get(trend.externalPlayerId) ?? null
+        : null;
+
+    return {
+      ...trend,
+      playerSlug: trend.externalPlayerId
+        ? slugMap.get(trend.externalPlayerId) ?? null
+        : null,
+
+      passingProjection: passingProjection
+        ? {
+            projectedPassingYards:
+              passingProjection.projectedPassingYards,
+            projectedAttempts:
+              passingProjection.projectedAttempts,
+            expectedYardsPerAttempt:
+              passingProjection.expectedYardsPerAttempt,
+            modelVersion: passingProjection.modelVersion,
+          }
+        : null,
+
+      rushingProjection: rbRushingProjection
+        ? {
+            projectedRushingYards:
+              rbRushingProjection.projectedRushingYards,
+            projectedCarries:
+              rbRushingProjection.projectedCarries,
+            expectedYpc: rbRushingProjection.expectedYpc,
+            modelVersion: rbRushingProjection.modelVersion,
+          }
+        : qbRushingProjection
+          ? {
+              projectedRushingYards:
+                qbRushingProjection.projectedRushingYards,
+              projectedCarries: null,
+              expectedYpc: null,
+              modelVersion:
+                qbRushingProjection.modelVersion,
+            }
+          : null,
+
+      receivingProjection: receivingProjection
+        ? {
+            projectedReceivingYards:
+              receivingProjection.projectedReceivingYards,
+            projectedTargets:
+              receivingProjection.projectedTargets,
+            expectedYardsPerTarget:
+              receivingProjection.expectedYardsPerTarget,
+            modelVersion: receivingProjection.modelVersion,
+          }
+        : null,
+
+      receptionsProjection: receptionsProjection
+        ? {
+            projectedReceptions:
+              receptionsProjection.projectedReceptions,
+            projectedTargets:
+              receptionsProjection.projectedTargets,
+            expectedCatchRate:
+              receptionsProjection.expectedCatchRate,
+            modelVersion: receptionsProjection.modelVersion,
+          }
+        : null,
+    };
+  });
 }
 
 export async function getNflPlayerPropTrendsByPlayer(
