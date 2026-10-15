@@ -158,32 +158,60 @@ export function getFreeNflProjectionIds(
   const selectedIds: number[] = [];
   const selectedPlayers = new Set<string>();
   const selectedGames = new Set<string>();
+  const selectedMarkets = new Set<NflPropMarket>();
 
   const getGameKey = (prop: NflPlayerPropTrend) =>
     prop.externalEventId ??
     `${prop.awayTeam}-${prop.homeTeam}-${prop.commenceTime}`;
 
+  const selectProp = (prop: NflPlayerPropTrend) => {
+    selectedIds.push(prop.propId);
+    selectedPlayers.add(prop.playerName);
+    selectedGames.add(getGameKey(prop));
+    selectedMarkets.add(prop.market);
+  };
+
+  // First, maximize variety across games, players, and markets.
   for (const prop of sorted) {
     const gameKey = getGameKey(prop);
 
     if (
       selectedPlayers.has(prop.playerName) ||
-      selectedGames.has(gameKey)
+      selectedGames.has(gameKey) ||
+      selectedMarkets.has(prop.market)
     ) {
       continue;
     }
 
-    selectedIds.push(prop.propId);
-    selectedPlayers.add(prop.playerName);
-    selectedGames.add(gameKey);
+    selectProp(prop);
 
     if (selectedIds.length >= unlockCount) {
       return new Set(selectedIds);
     }
   }
 
-  // Only fall back to another player from an already-selected
-  // game if the board does not contain enough unique games.
+  // If there are not enough unique markets, preserve unique
+  // games and players before repeating a market.
+  for (const prop of sorted) {
+    const gameKey = getGameKey(prop);
+
+    if (
+      selectedIds.includes(prop.propId) ||
+      selectedPlayers.has(prop.playerName) ||
+      selectedGames.has(gameKey)
+    ) {
+      continue;
+    }
+
+    selectProp(prop);
+
+    if (selectedIds.length >= unlockCount) {
+      return new Set(selectedIds);
+    }
+  }
+
+  // Only repeat a game if the board does not contain enough
+  // unique games. Still avoid featuring the same player twice.
   for (const prop of sorted) {
     if (
       selectedIds.includes(prop.propId) ||
@@ -192,8 +220,7 @@ export function getFreeNflProjectionIds(
       continue;
     }
 
-    selectedIds.push(prop.propId);
-    selectedPlayers.add(prop.playerName);
+    selectProp(prop);
 
     if (selectedIds.length >= unlockCount) {
       break;
