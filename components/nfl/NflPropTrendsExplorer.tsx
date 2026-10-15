@@ -25,6 +25,7 @@ type SortOption =
 type Props = {
   props: NflPlayerPropTrend[];
   hasProAccess: boolean;
+  freeProjectionIds: number[];
 };
 
 function marketLabel(market: NflPropMarket) {
@@ -219,94 +220,6 @@ function LockedTrendStat({
       </div>
     </a>
   );
-}
-
-function getFreeProjectionIds(
-  props: NflPlayerPropTrend[],
-): Set<number> {
-  const eligibleProps = props.filter(
-    (prop) => getModelProjection(prop) !== null,
-  );
-
-  if (eligibleProps.length === 0) {
-    return new Set();
-  }
-
-  const sundayProps = eligibleProps.filter((prop) => {
-    const date = new Date(prop.commenceTime);
-
-    return date.getUTCDay() === 0;
-  });
-
-  const pool =
-    sundayProps.length > 0 ? sundayProps : eligibleProps;
-
-  const unlockCount = sundayProps.length > 0 ? 3 : 1;
-
-  const sorted = [...pool].sort((a, b) => {
-    const gameCompare =
-      a.commenceTime.localeCompare(b.commenceTime);
-
-    if (gameCompare !== 0) {
-      return gameCompare;
-    }
-
-    const playerCompare =
-      a.playerName.localeCompare(b.playerName);
-
-    if (playerCompare !== 0) {
-      return playerCompare;
-    }
-
-    return a.market.localeCompare(b.market);
-  });
-
-  const selectedIds: number[] = [];
-  const selectedPlayers = new Set<string>();
-  const selectedGames = new Set<string>();
-
-  const getGameKey = (prop: NflPlayerPropTrend) =>
-    prop.externalEventId ??
-    `${prop.awayTeam}-${prop.homeTeam}-${prop.commenceTime}`;
-
-  for (const prop of sorted) {
-    const gameKey = getGameKey(prop);
-
-    if (
-      selectedPlayers.has(prop.playerName) ||
-      selectedGames.has(gameKey)
-    ) {
-      continue;
-    }
-
-    selectedIds.push(prop.propId);
-    selectedPlayers.add(prop.playerName);
-    selectedGames.add(gameKey);
-
-    if (selectedIds.length >= unlockCount) {
-      return new Set(selectedIds);
-    }
-  }
-
-  // Only fall back to another player from an already-selected
-  // game if the board does not contain enough unique games.
-  for (const prop of sorted) {
-    if (
-      selectedIds.includes(prop.propId) ||
-      selectedPlayers.has(prop.playerName)
-    ) {
-      continue;
-    }
-
-    selectedIds.push(prop.propId);
-    selectedPlayers.add(prop.playerName);
-
-    if (selectedIds.length >= unlockCount) {
-      break;
-    }
-  }
-
-  return new Set(selectedIds);
 }
 
 function PlayerPropCard({
@@ -618,6 +531,7 @@ function PlayerPropCard({
 export default function NflPropTrendsExplorer({
   props,
   hasProAccess,
+  freeProjectionIds: freeProjectionIdList,
 }: Props) {
   const [search, setSearch] = useState("");
   const [game, setGame] = useState("all");
@@ -628,8 +542,8 @@ export default function NflPropTrendsExplorer({
     useState<SortOption>("default");
 
   const freeProjectionIds = useMemo(
-    () => getFreeProjectionIds(props),
-    [props],
+    () => new Set(freeProjectionIdList),
+    [freeProjectionIdList],
   );
 
   const games = useMemo(() => {

@@ -104,6 +104,105 @@ export type NflPlayerPropTrend = {
   } | null;
 };
 
+function hasModelProjection(prop: NflPlayerPropTrend): boolean {
+  switch (prop.market) {
+    case "player_pass_yds":
+      return prop.passingProjection !== null;
+    case "player_rush_yds":
+      return prop.rushingProjection !== null;
+    case "player_reception_yds":
+      return prop.receivingProjection !== null;
+    case "player_receptions":
+      return prop.receptionsProjection !== null;
+  }
+}
+
+export function getFreeNflProjectionIds(
+  props: NflPlayerPropTrend[],
+): Set<number> {
+  const eligibleProps = props.filter(hasModelProjection);
+
+  if (eligibleProps.length === 0) {
+    return new Set();
+  }
+
+  const sundayProps = eligibleProps.filter((prop) => {
+    const date = new Date(prop.commenceTime);
+
+    return date.getUTCDay() === 0;
+  });
+
+  const pool =
+    sundayProps.length > 0 ? sundayProps : eligibleProps;
+
+  const unlockCount = sundayProps.length > 0 ? 3 : 1;
+
+  const sorted = [...pool].sort((a, b) => {
+    const gameCompare =
+      a.commenceTime.localeCompare(b.commenceTime);
+
+    if (gameCompare !== 0) {
+      return gameCompare;
+    }
+
+    const playerCompare =
+      a.playerName.localeCompare(b.playerName);
+
+    if (playerCompare !== 0) {
+      return playerCompare;
+    }
+
+    return a.market.localeCompare(b.market);
+  });
+
+  const selectedIds: number[] = [];
+  const selectedPlayers = new Set<string>();
+  const selectedGames = new Set<string>();
+
+  const getGameKey = (prop: NflPlayerPropTrend) =>
+    prop.externalEventId ??
+    `${prop.awayTeam}-${prop.homeTeam}-${prop.commenceTime}`;
+
+  for (const prop of sorted) {
+    const gameKey = getGameKey(prop);
+
+    if (
+      selectedPlayers.has(prop.playerName) ||
+      selectedGames.has(gameKey)
+    ) {
+      continue;
+    }
+
+    selectedIds.push(prop.propId);
+    selectedPlayers.add(prop.playerName);
+    selectedGames.add(gameKey);
+
+    if (selectedIds.length >= unlockCount) {
+      return new Set(selectedIds);
+    }
+  }
+
+  // Only fall back to another player from an already-selected
+  // game if the board does not contain enough unique games.
+  for (const prop of sorted) {
+    if (
+      selectedIds.includes(prop.propId) ||
+      selectedPlayers.has(prop.playerName)
+    ) {
+      continue;
+    }
+
+    selectedIds.push(prop.propId);
+    selectedPlayers.add(prop.playerName);
+
+    if (selectedIds.length >= unlockCount) {
+      break;
+    }
+  }
+
+  return new Set(selectedIds);
+}
+
 type PropTrendRow = {
   prop_id: number;
   external_event_id: string | null;

@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 
 import NflPropTrendsExplorer from "@/components/nfl/NflPropTrendsExplorer";
-import { getNflPlayerPropTrends } from "@/lib/nfl/prop-trends";
+import {
+  getFreeNflProjectionIds,
+  getNflPlayerPropTrends,
+} from "@/lib/nfl/prop-trends";
 import { hasKofSportsProAccess } from "@/lib/auth/entitlements";
 
 export const metadata: Metadata = {
@@ -15,6 +18,24 @@ export default async function NflPlayerPropTrendsPage() {
     getNflPlayerPropTrends(),
     hasKofSportsProAccess(),
   ]);
+
+  const freeProjectionIds = getFreeNflProjectionIds(props);
+
+  const visibleProps = hasProAccess
+    ? props
+    : props.map((prop) => {
+        if (freeProjectionIds.has(prop.propId)) {
+          return prop;
+        }
+
+        return {
+          ...prop,
+          passingProjection: null,
+          rushingProjection: null,
+          receivingProjection: null,
+          receptionsProjection: null,
+        };
+      });
 
   return (
     <main className="min-h-screen bg-slate-950">
@@ -67,8 +88,9 @@ export default async function NflPlayerPropTrendsPage() {
 
         {props.length > 0 ? (
           <NflPropTrendsExplorer
-  props={props}
+  props={visibleProps}
   hasProAccess={hasProAccess}
+  freeProjectionIds={Array.from(freeProjectionIds)}
 />
         ) : (
           <div className="rounded-2xl border border-slate-800 bg-slate-900 p-10 text-center">
