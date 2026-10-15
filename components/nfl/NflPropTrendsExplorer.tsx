@@ -221,12 +221,102 @@ function LockedTrendStat({
   );
 }
 
+function getFreeProjectionIds(
+  props: NflPlayerPropTrend[],
+): Set<number> {
+  const eligibleProps = props.filter(
+    (prop) => getModelProjection(prop) !== null,
+  );
+
+  if (eligibleProps.length === 0) {
+    return new Set();
+  }
+
+  const sundayProps = eligibleProps.filter((prop) => {
+    const date = new Date(prop.commenceTime);
+
+    return date.getUTCDay() === 0;
+  });
+
+  const pool =
+    sundayProps.length > 0 ? sundayProps : eligibleProps;
+
+  const unlockCount = sundayProps.length > 0 ? 3 : 1;
+
+  const sorted = [...pool].sort((a, b) => {
+    const gameCompare =
+      a.commenceTime.localeCompare(b.commenceTime);
+
+    if (gameCompare !== 0) {
+      return gameCompare;
+    }
+
+    const playerCompare =
+      a.playerName.localeCompare(b.playerName);
+
+    if (playerCompare !== 0) {
+      return playerCompare;
+    }
+
+    return a.market.localeCompare(b.market);
+  });
+
+  const selectedIds: number[] = [];
+  const selectedPlayers = new Set<string>();
+  const selectedGames = new Set<string>();
+
+  const getGameKey = (prop: NflPlayerPropTrend) =>
+    prop.externalEventId ??
+    `${prop.awayTeam}-${prop.homeTeam}-${prop.commenceTime}`;
+
+  for (const prop of sorted) {
+    const gameKey = getGameKey(prop);
+
+    if (
+      selectedPlayers.has(prop.playerName) ||
+      selectedGames.has(gameKey)
+    ) {
+      continue;
+    }
+
+    selectedIds.push(prop.propId);
+    selectedPlayers.add(prop.playerName);
+    selectedGames.add(gameKey);
+
+    if (selectedIds.length >= unlockCount) {
+      return new Set(selectedIds);
+    }
+  }
+
+  // Only fall back to another player from an already-selected
+  // game if the board does not contain enough unique games.
+  for (const prop of sorted) {
+    if (
+      selectedIds.includes(prop.propId) ||
+      selectedPlayers.has(prop.playerName)
+    ) {
+      continue;
+    }
+
+    selectedIds.push(prop.propId);
+    selectedPlayers.add(prop.playerName);
+
+    if (selectedIds.length >= unlockCount) {
+      break;
+    }
+  }
+
+  return new Set(selectedIds);
+}
+
 function PlayerPropCard({
   prop,
   hasProAccess,
+  isFreeProjection,
 }: {
   prop: NflPlayerPropTrend;
   hasProAccess: boolean;
+  isFreeProjection: boolean;
 }) {
   const visibleGames = hasProAccess
     ? prop.lastTen
@@ -291,7 +381,7 @@ function PlayerPropCard({
         </div>
       </div>
 
-      {hasProAccess ? (
+      {hasProAccess || isFreeProjection ? (
         <div className="border-t border-slate-800 px-5 py-4">
           {(() => {
             const projection = getModelProjection(prop);
@@ -302,7 +392,9 @@ function PlayerPropCard({
               <div className="grid grid-cols-3 gap-2 sm:gap-3">
                 <div className="min-w-0 rounded-xl border border-slate-800 bg-slate-950 p-2.5 sm:p-3">
                   <div className="text-[10px] font-semibold uppercase leading-tight tracking-wide text-slate-500 sm:text-[11px] sm:tracking-wider">
-                    👑 KOF Projection
+                    {hasProAccess
+                      ? "👑 KOF Projection"
+                      : "👑 Free KOF Projection"}
                   </div>
                   <div className="mt-1 text-xl font-black text-white">
                     {projection !== null
@@ -535,6 +627,11 @@ export default function NflPropTrendsExplorer({
   const [sort, setSort] =
     useState<SortOption>("default");
 
+  const freeProjectionIds = useMemo(
+    () => getFreeProjectionIds(props),
+    [props],
+  );
+
   const games = useMemo(() => {
     const uniqueGames = new Map<string, string>();
 
@@ -710,6 +807,26 @@ export default function NflPropTrendsExplorer({
     market,
     trend,
     sort,
+  ]);
+
+  const displayedProps = useMemo(() => {
+    if (hasProAccess) {
+      return filteredProps;
+    }
+
+    const freeProps = filteredProps.filter((prop) =>
+      freeProjectionIds.has(prop.propId),
+    );
+
+    const lockedProps = filteredProps.filter(
+      (prop) => !freeProjectionIds.has(prop.propId),
+    );
+
+    return [...freeProps, ...lockedProps];
+  }, [
+    filteredProps,
+    freeProjectionIds,
+    hasProAccess,
   ]);
 
   return (
@@ -894,15 +1011,87 @@ export default function NflPropTrendsExplorer({
       </div>
 
       {filteredProps.length > 0 ? (
-        <div className="grid gap-5 xl:grid-cols-2">
-          {filteredProps.map((prop) => (
-            <PlayerPropCard
-              key={prop.propId}
-              prop={prop}
-              hasProAccess={hasProAccess}
-            />
-          ))}
-        </div>
+        <>
+          {!hasProAccess &&
+          filteredProps.some((prop) =>
+            freeProjectionIds.has(prop.propId),
+          ) ? (
+            <div className="mb-4">
+              <div className="text-sm font-bold uppercase tracking-wider text-emerald-400">
+                👑 Free KOF Projections
+              </div>
+
+              <p className="mt-1 text-sm text-slate-400">
+                Preview today&apos;s KofSports model
+                projections. Unlock every NFL projection
+                with KofSports Pro.
+              </p>
+            </div>
+          ) : null}
+
+          <div className="grid gap-5 xl:grid-cols-2">
+            {displayedProps
+              .filter(
+                (prop) =>
+                  hasProAccess ||
+                  freeProjectionIds.has(prop.propId),
+              )
+              .map((prop) => (
+                <PlayerPropCard
+                  key={prop.propId}
+                  prop={prop}
+                  hasProAccess={hasProAccess}
+                  isFreeProjection={freeProjectionIds.has(
+                    prop.propId,
+                  )}
+                />
+              ))}
+
+            {!hasProAccess &&
+            displayedProps.some(
+              (prop) =>
+                !freeProjectionIds.has(prop.propId),
+            ) ? (
+              <div className="xl:col-span-2 mt-2 border-t border-slate-800 pt-6">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <div className="text-sm font-bold uppercase tracking-wider text-slate-300">
+                      🔒 More NFL Player Props
+                    </div>
+
+                    <p className="mt-1 text-sm text-slate-500">
+                      Unlock KOF projections for every prop
+                      with KofSports Pro.
+                    </p>
+                  </div>
+
+                  <Link
+                    href="/pro"
+                    className="text-sm font-bold text-emerald-400 transition hover:text-emerald-300"
+                  >
+                    Unlock KofSports Pro →
+                  </Link>
+                </div>
+              </div>
+            ) : null}
+
+            {!hasProAccess
+              ? displayedProps
+                  .filter(
+                    (prop) =>
+                      !freeProjectionIds.has(prop.propId),
+                  )
+                  .map((prop) => (
+                    <PlayerPropCard
+                      key={prop.propId}
+                      prop={prop}
+                      hasProAccess={hasProAccess}
+                      isFreeProjection={false}
+                    />
+                  ))
+              : null}
+          </div>
+        </>
       ) : (
         <div className="rounded-2xl border border-slate-800 bg-slate-900 p-10 text-center">
           <h2 className="text-xl font-bold text-white">
