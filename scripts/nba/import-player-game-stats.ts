@@ -8,9 +8,14 @@ const NBA_HEADERS = {
   Origin: "https://www.nba.com",
 };
 
-const SEASON = process.argv[2] ?? "2025-26";
-const SEASON_START_YEAR = Number(SEASON.slice(0, 4));
+const DEFAULT_SEASON = "2025-26";
 const GAME_TYPE = "regular";
+
+type ImportNbaPlayerGameStatsOptions = {
+  season?: string;
+  dateFrom?: string;
+  dateTo?: string;
+};
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -80,22 +85,34 @@ function parseMatchup(matchup: string) {
   };
 }
 
-async function fetchLeagueGameLog(): Promise<NbaResultSet> {
+async function fetchLeagueGameLog(
+  options: ImportNbaPlayerGameStatsOptions = {}
+): Promise<NbaResultSet> {
+  const season = options.season ?? DEFAULT_SEASON;
+  const dateFrom = options.dateFrom ?? "";
+  const dateTo = options.dateTo ?? "";
+
   const params = new URLSearchParams({
     Counter: "0",
-    DateFrom: "",
-    DateTo: "",
+    DateFrom: dateFrom,
+    DateTo: dateTo,
     Direction: "DESC",
     LeagueID: "00",
     PlayerOrTeam: "P",
-    Season: SEASON,
+    Season: season,
     SeasonType: "Regular Season",
     Sorter: "DATE",
   });
 
   const url = `https://stats.nba.com/stats/leaguegamelog?${params.toString()}`;
 
-  console.log(`Fetching NBA ${SEASON} regular-season player game logs...`);
+  console.log(
+    `Fetching NBA ${season} regular-season player game logs` +
+      (dateFrom || dateTo
+        ? ` (${dateFrom || "start"} through ${dateTo || "end"})`
+        : "") +
+      "..."
+  );
 
   const response = await fetch(url, {
     headers: NBA_HEADERS,
@@ -144,8 +161,20 @@ async function upsertInChunks(
   }
 }
 
-async function main() {
-  const resultSet = await fetchLeagueGameLog();
+export async function importNbaPlayerGameStats(
+  options: ImportNbaPlayerGameStatsOptions = {}
+) {
+  const season = options.season ?? DEFAULT_SEASON;
+  const seasonStartYear = Number(season.slice(0, 4));
+
+  if (!Number.isFinite(seasonStartYear)) {
+    throw new Error(`Invalid NBA season: ${season}`);
+  }
+
+  const resultSet = await fetchLeagueGameLog({
+    ...options,
+    season,
+  });
   const { headers, rowSet } = resultSet;
 
   console.log(`NBA rows returned: ${rowSet.length}`);
@@ -180,7 +209,7 @@ async function main() {
     if (!existingGame) {
       games.set(gameId, {
         id: gameId,
-        season: SEASON_START_YEAR,
+        season: seasonStartYear,
         game_type: GAME_TYPE,
         game_date: gameDate,
         home_team: isHome ? team : opponent,
@@ -216,7 +245,7 @@ async function main() {
     stats.push({
       game_id: gameId,
       player_id: playerId,
-      season: SEASON_START_YEAR,
+      season: seasonStartYear,
       game_type: GAME_TYPE,
       game_date: gameDate,
       player_name: playerName,
@@ -284,10 +313,68 @@ async function main() {
   );
 
   console.log("NBA player game stats import complete.");
+
+  return {
+    season,
+    dateFrom: options.dateFrom ?? null,
+    dateTo: options.dateTo ?? null,
+    playersProcessed: players.size,
+    gamesProcessed: games.size,
+    statsProcessed: stats.length,
+    neutralGames: neutralGameIds.size,
+  };
 }
 
-main().catch((error) => {
-  console.error("NBA player game stats import failed:");
-  console.error(error);
-  process.exit(1);
-});
+function formatNbaApiDate(date: Date): string {
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  const year = date.getUTCFullYear();
+
+  return `${month}/${day}/${year}`;
+}
+
+export async function refreshRecentNbaPlayerGameStats(
+  options?: {
+    season?: string;
+    lookbackDays?: number;
+  }
+) {
+  const season = options?.season ?? "2026-27";
+  const lookbackDays = options?.lookbackDays ?? 3;
+
+  if (
+    !Number.isInteger(lookbackDays) ||
+    lookbackDays < 0
+  ) {
+    throw new Error("Invalid NBA lookbackDays value");
+  }
+
+  const today = new Date();
+  const dateFrom = new Date(today);
+
+  dateFrom.setUTCDate(
+    dateFrom.getUTCDate() - lookbackDays
+  );
+
+  return importNbaPlayerGameStats({
+    season,
+    dateFrom: formatNbaApiDate(dateFrom),
+    dateTo: formatNbaApiDate(today),
+  });
+}
+
+async function main() {
+  const season = process.argv[2] ?? DEFAULT_SEASON;
+
+  await importNbaPlayerGameStats({
+    season,
+  });
+}
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main().catch((error) => {
+    console.error("NBA player game stats import failed:");
+    console.error(error);
+    process.exit(1);
+  });
+}
