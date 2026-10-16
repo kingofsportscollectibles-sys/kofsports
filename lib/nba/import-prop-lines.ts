@@ -1,0 +1,608 @@
+import { createClient } from "@supabase/supabase-js";
+
+const SPORT = "basketball_nba";
+
+const MARKETS = [
+  "player_points",
+  "player_rebounds",
+  "player_assists",
+  "player_threes",
+  "player_points_rebounds_assists",
+] as const;
+
+type Event = {
+  id: string;
+  sport_key: string;
+  sport_title: string;
+  commence_time: string;
+  home_team: string;
+  away_team: string;
+};
+
+type Outcome = {
+  name: string;
+  description?: string;
+  price: number;
+  point?: number;
+};
+
+type Market = {
+  key: string;
+  last_update?: string;
+  outcomes: Outcome[];
+};
+
+type Bookmaker = {
+  key: string;
+  title: string;
+  last_update?: string;
+  markets: Market[];
+};
+
+type EventOdds = Event & {
+  bookmakers: Bookmaker[];
+};
+
+type PropRow = {
+  external_event_id: string;
+  player_id: number | null;
+  player_name: string;
+  market: string;
+  line: number;
+  over_price: number | null;
+  under_price: number | null;
+  bookmaker: string;
+  home_team: string;
+  away_team: string;
+  commence_time: string;
+  fetched_at: string;
+  updated_at: string;
+};
+
+export type NbaPropImportResult = {
+  eventsProcessed: number;
+  eventsWithProps: number;
+  totalRows: number;
+};
+
+const TEAM_MAP: Record<string, string> = {
+  "Atlanta Hawks": "ATL",
+  "Boston Celtics": "BOS",
+  "Brooklyn Nets": "BKN",
+  "Charlotte Hornets": "CHA",
+  "Chicago Bulls": "CHI",
+  "Cleveland Cavaliers": "CLE",
+  "Dallas Mavericks": "DAL",
+  "Denver Nuggets": "DEN",
+  "Detroit Pistons": "DET",
+  "Golden State Warriors": "GSW",
+  "Houston Rockets": "HOU",
+  "Indiana Pacers": "IND",
+  "Los Angeles Clippers": "LAC",
+  "Los Angeles Lakers": "LAL",
+  "Memphis Grizzlies": "MEM",
+  "Miami Heat": "MIA",
+  "Milwaukee Bucks": "MIL",
+  "Minnesota Timberwolves": "MIN",
+  "New Orleans Pelicans": "NOP",
+  "New York Knicks": "NYK",
+  "Oklahoma City Thunder": "OKC",
+  "Orlando Magic": "ORL",
+  "Philadelphia 76ers": "PHI",
+  "Phoenix Suns": "PHX",
+  "Portland Trail Blazers": "POR",
+  "Sacramento Kings": "SAC",
+  "San Antonio Spurs": "SAS",
+  "Toronto Raptors": "TOR",
+  "Utah Jazz": "UTA",
+  "Washington Wizards": "WAS",
+};
+
+function normalizeTeam(team: string): string {
+  const normalized = TEAM_MAP[team];
+
+  if (!normalized) {
+    throw new Error(
+      `Unknown NBA team name from Odds API: ${team}`,
+    );
+  }
+
+  return normalized;
+}
+
+async function fetchJson<T>(url: string): Promise<T> {
+  const response = await fetch(url);
+
+  const remaining = response.headers.get(
+    "x-requests-remaining",
+  );
+
+  const used = response.headers.get(
+    "x-requests-used",
+  );
+
+  if (used !== null || remaining !== null) {
+    console.log(
+      `API quota — used: ${used ?? "?"}, remaining: ${remaining ?? "?"}`,
+    );
+  }
+
+  if (!response.ok) {
+    const body = await response.text();
+
+    throw new Error(
+      `Odds API request failed (${response.status}): ${body}`,
+    );
+  }
+
+  return (await response.json()) as T;
+}
+
+function parseEventOdds(
+  event: EventOdds,
+  resolvePlayerId: (playerName: string) => number | null,
+): PropRow[] {
+  const fetchedAt = new Date().toISOString();
+
+  const homeTeam = normalizeTeam(
+    event.home_team,
+  );
+
+  const awayTeam = normalizeTeam(
+    event.away_team,
+  );
+
+  const rows: PropRow[] = [];
+
+  for (const bookmaker of event.bookmakers ?? []) {
+    for (const market of bookmaker.markets ?? []) {
+      if (
+        !MARKETS.includes(
+          market.key as (typeof MARKETS)[number],
+        )
+      ) {
+        continue;
+      }
+
+      const grouped = new Map<
+        string,
+        {
+          playerName: string;
+          line: number;
+          overPrice: number | null;
+          underPrice: number | null;
+        }
+      >();
+
+      for (const outcome of market.outcomes ?? []) {
+        const playerName =
+          outcome.description?.trim();
+
+        const line = outcome.point;
+
+        if (!playerName) {
+          continue;
+        }
+
+        if (typeof line !== "number") {
+          continue;
+        }
+
+        if (
+          outcome.name !== "Over" &&
+          outcome.name !== "Under"
+        ) {
+          continue;
+        }
+
+        const key = `${playerName}|||${line}`;
+
+        let pair = grouped.get(key);
+
+        if (!pair) {
+          pair = {
+            playerName,
+            line,
+            overPrice: null,
+            underPrice: null,
+          };
+
+          grouped.set(key, pair);
+        }
+
+        if (outcome.name === "Over") {
+          pair.overPrice = outcome.price;
+        }
+
+        if (outcome.name === "Under") {
+          pair.underPrice = outcome.price;
+        }
+      }
+
+      for (const pair of grouped.values()) {
+        rows.push({
+          external_event_id: event.id,
+          player_id: resolvePlayerId(pair.playerName),
+          player_name: pair.playerName,
+          market: market.key,
+          line: pair.line,
+          over_price: pair.overPrice,
+          under_price: pair.underPrice,
+          bookmaker: bookmaker.key,
+          home_team: homeTeam,
+          away_team: awayTeam,
+          commence_time: event.commence_time,
+          fetched_at: fetchedAt,
+          updated_at: fetchedAt,
+        });
+      }
+    }
+  }
+
+  return rows;
+}
+
+export async function importNbaPropLines(): Promise<NbaPropImportResult> {
+  const supabaseUrl =
+    process.env.NEXT_PUBLIC_SUPABASE_URL;
+
+  const serviceRoleKey =
+    process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+ const oddsApiKey =
+  process.env.ODDS_API_KEY;
+
+if (!oddsApiKey) {
+  throw new Error("Missing ODDS_API_KEY");
+}
+
+const validatedOddsApiKey = oddsApiKey;
+
+  if (!supabaseUrl) {
+    throw new Error(
+      "Missing NEXT_PUBLIC_SUPABASE_URL",
+    );
+  }
+
+  if (!serviceRoleKey) {
+    throw new Error(
+      "Missing SUPABASE_SERVICE_ROLE_KEY",
+    );
+  }
+
+  const supabase = createClient(
+    supabaseUrl,
+    serviceRoleKey,
+    {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+      },
+    },
+  );
+
+  const { data: nbaPlayers, error: playersError } =
+    await supabase
+      .from("nba_players")
+      .select("id, player_name");
+
+  if (playersError) {
+    throw new Error(
+      `Could not load NBA player identities: ${playersError.message}`,
+    );
+  }
+
+  function normalizePlayerName(name: string): string {
+    return name
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[.'’]/g, "")
+      .replace(/-/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase();
+  }
+
+  const playerIdByName = new Map<string, number>();
+
+  for (const player of nbaPlayers ?? []) {
+    playerIdByName.set(
+      normalizePlayerName(player.player_name),
+      Number(player.id),
+    );
+  }
+
+  function resolvePlayerId(
+    playerName: string,
+  ): number | null {
+    return (
+      playerIdByName.get(
+        normalizePlayerName(playerName),
+      ) ?? null
+    );
+  }
+
+ async function getUpcomingEvents(): Promise<Event[]> {
+  const url =
+    `https://api.the-odds-api.com/v4/sports/${SPORT}/events` +
+    `?apiKey=${encodeURIComponent(validatedOddsApiKey)}`;
+
+  return fetchJson<Event[]>(url);
+}
+
+async function getEventProps(
+  eventId: string,
+): Promise<EventOdds> {
+  const url =
+    `https://api.the-odds-api.com/v4/sports/${SPORT}/events/${eventId}/odds` +
+    `?apiKey=${encodeURIComponent(validatedOddsApiKey)}` +
+    `&regions=us` +
+    `&markets=${MARKETS.join(",")}` +
+    `&oddsFormat=american`;
+
+  return fetchJson<EventOdds>(url);
+}
+
+  async function replaceEventLines(
+    eventId: string,
+    rows: PropRow[],
+  ): Promise<void> {
+    // Preserve existing lines when the Odds API temporarily returns
+    // no usable player props for an event.
+    if (rows.length === 0) {
+      console.log(
+        `No usable prop rows returned for ${eventId}; preserving existing lines.`,
+      );
+      return;
+    }
+
+    // Refresh only bookmaker/market combinations that are present in
+    // this response. If a market is temporarily omitted by a book,
+    // its last valid current lines remain available.
+    const combinations = new Map<
+      string,
+      {
+        bookmaker: string;
+        market: string;
+      }
+    >();
+
+    for (const row of rows) {
+      combinations.set(
+        `${row.bookmaker}|||${row.market}`,
+        {
+          bookmaker: row.bookmaker,
+          market: row.market,
+        },
+      );
+    }
+
+    for (const combination of combinations.values()) {
+      const { error: deleteError } =
+        await supabase
+          .from("nba_prop_lines")
+          .delete()
+          .eq(
+            "external_event_id",
+            eventId,
+          )
+          .eq(
+            "bookmaker",
+            combination.bookmaker,
+          )
+          .eq(
+            "market",
+            combination.market,
+          );
+
+      if (deleteError) {
+        throw new Error(
+          `Could not clear old ${combination.bookmaker} ${combination.market} lines for event ${eventId}: ${deleteError.message}`,
+        );
+      }
+    }
+
+    const { error: insertError } =
+      await supabase
+        .from("nba_prop_lines")
+        .insert(rows);
+
+    if (insertError) {
+      throw new Error(
+        `Could not insert prop lines for event ${eventId}: ${insertError.message}`,
+      );
+    }
+  }
+
+  console.log(
+    "Fetching upcoming NBA events...",
+  );
+
+  const events =
+    await getUpcomingEvents();
+
+  const now = Date.now();
+
+  const futureEvents = events
+    .filter(
+      (event) =>
+        new Date(
+          event.commence_time,
+        ).getTime() > now,
+    )
+    .sort(
+      (a, b) =>
+        new Date(
+          a.commence_time,
+        ).getTime() -
+        new Date(
+          b.commence_time,
+        ).getTime(),
+    );
+
+  if (futureEvents.length === 0) {
+    console.log(
+      "No upcoming NBA events found.",
+    );
+
+    return {
+      eventsProcessed: 0,
+      eventsWithProps: 0,
+      totalRows: 0,
+    };
+  }
+
+  const firstKickoff = new Date(
+    futureEvents[0].commence_time,
+  ).getTime();
+
+  const slateEnd =
+    firstKickoff +
+    6 * 24 * 60 * 60 * 1000;
+
+  const upcomingEvents =
+    futureEvents.filter((event) => {
+      const commenceTime = new Date(
+        event.commence_time,
+      ).getTime();
+
+      return commenceTime <= slateEnd;
+    });
+
+  console.log(
+    `Upcoming NBA events returned: ${upcomingEvents.length}`,
+  );
+
+  async function appendDraftKingsHistory(
+  rows: PropRow[],
+): Promise<void> {
+  const draftKingsRows = rows.filter(
+    (row) => row.bookmaker === "draftkings",
+  );
+
+  if (draftKingsRows.length === 0) {
+    return;
+  }
+
+  const historyRows = draftKingsRows.map(
+    ({
+      external_event_id,
+      player_id,
+      player_name,
+      market,
+      line,
+      over_price,
+      under_price,
+      bookmaker,
+      home_team,
+      away_team,
+      commence_time,
+      fetched_at,
+    }) => ({
+      external_event_id,
+      player_id,
+      player_name,
+      market,
+      line,
+      over_price,
+      under_price,
+      bookmaker,
+      home_team,
+      away_team,
+      commence_time,
+      fetched_at,
+    }),
+  );
+
+  const { error } = await supabase
+    .from("nba_prop_line_history")
+    .insert(historyRows);
+
+  if (error) {
+    throw new Error(
+      `Could not save DraftKings prop history: ${error.message}`,
+    );
+  }
+}
+
+  let eventsProcessed = 0;
+  let eventsWithProps = 0;
+  let totalRows = 0;
+
+  for (const event of upcomingEvents) {
+    const away = normalizeTeam(
+      event.away_team,
+    );
+
+    const home = normalizeTeam(
+      event.home_team,
+    );
+
+    console.log(
+      `Fetching ${away} @ ${home} — ${event.commence_time}`,
+    );
+
+    const eventOdds =
+      await getEventProps(event.id);
+
+    const rows =
+      parseEventOdds(
+        eventOdds,
+        resolvePlayerId,
+      );
+
+    const uniquePlayers = new Map<
+      string,
+      number | null
+    >();
+
+    for (const row of rows) {
+      uniquePlayers.set(
+        row.player_name,
+        row.player_id,
+      );
+    }
+
+    const matchedPlayers = [
+      ...uniquePlayers.entries(),
+    ].filter(([, playerId]) => playerId !== null);
+
+    const unmatchedPlayers = [
+      ...uniquePlayers.entries(),
+    ].filter(([, playerId]) => playerId === null);
+
+    console.log(
+      `Books: ${
+        eventOdds.bookmakers?.length ?? 0
+      } | Prop rows: ${rows.length} | Players matched: ${matchedPlayers.length}/${uniquePlayers.size}`,
+    );
+
+    if (unmatchedPlayers.length > 0) {
+      console.warn(
+        `Unmatched NBA players: ${unmatchedPlayers
+          .map(([playerName]) => playerName)
+          .join(", ")}`,
+      );
+    }
+
+    await replaceEventLines(
+      event.id,
+      rows,
+    );
+
+    await appendDraftKingsHistory(rows);
+
+    eventsProcessed += 1;
+
+    if (rows.length > 0) {
+      eventsWithProps += 1;
+      totalRows += rows.length;
+    }
+  }
+
+  return {
+    eventsProcessed,
+    eventsWithProps,
+    totalRows,
+  };
+}
