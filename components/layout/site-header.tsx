@@ -119,8 +119,8 @@ export async function SiteHeader() {
               </svg>
             </button>
 
-            <div className="invisible absolute left-1/2 top-full z-50 w-[640px] -translate-x-1/2 pt-4 opacity-0 transition duration-150 group-hover:visible group-hover:opacity-100">
-              <div className="grid grid-cols-2 gap-2 overflow-hidden rounded-xl border border-white/10 bg-zinc-950 p-3 shadow-2xl shadow-black/50">
+            <div className="invisible absolute left-1/2 top-full z-50 w-[900px] -translate-x-1/2 pt-4 opacity-0 transition duration-150 group-hover:visible group-hover:opacity-100">
+              <div className="grid grid-cols-3 gap-2 overflow-hidden rounded-xl border border-white/10 bg-zinc-950 p-3 shadow-2xl shadow-black/50">
                 {toolNavigationGroups.map((group) => (
                   <div key={group.sport} className="rounded-lg p-1">
                     <div className="px-3 pb-2 pt-1 text-[11px] font-black uppercase tracking-[0.2em] text-brand">
