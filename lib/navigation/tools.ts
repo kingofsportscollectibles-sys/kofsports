@@ -65,4 +65,14 @@ export const toolNavigationGroups: ToolNavigationGroup[] = [
       },
     ],
   },
+  {
+    sport: "NBA",
+    tools: [
+      {
+        name: "Player Prop Trends",
+        description: "Points, rebounds, assists and 3-pointer trends",
+        href: "/nba/player-prop-trends",
+      },
+    ],
+  },
 ];
