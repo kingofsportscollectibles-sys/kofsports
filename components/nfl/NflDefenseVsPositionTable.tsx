@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 
 export type DvpPosition = "QB" | "RB" | "WR" | "TE";
 
@@ -27,10 +27,23 @@ export type DefenseVsPositionRow = {
   ppr_rank: number;
 };
 
+export type DvpMatchupProp = {
+  propId: number;
+  playerSlug: string | null;
+  playerName: string;
+  playerTeam: string | null;
+  opponent: string;
+  market: string;
+  line: number;
+  l5Games: number;
+  l5Overs: number;
+};
+
 type Props = {
   rows: DefenseVsPositionRow[];
   initialPosition?: DvpPosition;
   season?: number;
+  matchupProps?: DvpMatchupProp[];
 };
 
 type SortDirection = "asc" | "desc";
@@ -257,9 +270,13 @@ export default function NflDefenseVsPositionTable({
   rows,
   initialPosition = "QB",
   season = 2026,
+  matchupProps = [],
 }: Props) {
   const [position, setPosition] =
     useState<DvpPosition>(initialPosition);
+
+  const [selectedDefense, setSelectedDefense] =
+    useState<string | null>(null);
 
   const [sortConfig, setSortConfig] = useState<SortConfig>({
     key: "ppr_rank",
@@ -388,6 +405,7 @@ export default function NflDefenseVsPositionTable({
                   href={POSITION_URLS[item]}
                   onClick={() => {
                     setPosition(item);
+                    setSelectedDefense(null);
                     setRankMetric(
                       "ppr_fantasy_points_per_game"
                     );
@@ -517,72 +535,194 @@ export default function NflDefenseVsPositionTable({
             </thead>
 
             <tbody>
-              {filteredRows.map((row) => (
-                <tr
-                  key={`${row.defense}-${row.position}`}
-                  className="border-b border-white/[0.06] transition last:border-0 hover:bg-white/[0.035]"
-                >
-                  <td className="w-[64px] bg-zinc-950 px-3 py-3 md:sticky md:left-0 md:z-10 md:w-auto md:px-4">
-                    {(() => {
-                      const displayRank = getDisplayRank(row);
+              {filteredRows.map((row) => {
+                const defenseProps = matchupProps.filter(
+                  (prop) => prop.opponent === row.defense,
+                );
+                const hasMatchupProps =
+                  defenseProps.length > 0;
+                const isExpanded =
+                  selectedDefense === row.defense;
 
-                      return (
-                        <span
-                          className={[
-                            "inline-flex h-8 min-w-8 items-center justify-center rounded-lg border px-2 text-sm font-bold",
-                            getRankClass(displayRank),
-                          ].join(" ")}
-                        >
-                          {displayRank}
-                        </span>
-                      );
-                    })()}
-                  </td>
+                return (
+                  <Fragment
+                    key={`${row.defense}-${row.position}`}
+                  >
+                    <tr
+                      key={`${row.defense}-${row.position}`}
+                      className="border-b border-white/[0.06] transition hover:bg-white/[0.035]"
+                    >
+                      <td className="w-[64px] bg-zinc-950 px-3 py-3 md:sticky md:left-0 md:z-10 md:w-auto md:px-4">
+                        {(() => {
+                          const displayRank =
+                            getDisplayRank(row);
 
-                  <td className="bg-zinc-950 px-2 py-3 md:sticky md:left-[78px] md:z-10 md:px-4">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-xs font-black text-white">
-                        {row.defense}
-                      </div>
-
-                      <div>
-                        <div className="whitespace-nowrap text-sm font-bold text-white">
-                          {TEAM_NAMES[row.defense] ??
-                            row.defense}
-                        </div>
-
-                        <div className="text-xs text-zinc-500">
-                          {row.games} games
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-
-                  {columns.map((column) => {
-                    const isSelectedMetric =
-                      column.key === rankMetric;
-
-                    return (
-                      <td
-                        key={column.key}
-                        className={[
-                          "whitespace-nowrap px-3 py-3 text-right text-sm tabular-nums md:px-4",
-                          isSelectedMetric
-                            ? "w-[92px] font-bold text-white"
-                            : "hidden text-zinc-300 md:table-cell",
-                        ].join(" ")}
-                      >
-                        {formatValue(
-                          row[column.key] as
-                            | number
-                            | string,
-                          column.decimals
-                        )}
+                          return (
+                            <span
+                              className={[
+                                "inline-flex h-8 min-w-8 items-center justify-center rounded-lg border px-2 text-sm font-bold",
+                                getRankClass(displayRank),
+                              ].join(" ")}
+                            >
+                              {displayRank}
+                            </span>
+                          );
+                        })()}
                       </td>
-                    );
-                  })}
-                </tr>
-              ))}
+
+                      <td className="bg-zinc-950 px-2 py-3 md:sticky md:left-[78px] md:z-10 md:px-4">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-xs font-black text-white">
+                            {row.defense}
+                          </div>
+
+                          <div>
+                            <div className="whitespace-nowrap text-sm font-bold text-white">
+                              {TEAM_NAMES[row.defense] ??
+                                row.defense}
+                            </div>
+
+                            <div className="text-xs text-zinc-500">
+                              {row.games} games
+                            </div>
+
+                            {hasMatchupProps && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setSelectedDefense(
+                                    isExpanded
+                                      ? null
+                                      : row.defense,
+                                  )
+                                }
+                                className="mt-1 whitespace-nowrap text-xs font-semibold text-emerald-400 transition hover:text-emerald-300"
+                              >
+                                {isExpanded
+                                  ? `Hide ${position} props ↑`
+                                  : `View ${position} props ↓`}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+
+                      {columns.map((column) => {
+                        const isSelectedMetric =
+                          column.key === rankMetric;
+
+                        return (
+                          <td
+                            key={column.key}
+                            className={[
+                              "whitespace-nowrap px-3 py-3 text-right text-sm tabular-nums md:px-4",
+                              isSelectedMetric
+                                ? "w-[92px] font-bold text-white"
+                                : "hidden text-zinc-300 md:table-cell",
+                            ].join(" ")}
+                          >
+                            {formatValue(
+                              row[column.key] as
+                                | number
+                                | string,
+                              column.decimals
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+
+                    {isExpanded && (
+                      <tr
+                        key={`${row.defense}-${row.position}-props`}
+                        className="border-b border-emerald-500/20 bg-emerald-500/[0.035]"
+                      >
+                        <td
+                          colSpan={columns.length + 2}
+                          className="px-4 py-5 md:px-6"
+                        >
+                          <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+                            <div>
+                              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-400">
+                                Current Player Props
+                              </div>
+                              <div className="mt-1 text-base font-bold text-white">
+                                {position}s Facing{" "}
+                                {TEAM_NAMES[row.defense] ??
+                                  row.defense}{" "}
+                                This Week
+                              </div>
+                            </div>
+
+                            <Link
+                              href="/nfl-player-prop-trends"
+                              className="text-xs font-semibold text-emerald-400 transition hover:text-emerald-300"
+                            >
+                              View all NFL prop research →
+                            </Link>
+                          </div>
+
+                          <div className="grid gap-2">
+                            {defenseProps.map((prop) => (
+                              <div
+                                key={prop.propId}
+                                className="flex flex-col gap-3 rounded-xl border border-white/[0.08] bg-zinc-950/80 p-4 sm:flex-row sm:items-center sm:justify-between"
+                              >
+                                <div>
+                                  <div className="text-sm font-bold text-white">
+                                    {prop.playerName}
+                                  </div>
+                                  <div className="mt-1 text-xs text-zinc-500">
+                                    {prop.playerTeam ?? "NFL"} ·{" "}
+                                    {prop.market ===
+                                    "player_reception_yds"
+                                      ? "Receiving Yards"
+                                      : prop.market ===
+                                          "player_receptions"
+                                        ? "Receptions"
+                                        : prop.market ===
+                                            "player_rush_yds"
+                                          ? "Rushing Yards"
+                                          : "Passing Yards"}
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-5">
+                                  <div className="text-right">
+                                    <div className="text-xs text-zinc-500">
+                                      Line
+                                    </div>
+                                    <div className="text-sm font-bold tabular-nums text-white">
+                                      {prop.line}
+                                    </div>
+                                  </div>
+
+                                  <div className="text-right">
+                                    <div className="text-xs text-zinc-500">
+                                      L5 Over
+                                    </div>
+                                    <div className="text-sm font-bold tabular-nums text-white">
+                                      {prop.l5Overs}/
+                                      {prop.l5Games}
+                                    </div>
+                                  </div>
+
+                                  <Link
+                                    href="/nfl-player-prop-trends"
+                                    className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs font-bold text-emerald-300 transition hover:bg-emerald-500/20"
+                                  >
+                                    Research →
+                                  </Link>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
+                );
+              })}
 
               {filteredRows.length === 0 && (
                 <tr>
