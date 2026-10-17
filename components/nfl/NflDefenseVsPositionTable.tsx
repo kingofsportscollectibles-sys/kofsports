@@ -542,9 +542,40 @@ export default function NflDefenseVsPositionTable({
 
             <tbody>
               {filteredRows.map((row) => {
-                const defenseProps = matchupProps.filter(
+                const allDefenseProps = matchupProps.filter(
                   (prop) => prop.opponent === row.defense,
                 );
+
+                const defenseProps =
+                  position === "WR"
+                    ? Array.from(
+                        allDefenseProps.reduce(
+                          (players, prop) => {
+                            const playerKey =
+                              prop.playerSlug ?? prop.playerName;
+                            const existing =
+                              players.get(playerKey);
+
+                            const preferredMarket =
+                              sortConfig.key === "receptions_per_game"
+                                ? "player_receptions"
+                                : "player_reception_yds";
+
+                            if (
+                              !existing ||
+                              (prop.market === preferredMarket &&
+                                existing.market !== preferredMarket)
+                            ) {
+                              players.set(playerKey, prop);
+                            }
+
+                            return players;
+                          },
+                          new Map<string, DvpMatchupProp>(),
+                        ).values(),
+                      )
+                    : allDefenseProps;
+
                 const hasMatchupProps =
                   defenseProps.length > 0;
                 const isExpanded =
