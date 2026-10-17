@@ -647,7 +647,7 @@ export default function NflDefenseVsPositionTable({
                                 Current Player Props
                               </div>
                               <div className="mt-1 text-base font-bold text-white">
-                                {position}s Facing{" "}
+                                {position === "QB" ? "QB" : `${position}s`} Facing{" "}
                                 {TEAM_NAMES[row.defense] ??
                                   row.defense}{" "}
                                 This Week

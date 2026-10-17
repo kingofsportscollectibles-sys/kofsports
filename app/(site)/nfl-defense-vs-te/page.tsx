@@ -3,6 +3,7 @@ import Link from "next/link";
 import NflDefenseVsPositionTable, {
   type DefenseVsPositionRow,
 } from "@/components/nfl/NflDefenseVsPositionTable";
+import { getNflPlayerPropTrends } from "@/lib/nfl/prop-trends";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
@@ -37,7 +38,28 @@ async function getDefenseVsPositionData() {
 }
 
 export default async function Page() {
-  const rows = await getDefenseVsPositionData();
+  const [rows, allProps] = await Promise.all([
+    getDefenseVsPositionData(),
+    getNflPlayerPropTrends(),
+  ]);
+
+  const matchupProps = allProps
+    .filter(
+      (prop): prop is typeof prop & { upcomingOpponent: string } =>
+        prop.position === "TE" &&
+        prop.upcomingOpponent !== null,
+    )
+    .map((prop) => ({
+      propId: prop.propId,
+      playerSlug: prop.playerSlug,
+      playerName: prop.playerName,
+      playerTeam: prop.playerTeam,
+      opponent: prop.upcomingOpponent,
+      market: prop.market,
+      line: prop.line,
+      l5Games: prop.l5Games,
+      l5Overs: prop.l5Overs,
+    }));
 
   return (
     <main className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
@@ -70,6 +92,7 @@ export default async function Page() {
         rows={rows}
         initialPosition="TE"
         season={2026}
+        matchupProps={matchupProps}
       />
 
       <section className="mt-12 space-y-12">
