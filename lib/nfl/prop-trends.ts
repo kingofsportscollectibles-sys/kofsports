@@ -34,6 +34,7 @@ export type NflPlayerPropTrend = {
 
   playerName: string;
   playerTeam: string | null;
+  position: string | null;
 
   market: NflPropMarket;
   line: number;
@@ -439,6 +440,7 @@ function mapPropTrend(row: PropTrendRow): NflPlayerPropTrend {
 
     playerName: row.player_name,
     playerTeam: row.player_team,
+    position: null,
 
     market: row.market as NflPropMarket,
     line: Number(row.line),
@@ -524,6 +526,41 @@ if (error) {
     getNflPlayerSlugMap(externalPlayerIds),
     resolvePropSeasonAndWeek(trends),
   ]);
+
+  const positionMap = new Map<string, string>();
+
+  if (schedule && externalPlayerIds.length > 0) {
+    const admin = createAdminClient();
+
+    const { data: rosterRows, error: rosterError } = await admin
+      .from("nfl_player_current_teams")
+      .select("gsis_id, position")
+      .in("gsis_id", Array.from(new Set(externalPlayerIds)))
+      .eq("season", schedule.season)
+      .eq("game_type", "REG");
+
+    if (rosterError) {
+      console.error("Failed to load NFL prop player positions:", {
+        message: rosterError.message,
+        details: rosterError.details,
+        hint: rosterError.hint,
+        code: rosterError.code,
+      });
+
+      throw new Error(
+        `Unable to load NFL prop player positions: ${rosterError.message}`,
+      );
+    }
+
+    for (const row of rosterRows ?? []) {
+      if (
+        typeof row.gsis_id === "string" &&
+        typeof row.position === "string"
+      ) {
+        positionMap.set(row.gsis_id, row.position);
+      }
+    }
+  }
 
   const playerIdsByMarket = {
     passing: trends
@@ -702,6 +739,9 @@ if (error) {
       playerSlug: trend.externalPlayerId
         ? slugMap.get(trend.externalPlayerId) ?? null
         : null,
+      position: trend.externalPlayerId
+        ? positionMap.get(trend.externalPlayerId) ?? null
+        : null,
 
       passingProjection: passingProjection
         ? {
@@ -800,5 +840,22 @@ export async function getNflPlayerPropTrendsByPlayer(
 
   return ((data ?? []) as PropTrendRow[]).map(
     mapPropTrend,
+  );
+}
+
+export type NflDvpPosition = "QB" | "RB" | "WR" | "TE";
+
+export async function getNflPropsFacingDefense(
+  defense: string,
+  position: NflDvpPosition,
+): Promise<NflPlayerPropTrend[]> {
+  const normalizedDefense = defense.trim().toUpperCase();
+
+  const props = await getNflPlayerPropTrends();
+
+  return props.filter(
+    (prop) =>
+      prop.upcomingOpponent === normalizedDefense &&
+      prop.position === position,
   );
 }
