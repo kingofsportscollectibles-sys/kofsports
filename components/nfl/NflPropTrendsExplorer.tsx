@@ -2,6 +2,7 @@
 import Link from "next/link";
 
 import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 import type {
   NflPlayerPropTrend,
@@ -533,9 +534,26 @@ export default function NflPropTrendsExplorer({
   hasProAccess,
   freeProjectionIds: freeProjectionIdList,
 }: Props) {
-  const [search, setSearch] = useState("");
+  const searchParams = useSearchParams();
+
+  const initialSearch =
+    searchParams.get("player")?.trim() ?? "";
+
+  const requestedMarket = searchParams.get("market");
+  const initialMarket =
+    requestedMarket &&
+    [
+      "player_pass_yds",
+      "player_rush_yds",
+      "player_reception_yds",
+      "player_receptions",
+    ].includes(requestedMarket)
+      ? requestedMarket
+      : "all";
+
+  const [search, setSearch] = useState(initialSearch);
   const [game, setGame] = useState("all");
-  const [market, setMarket] = useState("all");
+  const [market, setMarket] = useState(initialMarket);
   const [trend, setTrend] =
     useState<TrendFilter>("all");
   const [sort, setSort] =

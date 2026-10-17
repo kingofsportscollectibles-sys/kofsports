@@ -708,7 +708,15 @@ export default function NflDefenseVsPositionTable({
                                   </div>
 
                                   <Link
-                                    href="/nfl-player-prop-trends"
+                                    href={{
+                                      pathname:
+                                        "/nfl-player-prop-trends",
+                                      query: {
+                                        player:
+                                          prop.playerName,
+                                        market: prop.market,
+                                      },
+                                    }}
                                     className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs font-bold text-emerald-300 transition hover:bg-emerald-500/20"
                                   >
                                     Research →
