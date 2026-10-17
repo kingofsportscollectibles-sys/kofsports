@@ -3,6 +3,12 @@
 import Link from "next/link";
 import { Fragment, useMemo, useState } from "react";
 
+import {
+  getAnonymousId,
+  getGrowthSession,
+} from "@/lib/growth/events/session";
+import { trackGrowthEvent } from "@/lib/growth/events/trackEvent";
+
 export type DvpPosition = "QB" | "RB" | "WR" | "TE";
 
 export type DefenseVsPositionRow = {
@@ -589,13 +595,27 @@ export default function NflDefenseVsPositionTable({
                             {hasMatchupProps && (
                               <button
                                 type="button"
-                                onClick={() =>
-                                  setSelectedDefense(
-                                    isExpanded
-                                      ? null
-                                      : row.defense,
-                                  )
+                                onClick={() => {
+                                if (!isExpanded) {
+                                  void trackGrowthEvent({
+                                    eventType: "dvp_matchup_expand",
+                                    page: window.location.pathname,
+                                    url: window.location.href,
+                                    referrer: document.referrer || undefined,
+                                    sessionId: getGrowthSession() ?? undefined,
+                                    anonymousId: getAnonymousId() ?? undefined,
+                                    metadata: {
+                                      position,
+                                      defense: row.defense,
+                                      propCount: defenseProps.length,
+                                    },
+                                  });
                                 }
+
+                                setSelectedDefense(
+                                  isExpanded ? null : row.defense,
+                                );
+                              }}
                                 className="mt-1 whitespace-nowrap text-xs font-semibold text-emerald-400 transition hover:text-emerald-300"
                               >
                                 {isExpanded

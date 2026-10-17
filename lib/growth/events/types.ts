@@ -13,7 +13,11 @@ export type GrowthEventType =
   | "email_click"
   | "search"
   | "video_play"
-  | "exit_intent";
+  | "exit_intent"
+  | "dvp_view"
+  | "dvp_matchup_expand"
+  | "dvp_prop_cta_click"
+  | "prop_tool_view";
 
 export interface CreateGrowthEventInput {
   eventType: GrowthEventType;
