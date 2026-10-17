@@ -130,29 +130,36 @@ export async function getRecentNhlPropPlayerIds(
     Date.now() - hours * 60 * 60 * 1000
   ).toISOString();
 
-  const { data, error } = await supabase
-    .from("nhl_prop_lines")
-    .select("player_id")
-    .gte("fetched_at", cutoff)
-    .not("player_id", "is", null);
+  const playerIds = new Set<number>();
+  const pageSize = 1000;
 
-  if (error) {
-    throw new Error(
-      `Unable to load recent NHL prop players: ` +
-        error.message
-    );
+  for (let from = 0; ; from += pageSize) {
+    const { data, error } = await supabase
+      .from("nhl_prop_lines")
+      .select("player_id")
+      .gte("fetched_at", cutoff)
+      .not("player_id", "is", null)
+      .range(from, from + pageSize - 1);
+
+    if (error) {
+      throw new Error(
+        `Unable to load recent NHL prop players: ` +
+          error.message
+      );
+    }
+
+    for (const row of data ?? []) {
+      if (typeof row.player_id === "number") {
+        playerIds.add(row.player_id);
+      }
+    }
+
+    if ((data ?? []).length < pageSize) {
+      break;
+    }
   }
 
-  return Array.from(
-    new Set(
-      (data ?? [])
-        .map((row) => row.player_id)
-        .filter(
-          (id): id is number =>
-            typeof id === "number"
-        )
-    )
-  );
+  return Array.from(playerIds);
 }
 
 async function getPlayers(

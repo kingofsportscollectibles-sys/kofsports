@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import {
-  importNhlPlayerGameStats,
+  refreshRecentNhlPropPlayerStats,
 } from "@/scripts/nhl/import-player-game-stats";
 
 export const dynamic = "force-dynamic";
@@ -44,7 +44,8 @@ export async function GET(request: NextRequest) {
 
   try {
     const result =
-      await importNhlPlayerGameStats({
+      await refreshRecentNhlPropPlayerStats({
+        hours: 24 * 7,
         seasons: [20262027],
       });
 
