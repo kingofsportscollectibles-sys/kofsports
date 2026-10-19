@@ -252,7 +252,7 @@ function PlayerPropCard({
               {prop.playerSlug ? (
                 <Link
                   href={`/nfl/players/${prop.playerSlug}`}
-                  className="transition hover:text-emerald-400"
+                  className="underline decoration-emerald-500/60 decoration-2 underline-offset-4 transition hover:text-emerald-400 hover:decoration-emerald-400"
                 >
                   {prop.playerName}
                 </Link>
