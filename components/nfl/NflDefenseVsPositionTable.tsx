@@ -614,7 +614,7 @@ export default function NflDefenseVsPositionTable({
                           </div>
 
                           <div>
-                            <div className="whitespace-nowrap text-sm font-bold text-white">
+                            <div className="hidden whitespace-nowrap text-sm font-bold text-white md:block">
                               {TEAM_NAMES[row.defense] ??
                                 row.defense}
                             </div>
