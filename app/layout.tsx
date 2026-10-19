@@ -4,6 +4,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { Inter, Oswald } from "next/font/google";
 import "./globals.css";
 import GrowthTracker from "@/components/growth/GrowthTracker";
+import ActivityTracker from "@/components/auth/ActivityTracker";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -61,6 +62,7 @@ export default function RootLayout({
       >
         {children}
         <GrowthTracker />
+        <ActivityTracker />
         <Analytics />
       </body>
     </html>
