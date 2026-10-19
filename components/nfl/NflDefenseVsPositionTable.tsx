@@ -608,7 +608,7 @@ export default function NflDefenseVsPositionTable({
                       </td>
 
                       <td className="bg-zinc-950 px-2 py-3 md:sticky md:left-[78px] md:z-10 md:px-4">
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-col items-start gap-1 md:flex-row md:items-center md:gap-3">
                           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-xs font-black text-white">
                             {row.defense}
                           </div>
@@ -619,7 +619,7 @@ export default function NflDefenseVsPositionTable({
                                 row.defense}
                             </div>
 
-                            <div className="text-xs text-zinc-500">
+                            <div className="whitespace-nowrap text-xs text-zinc-500">
                               {row.games} games
                             </div>
 
