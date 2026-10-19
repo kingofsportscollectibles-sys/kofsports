@@ -351,11 +351,16 @@ async function getEligibleProjectionIds(
   );
 }
 
-async function resolvePropSeasonAndWeek(
+async function resolvePropSchedule(
   trends: NflPlayerPropTrend[],
-): Promise<{ season: number; week: number } | null> {
+): Promise<Map<string, { season: number; week: number }>> {
+  const scheduleMap = new Map<
+    string,
+    { season: number; week: number }
+  >();
+
   if (trends.length === 0) {
-    return null;
+    return scheduleMap;
   }
 
   const supabase = await createClient();
@@ -386,7 +391,7 @@ async function resolvePropSeasonAndWeek(
     .lte("commence_time", latestCommenceTime);
 
   if (error) {
-    console.error("Failed to resolve NFL prop season/week:", {
+    console.error("Failed to resolve NFL prop schedule:", {
       message: error.message,
       details: error.details,
       hint: error.hint,
@@ -394,16 +399,11 @@ async function resolvePropSeasonAndWeek(
     });
 
     throw new Error(
-      `Unable to resolve NFL prop season/week: ${error.message}`,
+      `Unable to resolve NFL prop schedule: ${error.message}`,
     );
   }
 
   const scheduleRows = (data ?? []) as NflPropScheduleRow[];
-
-  const matchedWeeks = new Map<string, {
-    season: number;
-    week: number;
-  }>();
 
   for (const trend of trends) {
     const match = scheduleRows.find(
@@ -414,21 +414,18 @@ async function resolvePropSeasonAndWeek(
     );
 
     if (match) {
-      matchedWeeks.set(
-        `${match.season}-${match.week}`,
-        {
-          season: match.season,
-          week: match.week,
-        },
-      );
+      const gameKey =
+        trend.externalEventId ??
+        `${trend.awayTeam}-${trend.homeTeam}-${trend.commenceTime}`;
+
+      scheduleMap.set(gameKey, {
+        season: match.season,
+        week: match.week,
+      });
     }
   }
 
-  if (matchedWeeks.size !== 1) {
-    return null;
-  }
-
-  return matchedWeeks.values().next().value ?? null;
+  return scheduleMap;
 }
 
 function mapPropTrend(row: PropTrendRow): NflPlayerPropTrend {
@@ -522,21 +519,39 @@ if (error) {
     .map((trend) => trend.externalPlayerId)
     .filter((id): id is string => Boolean(id));
 
-  const [slugMap, schedule] = await Promise.all([
+  const [slugMap, scheduleMap] = await Promise.all([
     getNflPlayerSlugMap(externalPlayerIds),
-    resolvePropSeasonAndWeek(trends),
+    resolvePropSchedule(trends),
   ]);
+
+  const getTrendGameKey = (trend: NflPlayerPropTrend) =>
+    trend.externalEventId ??
+    `${trend.awayTeam}-${trend.homeTeam}-${trend.commenceTime}`;
+
+  const getProjectionKey = (
+    season: number,
+    week: number,
+    externalPlayerId: string,
+  ) => `${season}-${week}-${externalPlayerId}`;
 
   const positionMap = new Map<string, string>();
 
-  if (schedule && externalPlayerIds.length > 0) {
+  const seasons = Array.from(
+    new Set(
+      Array.from(scheduleMap.values()).map(
+        (schedule) => schedule.season,
+      ),
+    ),
+  );
+
+  if (seasons.length > 0 && externalPlayerIds.length > 0) {
     const admin = createAdminClient();
 
     const { data: rosterRows, error: rosterError } = await admin
       .from("nfl_player_current_teams")
       .select("gsis_id, position")
       .in("gsis_id", Array.from(new Set(externalPlayerIds)))
-      .eq("season", schedule.season)
+      .in("season", seasons)
       .eq("game_type", "REG");
 
     if (rosterError) {
@@ -562,176 +577,289 @@ if (error) {
     }
   }
 
-  const playerIdsByMarket = {
-    passing: trends
-      .filter(
-        (trend) =>
-          trend.market === "player_pass_yds" &&
-          trend.externalPlayerId,
-      )
-      .map((trend) => trend.externalPlayerId as string),
+  const passingProjections = new Map<
+    string,
+    Awaited<
+      ReturnType<typeof getNflPassingYardsProjections>
+    > extends Map<string, infer T>
+      ? T
+      : never
+  >();
 
-    rushing: trends
-      .filter(
-        (trend) =>
-          trend.market === "player_rush_yds" &&
-          trend.externalPlayerId,
-      )
-      .map((trend) => trend.externalPlayerId as string),
+  const rushProjections = new Map<
+    string,
+    Awaited<
+      ReturnType<typeof getNflRushYardsProjections>
+    > extends Map<string, infer T>
+      ? T
+      : never
+  >();
 
-    receiving: trends
-      .filter(
-        (trend) =>
-          trend.market === "player_reception_yds" &&
-          trend.externalPlayerId,
-      )
-      .map((trend) => trend.externalPlayerId as string),
+  const qbRushProjections = new Map<
+    string,
+    Awaited<
+      ReturnType<typeof getNflQbRushYardsProjections>
+    > extends Map<string, infer T>
+      ? T
+      : never
+  >();
 
-    receptions: trends
-      .filter(
-        (trend) =>
-          trend.market === "player_receptions" &&
-          trend.externalPlayerId,
-      )
-      .map((trend) => trend.externalPlayerId as string),
-  };
+  const receivingProjections = new Map<
+    string,
+    Awaited<
+      ReturnType<typeof getNflReceivingYardsProjections>
+    > extends Map<string, infer T>
+      ? T
+      : never
+  >();
 
-  const [
-    eligiblePassingIds,
-    eligibleRushingIds,
-    eligibleQbRushingIds,
-    eligibleReceivingIds,
-    eligibleReceptionsIds,
-  ] = schedule
-    ? await Promise.all([
-        getEligibleProjectionIds(
-          playerIdsByMarket.passing,
-          schedule.season,
-          ["QB"],
-        ),
-        getEligibleProjectionIds(
-          playerIdsByMarket.rushing,
-          schedule.season,
-          ["RB"],
-        ),
-        getEligibleProjectionIds(
-          playerIdsByMarket.rushing,
-          schedule.season,
-          ["QB"],
-        ),
-        getEligibleProjectionIds(
-          playerIdsByMarket.receiving,
-          schedule.season,
-          ["RB", "WR", "TE"],
-        ),
-        getEligibleProjectionIds(
-          playerIdsByMarket.receptions,
-          schedule.season,
-          ["RB", "WR", "TE"],
-        ),
-      ])
-    : [
-        new Set<string>(),
-        new Set<string>(),
-        new Set<string>(),
-        new Set<string>(),
-        new Set<string>(),
-      ];
+  const receptionsProjections = new Map<
+    string,
+    Awaited<
+      ReturnType<typeof getNflReceptionsProjections>
+    > extends Map<string, infer T>
+      ? T
+      : never
+  >();
 
-  const [
-    passingProjections,
-    rushProjections,
-    qbRushProjections,
-    receivingProjections,
-    receptionsProjections,
-  ] = schedule
-    ? await Promise.all([
-        getNflPassingYardsProjections(
-          playerIdsByMarket.passing.filter((id) =>
-            eligiblePassingIds.has(id),
-          ),
-          schedule.season,
-          schedule.week,
-        ),
-        getNflRushYardsProjections(
-          playerIdsByMarket.rushing.filter((id) =>
-            eligibleRushingIds.has(id),
-          ),
-          schedule.season,
-          schedule.week,
-        ),
-        getNflQbRushYardsProjections(
-          trends
+  const trendsByWeek = new Map<
+    string,
+    {
+      season: number;
+      week: number;
+      trends: NflPlayerPropTrend[];
+    }
+  >();
+
+  for (const trend of trends) {
+    const schedule = scheduleMap.get(getTrendGameKey(trend));
+
+    if (!schedule) {
+      continue;
+    }
+
+    const weekKey = `${schedule.season}-${schedule.week}`;
+    const existing = trendsByWeek.get(weekKey);
+
+    if (existing) {
+      existing.trends.push(trend);
+    } else {
+      trendsByWeek.set(weekKey, {
+        season: schedule.season,
+        week: schedule.week,
+        trends: [trend],
+      });
+    }
+  }
+
+  await Promise.all(
+    Array.from(trendsByWeek.values()).map(
+      async ({ season, week, trends: weekTrends }) => {
+        const playerIdsByMarket = {
+          passing: weekTrends
+            .filter(
+              (trend) =>
+                trend.market === "player_pass_yds" &&
+                trend.externalPlayerId,
+            )
+            .map(
+              (trend) => trend.externalPlayerId as string,
+            ),
+
+          rushing: weekTrends
             .filter(
               (trend) =>
                 trend.market === "player_rush_yds" &&
-                trend.externalPlayerId &&
-                trend.upcomingOpponent &&
-                eligibleQbRushingIds.has(
-                  trend.externalPlayerId,
-                ),
+                trend.externalPlayerId,
             )
-            .map((trend) => ({
-              externalPlayerId:
-                trend.externalPlayerId as string,
-              opponent:
-                trend.upcomingOpponent as string,
-            })),
-          schedule.season,
-          schedule.week,
-        ),
-        getNflReceivingYardsProjections(
-          playerIdsByMarket.receiving.filter((id) =>
-            eligibleReceivingIds.has(id),
+            .map(
+              (trend) => trend.externalPlayerId as string,
+            ),
+
+          receiving: weekTrends
+            .filter(
+              (trend) =>
+                trend.market === "player_reception_yds" &&
+                trend.externalPlayerId,
+            )
+            .map(
+              (trend) => trend.externalPlayerId as string,
+            ),
+
+          receptions: weekTrends
+            .filter(
+              (trend) =>
+                trend.market === "player_receptions" &&
+                trend.externalPlayerId,
+            )
+            .map(
+              (trend) => trend.externalPlayerId as string,
+            ),
+        };
+
+        const [
+          eligiblePassingIds,
+          eligibleRushingIds,
+          eligibleQbRushingIds,
+          eligibleReceivingIds,
+          eligibleReceptionsIds,
+        ] = await Promise.all([
+          getEligibleProjectionIds(
+            playerIdsByMarket.passing,
+            season,
+            ["QB"],
           ),
-          schedule.season,
-          schedule.week,
-        ),
-        getNflReceptionsProjections(
-          playerIdsByMarket.receptions.filter((id) =>
-            eligibleReceptionsIds.has(id),
+          getEligibleProjectionIds(
+            playerIdsByMarket.rushing,
+            season,
+            ["RB"],
           ),
-          schedule.season,
-          schedule.week,
-        ),
-      ])
-    : [
-        new Map(),
-        new Map(),
-        new Map(),
-        new Map(),
-        new Map(),
-      ];
+          getEligibleProjectionIds(
+            playerIdsByMarket.rushing,
+            season,
+            ["QB"],
+          ),
+          getEligibleProjectionIds(
+            playerIdsByMarket.receiving,
+            season,
+            ["RB", "WR", "TE"],
+          ),
+          getEligibleProjectionIds(
+            playerIdsByMarket.receptions,
+            season,
+            ["RB", "WR", "TE"],
+          ),
+        ]);
+
+        const [
+          weekPassingProjections,
+          weekRushProjections,
+          weekQbRushProjections,
+          weekReceivingProjections,
+          weekReceptionsProjections,
+        ] = await Promise.all([
+          getNflPassingYardsProjections(
+            playerIdsByMarket.passing.filter((id) =>
+              eligiblePassingIds.has(id),
+            ),
+            season,
+            week,
+          ),
+          getNflRushYardsProjections(
+            playerIdsByMarket.rushing.filter((id) =>
+              eligibleRushingIds.has(id),
+            ),
+            season,
+            week,
+          ),
+          getNflQbRushYardsProjections(
+            weekTrends
+              .filter(
+                (trend) =>
+                  trend.market === "player_rush_yds" &&
+                  trend.externalPlayerId &&
+                  trend.upcomingOpponent &&
+                  eligibleQbRushingIds.has(
+                    trend.externalPlayerId,
+                  ),
+              )
+              .map((trend) => ({
+                externalPlayerId:
+                  trend.externalPlayerId as string,
+                opponent: trend.upcomingOpponent as string,
+              })),
+            season,
+            week,
+          ),
+          getNflReceivingYardsProjections(
+            playerIdsByMarket.receiving.filter((id) =>
+              eligibleReceivingIds.has(id),
+            ),
+            season,
+            week,
+          ),
+          getNflReceptionsProjections(
+            playerIdsByMarket.receptions.filter((id) =>
+              eligibleReceptionsIds.has(id),
+            ),
+            season,
+            week,
+          ),
+        ]);
+
+        for (const [playerId, projection] of weekPassingProjections) {
+          passingProjections.set(
+            getProjectionKey(season, week, playerId),
+            projection,
+          );
+        }
+
+        for (const [playerId, projection] of weekRushProjections) {
+          rushProjections.set(
+            getProjectionKey(season, week, playerId),
+            projection,
+          );
+        }
+
+        for (const [playerId, projection] of weekQbRushProjections) {
+          qbRushProjections.set(
+            getProjectionKey(season, week, playerId),
+            projection,
+          );
+        }
+
+        for (const [playerId, projection] of weekReceivingProjections) {
+          receivingProjections.set(
+            getProjectionKey(season, week, playerId),
+            projection,
+          );
+        }
+
+        for (const [playerId, projection] of weekReceptionsProjections) {
+          receptionsProjections.set(
+            getProjectionKey(season, week, playerId),
+            projection,
+          );
+        }
+      },
+    ),
+  );
 
   return trends.map((trend) => {
+    const schedule = scheduleMap.get(getTrendGameKey(trend));
+
+    const projectionKey =
+      schedule && trend.externalPlayerId
+        ? getProjectionKey(
+            schedule.season,
+            schedule.week,
+            trend.externalPlayerId,
+          )
+        : null;
+
     const passingProjection =
-      trend.market === "player_pass_yds" &&
-      trend.externalPlayerId
-        ? passingProjections.get(trend.externalPlayerId) ?? null
+      trend.market === "player_pass_yds" && projectionKey
+        ? passingProjections.get(projectionKey) ?? null
         : null;
 
     const rbRushingProjection =
-      trend.market === "player_rush_yds" &&
-      trend.externalPlayerId
-        ? rushProjections.get(trend.externalPlayerId) ?? null
+      trend.market === "player_rush_yds" && projectionKey
+        ? rushProjections.get(projectionKey) ?? null
         : null;
 
     const qbRushingProjection =
-      trend.market === "player_rush_yds" &&
-      trend.externalPlayerId
-        ? qbRushProjections.get(trend.externalPlayerId) ?? null
+      trend.market === "player_rush_yds" && projectionKey
+        ? qbRushProjections.get(projectionKey) ?? null
         : null;
 
     const receivingProjection =
-      trend.market === "player_reception_yds" &&
-      trend.externalPlayerId
-        ? receivingProjections.get(trend.externalPlayerId) ?? null
+      trend.market === "player_reception_yds" && projectionKey
+        ? receivingProjections.get(projectionKey) ?? null
         : null;
 
     const receptionsProjection =
-      trend.market === "player_receptions" &&
-      trend.externalPlayerId
-        ? receptionsProjections.get(trend.externalPlayerId) ?? null
+      trend.market === "player_receptions" && projectionKey
+        ? receptionsProjections.get(projectionKey) ?? null
         : null;
 
     return {
