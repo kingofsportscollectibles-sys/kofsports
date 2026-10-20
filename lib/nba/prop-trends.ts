@@ -275,3 +275,44 @@ export async function getNbaPlayerPropTrends(): Promise<
     mapPropTrend,
   );
 }
+
+export async function getNbaPlayerPropTrendsByPlayer(
+  playerId: number,
+): Promise<NbaPlayerPropTrend[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("nba_player_prop_trends")
+    .select("*")
+    .eq("player_id", playerId)
+    .eq("bookmaker", "draftkings")
+    .in("market", NBA_PROP_MARKETS)
+    .gte("commence_time", new Date().toISOString())
+    .order("commence_time", {
+      ascending: true,
+    })
+    .order("market", {
+      ascending: true,
+    });
+
+  if (error) {
+    console.error(
+      "Failed to load NBA player prop trends by player:",
+      {
+        playerId,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+      },
+    );
+
+    throw new Error(
+      `Unable to load NBA player prop trends: ${error.message}`,
+    );
+  }
+
+  return ((data ?? []) as PropTrendRow[]).map(
+    mapPropTrend,
+  );
+}
