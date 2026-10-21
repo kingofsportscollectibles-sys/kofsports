@@ -362,13 +362,12 @@ export async function importNbaPlayerGameStats(
     throw new Error(`Invalid NBA season: ${season}`);
   }
 
-  const [resultSet, playerIndexResultSet] = await Promise.all([
-    fetchLeagueGameLog({
-      ...options,
-      season,
-    }),
-    fetchPlayerIndex(season),
-  ]);
+  const resultSet = await fetchLeagueGameLog({
+    ...options,
+    season,
+  });
+
+  const playerIndexResultSet = await fetchPlayerIndex(season);
 
   const { headers, rowSet } = resultSet;
   const {
