@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import type {
@@ -21,8 +22,50 @@ type SortOption =
   | "edge-desc"
   | "player-asc";
 
+export type NbaPlayerPropTrendWithSlug = Omit<
+  NbaPlayerPropTrend,
+  | "l10Games"
+  | "l10Overs"
+  | "l10Unders"
+  | "l10Pushes"
+  | "l10OverPct"
+  | "avgL10"
+  | "seasonGames"
+  | "seasonOvers"
+  | "seasonUnders"
+  | "seasonPushes"
+  | "seasonOverPct"
+  | "avgSeason"
+  | "h2hGames"
+  | "h2hOvers"
+  | "h2hUnders"
+  | "h2hPushes"
+  | "h2hOverPct"
+  | "avgH2h"
+> & {
+  playerSlug: string | null;
+  l10Games: number | null;
+  l10Overs: number | null;
+  l10Unders: number | null;
+  l10Pushes: number | null;
+  l10OverPct: number | null;
+  avgL10: number | null;
+  seasonGames: number | null;
+  seasonOvers: number | null;
+  seasonUnders: number | null;
+  seasonPushes: number | null;
+  seasonOverPct: number | null;
+  avgSeason: number | null;
+  h2hGames: number | null;
+  h2hOvers: number | null;
+  h2hUnders: number | null;
+  h2hPushes: number | null;
+  h2hOverPct: number | null;
+  avgH2h: number | null;
+};
+
 type Props = {
-  props: NbaPlayerPropTrend[];
+  props: NbaPlayerPropTrendWithSlug[];
   hasProAccess: boolean;
 };
 
@@ -65,7 +108,9 @@ function formatOdds(value: number | null) {
   return value > 0 ? `+${value}` : `${value}`;
 }
 
-function getAverageEdge(prop: NbaPlayerPropTrend) {
+function getAverageEdge(
+  prop: Pick<NbaPlayerPropTrend, "avgL5" | "line">,
+) {
   if (prop.avgL5 === null) {
     return null;
   }
@@ -184,19 +229,14 @@ function PlayerPropCard({
   prop,
   hasProAccess,
 }: {
-  prop: NbaPlayerPropTrend;
+  prop: NbaPlayerPropTrendWithSlug;
   hasProAccess: boolean;
 }) {
   const visibleGames = hasProAccess
     ? prop.lastTen
     : prop.lastTen.slice(0, 5);
 
-  const lockedGameCount = hasProAccess
-    ? 0
-    : Math.min(
-        5,
-        Math.max(prop.lastTen.length - 5, 0),
-      );
+  const lockedGameCount = hasProAccess ? 0 : 5;
 
   return (
     <article className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900">
@@ -204,16 +244,32 @@ function PlayerPropCard({
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
           <div>
             <h3 className="text-lg font-bold text-white">
-              {prop.playerName}
+              {prop.playerSlug ? (
+                <Link
+                  href={`/nba/players/${prop.playerSlug}`}
+                  className="underline decoration-emerald-500/60 decoration-2 underline-offset-4 transition hover:text-emerald-400 hover:decoration-emerald-400"
+                >
+                  {prop.playerName}
+                </Link>
+              ) : (
+                prop.playerName
+              )}
             </h3>
 
             <div className="mt-1 text-sm text-slate-400">
               {prop.playerTeam ?? "—"}
-              {prop.upcomingOpponent
-                ? ` • ${
-                    prop.playerTeam === prop.awayTeam ? "@" : "vs"
-                  } ${prop.upcomingOpponent}`
-                : ""}
+              {prop.upcomingOpponent && (
+                <>
+                  {" • "}
+                  {prop.playerTeam === prop.awayTeam ? "@" : "vs"}{" "}
+                  <Link
+                    href="/nba/defense-vs-position"
+                    className="font-semibold text-slate-300 underline decoration-slate-600 underline-offset-2 transition hover:text-emerald-400 hover:decoration-emerald-500"
+                  >
+                    {prop.upcomingOpponent}
+                  </Link>
+                </>
+              )}
             </div>
           </div>
 
@@ -254,8 +310,8 @@ function PlayerPropCard({
         {hasProAccess ? (
           <TrendStat
             label="Last 10"
-            overs={prop.l10Overs}
-            games={prop.l10Games}
+            overs={prop.l10Overs ?? 0}
+            games={prop.l10Games ?? 0}
             percentage={prop.l10OverPct}
           />
         ) : (
@@ -265,8 +321,8 @@ function PlayerPropCard({
         {hasProAccess ? (
           <TrendStat
             label="Season"
-            overs={prop.seasonOvers}
-            games={prop.seasonGames}
+            overs={prop.seasonOvers ?? 0}
+            games={prop.seasonGames ?? 0}
             percentage={prop.seasonOverPct}
           />
         ) : (
@@ -280,8 +336,8 @@ function PlayerPropCard({
                 ? `vs ${prop.upcomingOpponent}`
                 : "Head to Head"
             }
-            overs={prop.h2hOvers}
-            games={prop.h2hGames}
+            overs={prop.h2hOvers ?? 0}
+            games={prop.h2hGames ?? 0}
             percentage={prop.h2hOverPct}
           />
         ) : (
@@ -410,6 +466,31 @@ export default function NbaPropTrendsExplorer({
     useState<TrendFilter>("all");
   const [sort, setSort] =
     useState<SortOption>("default");
+
+  const latestFetchedAt = useMemo(() => {
+    let latestTimestamp = 0;
+
+    for (const prop of props) {
+      const timestamp = Date.parse(prop.fetchedAt);
+
+      if (Number.isFinite(timestamp) && timestamp > latestTimestamp) {
+        latestTimestamp = timestamp;
+      }
+    }
+
+    if (latestTimestamp === 0) {
+      return null;
+    }
+
+    return new Intl.DateTimeFormat("en-US", {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      timeZone: "America/New_York",
+      timeZoneName: "short",
+    }).format(new Date(latestTimestamp));
+  }, [props]);
 
   const games = useMemo(() => {
     const uniqueGames = new Map<string, string>();
@@ -591,6 +672,11 @@ export default function NbaPropTrendsExplorer({
   return (
     <div>
       <div className="mb-8 rounded-2xl border border-slate-800 bg-slate-900 p-5">
+        {latestFetchedAt && (
+          <div className="mb-4 text-xs font-medium text-slate-500">
+            DraftKings lines updated {latestFetchedAt}
+          </div>
+        )}
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
           <div className="md:col-span-2 xl:col-span-2">
             <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-500">

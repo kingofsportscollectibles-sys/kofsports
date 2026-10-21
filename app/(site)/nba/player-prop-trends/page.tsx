@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import NbaPropTrendsExplorer from "@/components/nba/NbaPropTrendsExplorer";
 import { getNbaPlayerPropTrends } from "@/lib/nba/prop-trends";
+import { getNbaPlayerResearchMetadataByIds } from "@/lib/nba/player-pages";
 import { hasKofSportsProAccess } from "@/lib/auth/entitlements";
 
 export const dynamic = "force-dynamic";
@@ -11,6 +12,9 @@ export const metadata: Metadata = {
   title: "NBA Player Props Today: Trends & Hit Rates | KofSports",
   description:
     "Research NBA player props today with current lines, recent hit rates, historical results, and advanced player prop trends from KofSports.",
+  alternates: {
+    canonical: "/nba/player-prop-trends",
+  },
 };
 
 export default async function NbaPlayerPropTrendsPage() {
@@ -18,6 +22,46 @@ export default async function NbaPlayerPropTrendsPage() {
     getNbaPlayerPropTrends(),
     hasKofSportsProAccess(),
   ]);
+
+  const playerMetadata = await getNbaPlayerResearchMetadataByIds(
+    props.map((prop) => prop.playerId),
+  );
+
+  const propsWithSlugs = props.map((prop) => {
+    const playerSlug =
+      playerMetadata.get(prop.playerId)?.slug ?? null;
+
+    if (hasProAccess) {
+      return {
+        ...prop,
+        playerSlug,
+      };
+    }
+
+    return {
+      ...prop,
+      playerSlug,
+      l10Games: null,
+      l10Overs: null,
+      l10Unders: null,
+      l10Pushes: null,
+      l10OverPct: null,
+      avgL10: null,
+      seasonGames: null,
+      seasonOvers: null,
+      seasonUnders: null,
+      seasonPushes: null,
+      seasonOverPct: null,
+      avgSeason: null,
+      h2hGames: null,
+      h2hOvers: null,
+      h2hUnders: null,
+      h2hPushes: null,
+      h2hOverPct: null,
+      avgH2h: null,
+      lastTen: prop.lastTen.slice(0, 5),
+    };
+  });
 
   return (
     <main className="min-h-screen bg-slate-950">
@@ -70,7 +114,7 @@ export default async function NbaPlayerPropTrendsPage() {
 
         {props.length > 0 ? (
           <NbaPropTrendsExplorer
-  props={props}
+  props={propsWithSlugs}
   hasProAccess={hasProAccess}
 />
         ) : (

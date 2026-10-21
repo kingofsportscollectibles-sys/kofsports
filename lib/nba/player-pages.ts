@@ -365,3 +365,91 @@ export async function getNbaPlayerGameLog(
     plusMinus: row.plus_minus ?? 0,
   }));
 }
+
+export type NbaPlayerResearchMetadata = {
+  slug: string | null;
+  positionGroup: "G" | "F" | "C" | null;
+};
+
+export async function getNbaPlayerResearchMetadataByIds(
+  playerIds: number[],
+): Promise<Map<number, NbaPlayerResearchMetadata>> {
+  const uniquePlayerIds = Array.from(new Set(playerIds));
+
+  if (uniquePlayerIds.length === 0) {
+    return new Map();
+  }
+
+  const supabase = await createClient();
+
+  const [{ data: players, error: playersError }, { data: pages, error: pagesError }] =
+    await Promise.all([
+      supabase
+        .from("nba_players")
+        .select("id, position_group")
+        .in("id", uniquePlayerIds),
+      supabase
+        .from("nba_player_pages")
+        .select("player_id, slug")
+        .in("player_id", uniquePlayerIds),
+    ]);
+
+  if (playersError) {
+    console.error("Failed to load NBA player research metadata:", {
+      playerIds: uniquePlayerIds,
+      error: playersError,
+    });
+    throw new Error("Failed to load NBA player research metadata");
+  }
+
+  if (pagesError) {
+    console.error("Failed to load NBA player page slugs:", {
+      playerIds: uniquePlayerIds,
+      error: pagesError,
+    });
+    throw new Error("Failed to load NBA player page slugs");
+  }
+
+  const slugs = new Map(
+    (pages ?? []).flatMap((row) => {
+      const playerId = Number(row.player_id);
+
+      if (
+        !Number.isFinite(playerId) ||
+        typeof row.slug !== "string" ||
+        row.slug.length === 0
+      ) {
+        return [];
+      }
+
+      return [[playerId, row.slug] as const];
+    }),
+  );
+
+  return new Map(
+    (players ?? []).flatMap((row) => {
+      const playerId = Number(row.id);
+
+      if (!Number.isFinite(playerId)) {
+        return [];
+      }
+
+      const positionGroup =
+        row.position_group === "G" ||
+        row.position_group === "F" ||
+        row.position_group === "C"
+          ? row.position_group
+          : null;
+
+      return [
+        [
+          playerId,
+          {
+            slug: slugs.get(playerId) ?? null,
+            positionGroup,
+          },
+        ] as const,
+      ];
+    }),
+  );
+}

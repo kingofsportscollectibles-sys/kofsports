@@ -73,6 +73,11 @@ export const toolNavigationGroups: ToolNavigationGroup[] = [
         description: "Points, rebounds, assists and 3-pointer trends",
         href: "/nba/player-prop-trends",
       },
+      {
+        name: "Defense vs Position",
+        description: "Guard, forward and center matchup rankings",
+        href: "/nba/defense-vs-position",
+      },
     ],
   },
 ];

@@ -52,6 +52,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.5,
     },
     {
+      url: `${baseUrl}/nba/player-prop-trends`,
+      lastModified: now,
+      changeFrequency: "daily",
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/nba/defense-vs-position`,
+      lastModified: now,
+      changeFrequency: "daily",
+      priority: 0.9,
+    },
+    {
       url: `${baseUrl}/nfl-player-prop-trends`,
       lastModified: now,
       changeFrequency: "daily",
@@ -120,18 +132,33 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const supabase = createAdminClient();
 
-  const { data: players, error: playersError } = await supabase
-    .from("nfl_player_pages")
-    .select("slug")
-    .order("slug", { ascending: true });
+  const [
+    { data: nflPlayers, error: nflPlayersError },
+    { data: nbaPlayers, error: nbaPlayersError },
+  ] = await Promise.all([
+    supabase
+      .from("nfl_player_pages")
+      .select("slug")
+      .order("slug", { ascending: true }),
+    supabase
+      .from("nba_player_pages")
+      .select("slug")
+      .order("slug", { ascending: true }),
+  ]);
 
-  if (playersError) {
+  if (nflPlayersError) {
     throw new Error(
-      `Failed to load NFL player pages for sitemap: ${playersError.message}`,
+      `Failed to load NFL player pages for sitemap: ${nflPlayersError.message}`,
     );
   }
 
-  const playerRoutes: MetadataRoute.Sitemap = (players ?? []).map(
+  if (nbaPlayersError) {
+    throw new Error(
+      `Failed to load NBA player pages for sitemap: ${nbaPlayersError.message}`,
+    );
+  }
+
+  const nflPlayerRoutes: MetadataRoute.Sitemap = (nflPlayers ?? []).map(
     ({ slug }) => ({
       url: `${baseUrl}/nfl/players/${slug}`,
       lastModified: now,
@@ -140,5 +167,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }),
   );
 
-  return [...staticRoutes, ...articleRoutes, ...playerRoutes];
+  const nbaPlayerRoutes: MetadataRoute.Sitemap = (nbaPlayers ?? []).map(
+    ({ slug }) => ({
+      url: `${baseUrl}/nba/players/${slug}`,
+      lastModified: now,
+      changeFrequency: "daily",
+      priority: 0.7,
+    }),
+  );
+
+  return [
+    ...staticRoutes,
+    ...articleRoutes,
+    ...nflPlayerRoutes,
+    ...nbaPlayerRoutes,
+  ];
 }

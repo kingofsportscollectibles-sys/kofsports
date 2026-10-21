@@ -136,6 +136,70 @@ async function fetchLeagueGameLog(
   return resultSet;
 }
 
+function normalizePositionGroup(
+  position: string | null
+): "G" | "F" | "C" | null {
+  if (!position) {
+    return null;
+  }
+
+  const primaryPosition = position.split("-")[0];
+
+  if (
+    primaryPosition === "G" ||
+    primaryPosition === "F" ||
+    primaryPosition === "C"
+  ) {
+    return primaryPosition;
+  }
+
+  return null;
+}
+
+async function fetchPlayerIndex(
+  season: string
+): Promise<NbaResultSet> {
+  const params = new URLSearchParams({
+    College: "",
+    Country: "",
+    DraftPick: "",
+    DraftRound: "",
+    DraftYear: "",
+    Height: "",
+    Historical: "0",
+    LeagueID: "00",
+    Season: season,
+    SeasonType: "Regular Season",
+    TeamID: "0",
+    Weight: "",
+  });
+
+  const url = `https://stats.nba.com/stats/playerindex?${params.toString()}`;
+
+  console.log(`Fetching NBA ${season} player metadata...`);
+
+  const response = await fetch(url, {
+    headers: NBA_HEADERS,
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `NBA player index request failed: ${response.status} ${response.statusText}`
+    );
+  }
+
+  const data = (await response.json()) as NbaResponse;
+  const resultSet = data.resultSets?.find(
+    (result) => result.name === "PlayerIndex"
+  );
+
+  if (!resultSet) {
+    throw new Error("NBA API response missing PlayerIndex result set");
+  }
+
+  return resultSet;
+}
+
 async function upsertInChunks(
   table: string,
   rows: Record<string, unknown>[],
@@ -161,6 +225,115 @@ async function upsertInChunks(
   }
 }
 
+async function updatePlayerMetadata(
+  rows: {
+    id: number;
+    position: string;
+    position_group: "G" | "F" | "C";
+    updated_at: string;
+  }[]
+) {
+  let updated = 0;
+
+  for (const row of rows) {
+    const { data, error } = await supabase
+      .from("nba_players")
+      .update({
+        position: row.position,
+        position_group: row.position_group,
+        updated_at: row.updated_at,
+      })
+      .eq("id", row.id)
+      .select("id");
+
+    if (error) {
+      throw new Error(
+        `nba_players metadata update failed for ${row.id}: ${error.message}`
+      );
+    }
+
+    if (data?.length) {
+      updated += data.length;
+    }
+  }
+
+  if (updated !== rows.length) {
+    throw new Error(
+      `NBA player metadata coverage mismatch: expected ${rows.length} existing players, updated ${updated}`
+    );
+  }
+
+  console.log(`nba_players metadata updated: ${updated}/${rows.length}`);
+}
+
+export async function importNbaPlayerMetadata(
+  season = DEFAULT_SEASON
+) {
+  const { headers, rowSet } = await fetchPlayerIndex(season);
+
+  const updates: {
+    id: number;
+    position: string;
+    position_group: "G" | "F" | "C";
+    updated_at: string;
+  }[] = [];
+
+  let missingPosition = 0;
+  let unsupportedPosition = 0;
+
+  for (const row of rowSet) {
+    const playerId = Number(value(row, headers, "PERSON_ID"));
+    const rawPosition = value(row, headers, "POSITION");
+
+    if (!Number.isFinite(playerId)) {
+      continue;
+    }
+
+    const position =
+      rawPosition === null ||
+      rawPosition === undefined ||
+      rawPosition === ""
+        ? null
+        : String(rawPosition);
+
+    if (!position) {
+      missingPosition += 1;
+      continue;
+    }
+
+    const positionGroup = normalizePositionGroup(position);
+
+    if (!positionGroup) {
+      unsupportedPosition += 1;
+      continue;
+    }
+
+    updates.push({
+      id: playerId,
+      position,
+      position_group: positionGroup,
+      updated_at: new Date().toISOString(),
+    });
+  }
+
+  console.log(`NBA player metadata rows returned: ${rowSet.length}`);
+  console.log(`Players with positions: ${updates.length}`);
+  console.log(`Players missing positions: ${missingPosition}`);
+  console.log(`Players with unsupported positions: ${unsupportedPosition}`);
+
+  await updatePlayerMetadata(updates);
+
+  console.log("NBA player metadata import complete.");
+
+  return {
+    season,
+    rowsReturned: rowSet.length,
+    positionsProcessed: updates.length,
+    missingPosition,
+    unsupportedPosition,
+  };
+}
+
 export async function importNbaPlayerGameStats(
   options: ImportNbaPlayerGameStatsOptions = {}
 ) {
@@ -171,13 +344,56 @@ export async function importNbaPlayerGameStats(
     throw new Error(`Invalid NBA season: ${season}`);
   }
 
-  const resultSet = await fetchLeagueGameLog({
-    ...options,
-    season,
-  });
+  const [resultSet, playerIndexResultSet] = await Promise.all([
+    fetchLeagueGameLog({
+      ...options,
+      season,
+    }),
+    fetchPlayerIndex(season),
+  ]);
+
   const { headers, rowSet } = resultSet;
+  const {
+    headers: playerIndexHeaders,
+    rowSet: playerIndexRows,
+  } = playerIndexResultSet;
 
   console.log(`NBA rows returned: ${rowSet.length}`);
+  console.log(`NBA player metadata rows returned: ${playerIndexRows.length}`);
+
+  const playerMetadata = new Map<
+    number,
+    {
+      position: string | null;
+      positionGroup: "G" | "F" | "C" | null;
+    }
+  >();
+
+  for (const row of playerIndexRows) {
+    const playerId = Number(
+      value(row, playerIndexHeaders, "PERSON_ID")
+    );
+    const rawPosition = value(
+      row,
+      playerIndexHeaders,
+      "POSITION"
+    );
+    const position =
+      rawPosition === null ||
+      rawPosition === undefined ||
+      rawPosition === ""
+        ? null
+        : String(rawPosition);
+
+    if (!Number.isFinite(playerId)) {
+      continue;
+    }
+
+    playerMetadata.set(playerId, {
+      position,
+      positionGroup: normalizePositionGroup(position),
+    });
+  }
 
   const players = new Map<number, Record<string, unknown>>();
   const games = new Map<string, Record<string, unknown>>();
@@ -196,11 +412,19 @@ export async function importNbaPlayerGameStats(
       throw new Error(`Invalid PLAYER_ID for ${playerName}`);
     }
 
+    const metadata = playerMetadata.get(playerId);
+
     players.set(playerId, {
       id: playerId,
       player_name: playerName,
       team,
       active: true,
+      ...(metadata?.position
+        ? {
+            position: metadata.position,
+            position_group: metadata.positionGroup,
+          }
+        : {}),
       updated_at: new Date().toISOString(),
     });
 
