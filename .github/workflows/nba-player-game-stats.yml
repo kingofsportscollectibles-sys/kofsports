@@ -31,10 +31,12 @@ jobs:
           npx tsx -e '
             import { refreshRecentNbaPlayerGameStats } from "./scripts/nba/import-player-game-stats.ts";
 
-            const result = await refreshRecentNbaPlayerGameStats({
-              season: "2026-27",
-              lookbackDays: 3,
-            });
+            void (async () => {
+              const result = await refreshRecentNbaPlayerGameStats({
+                season: "2026-27",
+                lookbackDays: 3,
+              });
 
-            console.log("NBA player game stats refresh complete:", result);
+              console.log("NBA player game stats refresh complete:", result);
+            })();
           '
