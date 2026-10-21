@@ -114,9 +114,18 @@ async function fetchLeagueGameLog(
       "..."
   );
 
-  const response = await fetch(url, {
-    headers: NBA_HEADERS,
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(url, {
+      headers: NBA_HEADERS,
+    });
+  } catch (error) {
+    console.error("NBA LeagueGameLog fetch failed:", error);
+    throw error;
+  }
+
+  console.log(`NBA LeagueGameLog response: ${response.status}`);
 
   if (!response.ok) {
     throw new Error(
@@ -178,9 +187,18 @@ async function fetchPlayerIndex(
 
   console.log(`Fetching NBA ${season} player metadata...`);
 
-  const response = await fetch(url, {
-    headers: NBA_HEADERS,
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(url, {
+      headers: NBA_HEADERS,
+    });
+  } catch (error) {
+    console.error("NBA PlayerIndex fetch failed:", error);
+    throw error;
+  }
+
+  console.log(`NBA PlayerIndex response: ${response.status}`);
 
   if (!response.ok) {
     throw new Error(
