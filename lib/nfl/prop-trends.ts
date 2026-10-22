@@ -1,5 +1,5 @@
-import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
 import { getNflPlayerSlugMap } from "@/lib/nfl/player-pages";
 import {
   getNflPassingYardsProjections,
@@ -231,7 +231,7 @@ export function getFreeNflProjectionIds(
   return new Set(selectedIds);
 }
 
-type PropTrendRow = {
+export type PropTrendRow = {
   prop_id: number;
   external_event_id: string | null;
   external_player_id: string | null;
@@ -302,6 +302,7 @@ async function getEligibleProjectionIds(
   externalPlayerIds: string[],
   season: number,
   positions: string[],
+  client?: SupabaseClient,
 ): Promise<Set<string>> {
   const uniquePlayerIds = Array.from(
     new Set(externalPlayerIds.filter(Boolean)),
@@ -314,7 +315,9 @@ async function getEligibleProjectionIds(
     return new Set();
   }
 
-  const supabase = createAdminClient();
+  const supabase =
+    client ??
+    (await import("@/lib/supabase/admin")).createAdminClient();
 
   const { data, error } = await supabase
     .from("nfl_player_current_teams")
@@ -351,8 +354,9 @@ async function getEligibleProjectionIds(
   );
 }
 
-async function resolvePropSchedule(
+export async function resolvePropSchedule(
   trends: NflPlayerPropTrend[],
+  client?: SupabaseClient,
 ): Promise<Map<string, { season: number; week: number }>> {
   const scheduleMap = new Map<
     string,
@@ -363,7 +367,9 @@ async function resolvePropSchedule(
     return scheduleMap;
   }
 
-  const supabase = await createClient();
+  const supabase =
+    client ??
+    (await (await import("@/lib/supabase/server")).createClient());
 
   const earliestCommenceTime = trends.reduce(
     (earliest, trend) =>
@@ -428,7 +434,7 @@ async function resolvePropSchedule(
   return scheduleMap;
 }
 
-function mapPropTrend(row: PropTrendRow): NflPlayerPropTrend {
+export function mapPropTrend(row: PropTrendRow): NflPlayerPropTrend {
   return {
     propId: row.prop_id,
     externalEventId: row.external_event_id,
@@ -486,43 +492,16 @@ function mapPropTrend(row: PropTrendRow): NflPlayerPropTrend {
   };
 }
 
-export async function getNflPlayerPropTrends(): Promise<
-  NflPlayerPropTrend[]
-> {
-  const supabase = await createClient();
-
-  const { data, error } = await supabase
-    .from("nfl_player_prop_trends_with_identity")
-    .select("*")
-    .eq("bookmaker", "draftkings")
-    .in("market", NFL_PROP_MARKETS)
-    .gte("commence_time", new Date().toISOString())
-    .order("commence_time", { ascending: true })
-    .order("player_name", { ascending: true });
-
-if (error) {
-  console.error("Failed to load NFL player prop trends:", {
-    message: error.message,
-    details: error.details,
-    hint: error.hint,
-    code: error.code,
-  });
-
-  throw new Error(
-    `Unable to load NFL player prop trends: ${error.message}`,
-  );
-}
-
-  const trends = ((data ?? []) as PropTrendRow[]).map(mapPropTrend);
-
+export async function enrichNflPlayerPropTrends(
+  trends: NflPlayerPropTrend[],
+  slugMap: Map<string, string> = new Map(),
+  client?: SupabaseClient,
+): Promise<NflPlayerPropTrend[]> {
   const externalPlayerIds = trends
     .map((trend) => trend.externalPlayerId)
     .filter((id): id is string => Boolean(id));
 
-  const [slugMap, scheduleMap] = await Promise.all([
-    getNflPlayerSlugMap(externalPlayerIds),
-    resolvePropSchedule(trends),
-  ]);
+  const scheduleMap = await resolvePropSchedule(trends, client);
 
   const getTrendGameKey = (trend: NflPlayerPropTrend) =>
     trend.externalEventId ??
@@ -545,7 +524,9 @@ if (error) {
   );
 
   if (seasons.length > 0 && externalPlayerIds.length > 0) {
-    const admin = createAdminClient();
+    const admin =
+      client ??
+      (await import("@/lib/supabase/admin")).createAdminClient();
 
     const { data: rosterRows, error: rosterError } = await admin
       .from("nfl_player_current_teams")
@@ -708,26 +689,31 @@ if (error) {
             playerIdsByMarket.passing,
             season,
             ["QB"],
+            client,
           ),
           getEligibleProjectionIds(
             playerIdsByMarket.rushing,
             season,
             ["RB"],
+            client,
           ),
           getEligibleProjectionIds(
             playerIdsByMarket.rushing,
             season,
             ["QB"],
+            client,
           ),
           getEligibleProjectionIds(
             playerIdsByMarket.receiving,
             season,
             ["RB", "WR", "TE"],
+            client,
           ),
           getEligibleProjectionIds(
             playerIdsByMarket.receptions,
             season,
             ["RB", "WR", "TE"],
+            client,
           ),
         ]);
 
@@ -744,6 +730,7 @@ if (error) {
             ),
             season,
             week,
+            client,
           ),
           getNflRushYardsProjections(
             playerIdsByMarket.rushing.filter((id) =>
@@ -751,6 +738,7 @@ if (error) {
             ),
             season,
             week,
+            client,
           ),
           getNflQbRushYardsProjections(
             weekTrends
@@ -770,6 +758,7 @@ if (error) {
               })),
             season,
             week,
+            client,
           ),
           getNflReceivingYardsProjections(
             playerIdsByMarket.receiving.filter((id) =>
@@ -777,6 +766,7 @@ if (error) {
             ),
             season,
             week,
+            client,
           ),
           getNflReceptionsProjections(
             playerIdsByMarket.receptions.filter((id) =>
@@ -784,6 +774,7 @@ if (error) {
             ),
             season,
             week,
+            client,
           ),
         ]);
 
@@ -930,10 +921,52 @@ if (error) {
   });
 }
 
+export async function getNflPlayerPropTrends(): Promise<
+  NflPlayerPropTrend[]
+> {
+  const supabase = await (
+    await import("@/lib/supabase/server")
+  ).createClient();
+
+  const { data, error } = await supabase
+    .from("nfl_player_prop_trends_with_identity")
+    .select("*")
+    .eq("bookmaker", "draftkings")
+    .in("market", NFL_PROP_MARKETS)
+    .gte("commence_time", new Date().toISOString())
+    .order("commence_time", { ascending: true })
+    .order("player_name", { ascending: true });
+
+if (error) {
+  console.error("Failed to load NFL player prop trends:", {
+    message: error.message,
+    details: error.details,
+    hint: error.hint,
+    code: error.code,
+  });
+
+  throw new Error(
+    `Unable to load NFL player prop trends: ${error.message}`,
+  );
+}
+
+  const trends = ((data ?? []) as PropTrendRow[]).map(mapPropTrend);
+
+  const externalPlayerIds = trends
+    .map((trend) => trend.externalPlayerId)
+    .filter((id): id is string => Boolean(id));
+
+  const slugMap = await getNflPlayerSlugMap(externalPlayerIds);
+
+  return enrichNflPlayerPropTrends(trends, slugMap);
+}
+
 export async function getNflPlayerPropTrendsByPlayer(
   externalPlayerId: string,
 ): Promise<NflPlayerPropTrend[]> {
-  const supabase = await createClient();
+  const supabase = await (
+    await import("@/lib/supabase/server")
+  ).createClient();
 
   const { data, error } = await supabase
     .from("nfl_player_prop_trends_with_identity")

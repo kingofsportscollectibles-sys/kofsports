@@ -1,3 +1,5 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+
 import { createClient } from "@/lib/supabase/server";
 
 export const NFL_RUSH_YDS_MODEL_VERSION =
@@ -44,12 +46,13 @@ async function loadRushProjectionHistory(
   externalPlayerIds: string[],
   currentSeason: number,
   targetWeek: number,
+  client?: SupabaseClient,
 ): Promise<NflRushGameStatRow[]> {
   if (externalPlayerIds.length === 0) {
     return [];
   }
 
-  const supabase = await createClient();
+  const supabase = client ?? (await createClient());
 
   const { data, error } = await supabase
     .from("nfl_player_game_stats")
@@ -195,8 +198,9 @@ type NflRbWeeklyRushingTotalRow = {
 
 async function loadRbWeeklyRushingTotals(
   currentSeason: number,
+  client?: SupabaseClient,
 ): Promise<NflRbWeeklyRushingTotalRow[]> {
-  const supabase = await createClient();
+  const supabase = client ?? (await createClient());
 
   const { data, error } = await supabase
     .from("nfl_rb_weekly_rushing_totals")
@@ -271,6 +275,7 @@ export async function getNflRushYardsProjections(
   externalPlayerIds: string[],
   currentSeason: number,
   targetWeek: number,
+  client?: SupabaseClient,
 ): Promise<Map<string, NflRushYardsProjection>> {
   const uniquePlayerIds = Array.from(
     new Set(externalPlayerIds.filter(Boolean)),
@@ -285,8 +290,9 @@ export async function getNflRushYardsProjections(
       uniquePlayerIds,
       currentSeason,
       targetWeek,
+      client,
     ),
-    loadRbWeeklyRushingTotals(currentSeason),
+    loadRbWeeklyRushingTotals(currentSeason, client),
   ]);
 
   const expectedYpc = calculateExpectedYpcForWeek(
@@ -400,12 +406,13 @@ async function loadReceptionProjectionHistory(
   externalPlayerIds: string[],
   currentSeason: number,
   targetWeek: number,
+  client?: SupabaseClient,
 ): Promise<NflReceptionGameStatRow[]> {
   if (externalPlayerIds.length === 0) {
     return [];
   }
 
-  const supabase = await createClient();
+  const supabase = client ?? (await createClient());
 
   const pageSize = 1000;
   const rows: NflReceptionGameStatRow[] = [];
@@ -476,8 +483,9 @@ type NflPositionReceivingTotals = {
 
 async function loadPriorSeasonPositionCatchRates(
   priorSeason: number,
+  client?: SupabaseClient,
 ): Promise<Map<string, number>> {
-  const supabase = await createClient();
+  const supabase = client ?? (await createClient());
 
   const pageSize = 1000;
   const totals = new Map<string, NflPositionReceivingTotals>();
@@ -675,6 +683,7 @@ export async function getNflReceptionsProjections(
   externalPlayerIds: string[],
   currentSeason: number,
   targetWeek: number,
+  client?: SupabaseClient,
 ): Promise<Map<string, NflReceptionsProjection>> {
   const uniquePlayerIds = Array.from(
     new Set(externalPlayerIds.filter(Boolean)),
@@ -689,8 +698,12 @@ export async function getNflReceptionsProjections(
       uniquePlayerIds,
       currentSeason,
       targetWeek,
+      client,
     ),
-    loadPriorSeasonPositionCatchRates(currentSeason - 1),
+    loadPriorSeasonPositionCatchRates(
+      currentSeason - 1,
+      client,
+    ),
   ]);
 
   const projections = new Map<string, NflReceptionsProjection>();
@@ -796,8 +809,9 @@ async function loadReceivingYardsProjectionHistory(
   externalPlayerIds: string[],
   currentSeason: number,
   targetWeek: number,
+  client?: SupabaseClient,
 ): Promise<NflReceivingYardsGameStatRow[]> {
-  const supabase = await createClient();
+  const supabase = client ?? (await createClient());
   const pageSize = 1000;
   const rows: NflReceivingYardsGameStatRow[] = [];
 
@@ -875,8 +889,9 @@ async function loadReceivingYardsProjectionHistory(
 
 async function loadPriorSeasonPositionYardsPerTarget(
   priorSeason: number,
+  client?: SupabaseClient,
 ): Promise<Map<string, number>> {
-  const supabase = await createClient();
+  const supabase = client ?? (await createClient());
   const pageSize = 1000;
 
   const totals = new Map<
@@ -1061,6 +1076,7 @@ export async function getNflReceivingYardsProjections(
   externalPlayerIds: string[],
   currentSeason: number,
   targetWeek: number,
+  client?: SupabaseClient,
 ): Promise<Map<string, NflReceivingYardsProjection>> {
   const uniquePlayerIds = Array.from(
     new Set(externalPlayerIds.filter(Boolean)),
@@ -1076,9 +1092,11 @@ export async function getNflReceivingYardsProjections(
         uniquePlayerIds,
         currentSeason,
         targetWeek,
+        client,
       ),
       loadPriorSeasonPositionYardsPerTarget(
         currentSeason - 1,
+        client,
       ),
     ]);
 
@@ -1196,12 +1214,13 @@ async function loadPassingYardsProjectionHistory(
   externalPlayerIds: string[],
   currentSeason: number,
   targetWeek: number,
+  client?: SupabaseClient,
 ): Promise<NflPassingYardsGameStatRow[]> {
   if (externalPlayerIds.length === 0) {
     return [];
   }
 
-  const supabase = await createClient();
+  const supabase = client ?? (await createClient());
   const pageSize = 1000;
   const rows: NflPassingYardsGameStatRow[] = [];
 
@@ -1277,8 +1296,9 @@ async function loadPassingYardsProjectionHistory(
 
 async function loadPriorSeasonLeagueQbYpa(
   priorSeason: number,
+  client?: SupabaseClient,
 ): Promise<number | null> {
-  const supabase = await createClient();
+  const supabase = client ?? (await createClient());
   const pageSize = 1000;
 
   let attempts = 0;
@@ -1466,6 +1486,7 @@ export async function getNflPassingYardsProjections(
   externalPlayerIds: string[],
   currentSeason: number,
   targetWeek: number,
+  client?: SupabaseClient,
 ): Promise<Map<string, NflPassingYardsProjection>> {
   const uniquePlayerIds = Array.from(
     new Set(externalPlayerIds.filter(Boolean)),
@@ -1481,9 +1502,11 @@ export async function getNflPassingYardsProjections(
         uniquePlayerIds,
         currentSeason,
         targetWeek,
+        client,
       ),
       loadPriorSeasonLeagueQbYpa(
         currentSeason - 1,
+        client,
       ),
     ]);
 
@@ -1596,8 +1619,9 @@ type NflQbRushGameStatRow = {
 async function loadQbRushProjectionHistory(
   currentSeason: number,
   targetWeek: number,
+  client?: SupabaseClient,
 ): Promise<NflQbRushGameStatRow[]> {
-  const supabase = await createClient();
+  const supabase = client ?? (await createClient());
   const pageSize = 1000;
   const rows: NflQbRushGameStatRow[] = [];
 
@@ -1767,6 +1791,7 @@ export async function getNflQbRushYardsProjections(
   inputs: NflQbRushProjectionInput[],
   currentSeason: number,
   targetWeek: number,
+  client?: SupabaseClient,
 ): Promise<Map<string, NflQbRushYardsProjection>> {
   const uniqueInputs = Array.from(
     new Map(
@@ -1790,6 +1815,7 @@ export async function getNflQbRushYardsProjections(
   const rows = await loadQbRushProjectionHistory(
     currentSeason,
     targetWeek,
+    client,
   );
 
   const priorLeagueQbRushingYardsPerGame =
