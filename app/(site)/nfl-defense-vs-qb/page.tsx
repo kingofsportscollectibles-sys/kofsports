@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+
+import NovigPromoCard from "@/components/NovigPromoCard";
 import NflDefenseVsPositionTable, {
   type DefenseVsPositionRow,
 } from "@/components/nfl/NflDefenseVsPositionTable";
@@ -79,6 +81,8 @@ export default async function Page() {
           See how every NFL defense performs against quarterbacks using fantasy points, passing yards, passing touchdowns, interceptions and quarterback rushing production allowed per game.
         </p>
       </section>
+
+      <NovigPromoCard />
 
       <NflDefenseVsPositionTable
         rows={rows}

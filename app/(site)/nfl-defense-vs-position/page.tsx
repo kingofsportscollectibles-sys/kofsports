@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 
+import NovigPromoCard from "@/components/NovigPromoCard";
+
 import NflDefenseVsPositionTable, {
   type DefenseVsPositionRow,
 } from "@/components/nfl/NflDefenseVsPositionTable";
@@ -58,6 +60,8 @@ export default async function NflDefenseVsPositionPage() {
           defensive trends before researching player props.
         </p>
       </section>
+
+      <NovigPromoCard />
 
       <NflDefenseVsPositionTable
         rows={rows}
