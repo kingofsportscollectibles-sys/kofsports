@@ -243,45 +243,20 @@ async function upsertInChunks(
   }
 }
 
-async function updatePlayerMetadata(
+async function upsertPlayerMetadata(
   rows: {
     id: number;
+    player_name: string;
+    team: string | null;
+    active: boolean;
     position: string;
     position_group: "G" | "F" | "C";
     updated_at: string;
   }[]
 ) {
-  let updated = 0;
+  await upsertInChunks("nba_players", rows, "id");
 
-  for (const row of rows) {
-    const { data, error } = await supabase
-      .from("nba_players")
-      .update({
-        position: row.position,
-        position_group: row.position_group,
-        updated_at: row.updated_at,
-      })
-      .eq("id", row.id)
-      .select("id");
-
-    if (error) {
-      throw new Error(
-        `nba_players metadata update failed for ${row.id}: ${error.message}`
-      );
-    }
-
-    if (data?.length) {
-      updated += data.length;
-    }
-  }
-
-  if (updated !== rows.length) {
-    throw new Error(
-      `NBA player metadata coverage mismatch: expected ${rows.length} existing players, updated ${updated}`
-    );
-  }
-
-  console.log(`nba_players metadata updated: ${updated}/${rows.length}`);
+  console.log(`nba_players metadata synced: ${rows.length}/${rows.length}`);
 }
 
 export async function importNbaPlayerMetadata(
@@ -291,6 +266,9 @@ export async function importNbaPlayerMetadata(
 
   const updates: {
     id: number;
+    player_name: string;
+    team: string | null;
+    active: boolean;
     position: string;
     position_group: "G" | "F" | "C";
     updated_at: string;
@@ -302,6 +280,19 @@ export async function importNbaPlayerMetadata(
   for (const row of rowSet) {
     const playerId = Number(value(row, headers, "PERSON_ID"));
     const rawPosition = value(row, headers, "POSITION");
+    const firstName = String(
+      value(row, headers, "PLAYER_FIRST_NAME") ?? ""
+    ).trim();
+    const lastName = String(
+      value(row, headers, "PLAYER_LAST_NAME") ?? ""
+    ).trim();
+    const playerName = `${firstName} ${lastName}`.trim();
+    const rawTeam = value(row, headers, "TEAM_ABBREVIATION");
+    const team =
+      rawTeam === null || rawTeam === undefined || rawTeam === ""
+        ? null
+        : String(rawTeam);
+    const rosterStatus = Number(value(row, headers, "ROSTER_STATUS"));
 
     if (!Number.isFinite(playerId)) {
       continue;
@@ -326,8 +317,15 @@ export async function importNbaPlayerMetadata(
       continue;
     }
 
+    if (!playerName) {
+      throw new Error(`NBA PlayerIndex missing name for PERSON_ID ${playerId}`);
+    }
+
     updates.push({
       id: playerId,
+      player_name: playerName,
+      team,
+      active: rosterStatus === 1,
       position,
       position_group: positionGroup,
       updated_at: new Date().toISOString(),
@@ -339,7 +337,7 @@ export async function importNbaPlayerMetadata(
   console.log(`Players missing positions: ${missingPosition}`);
   console.log(`Players with unsupported positions: ${unsupportedPosition}`);
 
-  await updatePlayerMetadata(updates);
+  await upsertPlayerMetadata(updates);
 
   console.log("NBA player metadata import complete.");
 

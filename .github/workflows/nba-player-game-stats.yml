@@ -23,20 +23,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Import recent NBA player game stats
+      - name: Import recent NBA player game stats from ESPN
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          TZ: America/New_York
         run: |
-          npx tsx -e '
-            import { refreshRecentNbaPlayerGameStats } from "./scripts/nba/import-player-game-stats.ts";
-
-            void (async () => {
-              const result = await refreshRecentNbaPlayerGameStats({
-                season: "2026-27",
-                lookbackDays: 3,
-              });
-
-              console.log("NBA player game stats refresh complete:", result);
-            })();
-          '
+          for DAYS_AGO in 3 2 1; do
+            GAME_DATE=$(date -d "$DAYS_AGO days ago" +%F)
+            echo "Importing NBA player game stats for $GAME_DATE..."
+            npx tsx scripts/nba/import-espn-player-game-stats.ts "$GAME_DATE" --write --allow-empty
+          done
