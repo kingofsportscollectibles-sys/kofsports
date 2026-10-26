@@ -8,9 +8,9 @@ import {
 import { hasKofSportsProAccess } from "@/lib/auth/entitlements";
 
 export const metadata: Metadata = {
-  title: "NFL Player Props Today: Trends & Hit Rates | KofSports",
+  title: "NFL Player Prop Trends 2026: Hit Rates & Stats | KofSports",
   description:
-    "Research NFL player props today with current lines, recent hit rates, historical results, and advanced player prop trends from KofSports.",
+    "NFL player prop trends, hit rates, stats, and results for 2026. Compare current lines with L5, L10, season, and matchup trends for today's NFL props.",
 };
 
 export default async function NflPlayerPropTrendsPage() {
@@ -46,7 +46,7 @@ export default async function NflPlayerPropTrendsPage() {
           </div>
 
           <h1 className="mt-4 max-w-4xl text-4xl font-black tracking-tight text-white md:text-5xl">
-            NFL Player Props Today: Trends & Hit Rates
+            NFL Player Prop Trends 2026: Hit Rates & Stats
           </h1>
 
           <p className="mt-5 max-w-3xl text-base leading-7 text-slate-400">
