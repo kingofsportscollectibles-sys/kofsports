@@ -42,7 +42,7 @@ export default function NovigPromoCard() {
 
         <div className="lg:min-w-52">
           <a
-            href="https://novig.com/"
+            href="https://novig.onelink.me/JHQQ/sz3auvq5"
             target="_blank"
             rel="sponsored noopener noreferrer"
             className="flex w-full items-center justify-center rounded-lg bg-[#179BE7] px-4 py-2.5 text-sm font-bold text-white transition hover:opacity-90"
