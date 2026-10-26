@@ -8,9 +8,9 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export const metadata: Metadata = {
-  title: "NFL Snap Counts 2026: Weekly Snap % by Team",
+  title: "NFL Snap Counts 2026: Player Snap % & Team Snap Counts",
   description:
-    "View NFL snap counts, player snap percentages, recent usage trends, and season averages for quarterbacks, running backs, wide receivers, and tight ends.",
+    "NFL snap counts and snap percentages for every team and player in 2026. Search by team, player or position and track weekly snap share and usage trends.",
   alternates: {
     canonical: "/nfl-snap-counts",
   },
@@ -33,7 +33,7 @@ export default async function NflSnapCountsPage() {
           </p>
 
           <h1 className="mt-3 text-4xl font-bold tracking-tight sm:text-5xl">
-            NFL Snap Counts 2026: Weekly Snap Counts &amp; Snap % by Team
+            NFL Snap Counts 2026: Player Snap % by Team
           </h1>
 
           <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-300">
