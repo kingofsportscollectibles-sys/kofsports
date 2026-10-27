@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import {
-  refreshRecentNbaPlayerGameStats,
-} from "@/scripts/nba/import-player-game-stats";
+  importEspnNbaPlayerGameStats,
+} from "@/scripts/nba/import-espn-player-game-stats";
 
 export const dynamic = "force-dynamic";
 
@@ -41,11 +41,20 @@ export async function GET(request: NextRequest) {
   );
 
   try {
-    const result =
-      await refreshRecentNbaPlayerGameStats({
-        season: "2026-27",
-        lookbackDays: 3,
+    const today = new Date();
+
+    for (let daysAgo = 3; daysAgo >= 1; daysAgo -= 1) {
+      const date = new Date(today);
+      date.setUTCDate(date.getUTCDate() - daysAgo);
+
+      const dateArg = date.toISOString().slice(0, 10);
+
+      await importEspnNbaPlayerGameStats({
+        dateArg,
+        writeMode: true,
+        allowEmpty: true,
       });
+    }
 
     const completedAt = new Date().toISOString();
 
@@ -57,7 +66,6 @@ export async function GET(request: NextRequest) {
       ok: true,
       startedAt,
       completedAt,
-      ...result,
     });
   } catch (error) {
     console.error(

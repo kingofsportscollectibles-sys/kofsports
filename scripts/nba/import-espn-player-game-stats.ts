@@ -185,14 +185,18 @@ async function resolveGameId({
   };
 }
 
-async function main() {
-  const dateArg = process.argv[2];
-  const writeMode = process.argv.includes("--write");
-  const allowEmpty = process.argv.includes("--allow-empty");
-
-  if (!dateArg || !/^\d{4}-\d{2}-\d{2}$/.test(dateArg)) {
+export async function importEspnNbaPlayerGameStats({
+  dateArg,
+  writeMode = true,
+  allowEmpty = false,
+}: {
+  dateArg: string;
+  writeMode?: boolean;
+  allowEmpty?: boolean;
+}) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateArg)) {
     throw new Error(
-      "Usage: npx tsx --env-file=.env.local scripts/nba/import-espn-player-game-stats.ts YYYY-MM-DD",
+      `Invalid ESPN NBA import date: ${dateArg}`,
     );
   }
 
@@ -561,7 +565,23 @@ async function main() {
   );
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});
+if (require.main === module) {
+  const dateArg = process.argv[2];
+  const writeMode = process.argv.includes("--write");
+  const allowEmpty = process.argv.includes("--allow-empty");
+
+  if (!dateArg) {
+    throw new Error(
+      "Usage: npx tsx --env-file=.env.local scripts/nba/import-espn-player-game-stats.ts YYYY-MM-DD",
+    );
+  }
+
+  importEspnNbaPlayerGameStats({
+    dateArg,
+    writeMode,
+    allowEmpty,
+  }).catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });
+}
