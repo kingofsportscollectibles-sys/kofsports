@@ -11,6 +11,58 @@ const NBA_HEADERS = {
 const DEFAULT_SEASON = "2025-26";
 const GAME_TYPE = "regular";
 
+const NBA_FETCH_TIMEOUT_MS = 20_000;
+const NBA_FETCH_ATTEMPTS = 3;
+const NBA_FETCH_RETRY_DELAY_MS = 2_000;
+
+async function fetchNbaApi(
+  url: string,
+  label: string
+): Promise<Response> {
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= NBA_FETCH_ATTEMPTS; attempt += 1) {
+    const controller = new AbortController();
+    const timeout = setTimeout(
+      () => controller.abort(),
+      NBA_FETCH_TIMEOUT_MS
+    );
+
+    try {
+      const response = await fetch(url, {
+        headers: NBA_HEADERS,
+        signal: controller.signal,
+      });
+
+      if (response.ok) {
+        return response;
+      }
+
+      lastError = new Error(
+        `${label} request failed: ${response.status} ${response.statusText}`
+      );
+    } catch (error) {
+      lastError = error;
+    } finally {
+      clearTimeout(timeout);
+    }
+
+    if (attempt < NBA_FETCH_ATTEMPTS) {
+      console.warn(
+        `${label} attempt ${attempt}/${NBA_FETCH_ATTEMPTS} failed; retrying...`
+      );
+
+      await new Promise((resolve) =>
+        setTimeout(resolve, NBA_FETCH_RETRY_DELAY_MS)
+      );
+    }
+  }
+
+  throw lastError instanceof Error
+    ? lastError
+    : new Error(`${label} request failed after ${NBA_FETCH_ATTEMPTS} attempts`);
+}
+
 type ImportNbaPlayerGameStatsOptions = {
   season?: string;
   dateFrom?: string;
@@ -114,24 +166,12 @@ async function fetchLeagueGameLog(
       "..."
   );
 
-  let response: Response;
-
-  try {
-    response = await fetch(url, {
-      headers: NBA_HEADERS,
-    });
-  } catch (error) {
-    console.error("NBA LeagueGameLog fetch failed:", error);
-    throw error;
-  }
+  const response = await fetchNbaApi(
+    url,
+    "NBA LeagueGameLog"
+  );
 
   console.log(`NBA LeagueGameLog response: ${response.status}`);
-
-  if (!response.ok) {
-    throw new Error(
-      `NBA API request failed: ${response.status} ${response.statusText}`
-    );
-  }
 
   const data = (await response.json()) as NbaResponse;
   const resultSet = data.resultSets?.find(
@@ -187,24 +227,12 @@ async function fetchPlayerIndex(
 
   console.log(`Fetching NBA ${season} player metadata...`);
 
-  let response: Response;
-
-  try {
-    response = await fetch(url, {
-      headers: NBA_HEADERS,
-    });
-  } catch (error) {
-    console.error("NBA PlayerIndex fetch failed:", error);
-    throw error;
-  }
+  const response = await fetchNbaApi(
+    url,
+    "NBA PlayerIndex"
+  );
 
   console.log(`NBA PlayerIndex response: ${response.status}`);
-
-  if (!response.ok) {
-    throw new Error(
-      `NBA player index request failed: ${response.status} ${response.statusText}`
-    );
-  }
 
   const data = (await response.json()) as NbaResponse;
   const resultSet = data.resultSets?.find(
