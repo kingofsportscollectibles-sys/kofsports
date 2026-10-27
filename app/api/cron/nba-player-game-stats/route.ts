@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
   try {
     const today = new Date();
 
-    for (let daysAgo = 3; daysAgo >= 1; daysAgo -= 1) {
+    for (let daysAgo = 1; daysAgo >= 1; daysAgo -= 1) {
       const date = new Date(today);
       date.setUTCDate(date.getUTCDate() - daysAgo);
 
