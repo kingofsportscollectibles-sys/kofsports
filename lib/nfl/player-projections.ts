@@ -1163,7 +1163,7 @@ export async function getNflReceivingYardsProjections(
 }
 
 export const NFL_PASS_YDS_MODEL_VERSION =
-  "nfl_pass_yds_v1.0" as const;
+  "nfl_pass_yds_v2.0" as const;
 
 const PASS_YDS_PRIOR_VOLUME_MIN_ATTEMPTS = 50;
 const PASS_YDS_PRIOR_VOLUME_ANCHOR_GAMES = 3;
@@ -1171,6 +1171,13 @@ const PASS_YDS_PRIOR_VOLUME_ANCHOR_GAMES = 3;
 const PASS_YDS_PRIOR_EFFICIENCY_MIN_ATTEMPTS = 300;
 const PASS_YDS_PRIOR_YPA_PSEUDO_ATTEMPTS = 200;
 const PASS_YDS_CURRENT_YPA_PSEUDO_ATTEMPTS = 200;
+const PASS_YDS_OPPONENT_VOLUME_WEIGHT = 0.25;
+
+export type NflPassingYardsProjectionInput = {
+  externalPlayerId: string;
+  team: string;
+  opponent: string;
+};
 
 export type NflPassingYardsProjection = {
   externalPlayerId: string;
@@ -1180,6 +1187,13 @@ export type NflPassingYardsProjection = {
   projectedPassingYards: number;
   projectedAttempts: number;
   expectedYardsPerAttempt: number;
+
+  baselineProjectedAttempts: number;
+  teamPassingAttemptsPerGame: number;
+  teamVolumeWeight: number;
+  teamBlendedProjectedAttempts: number;
+  opponentPassingAttemptsAllowedPerGame: number;
+  opponentVolumeWeight: number;
 
   currentSeasonGames: number;
   currentSeasonAttempts: number;
@@ -1203,6 +1217,8 @@ type NflPassingYardsGameStatRow = {
   season: number;
   week: number;
   position: string | null;
+  team: string | null;
+  opponent: string | null;
   passing_attempts: number | null;
   passing_yards: number | null;
   nfl_games: {
@@ -1233,6 +1249,8 @@ async function loadPassingYardsProjectionHistory(
           season,
           week,
           position,
+          team,
+          opponent,
           passing_attempts,
           passing_yards,
           nfl_games!inner (
@@ -1292,6 +1310,171 @@ async function loadPassingYardsProjectionHistory(
   }
 
   return rows;
+}
+
+async function loadPassingVolumeHistory(
+  currentSeason: number,
+  targetWeek: number,
+  client?: SupabaseClient,
+): Promise<NflPassingYardsGameStatRow[]> {
+  const supabase = client ?? (await createClient());
+  const pageSize = 1000;
+  const rows: NflPassingYardsGameStatRow[] = [];
+
+  for (let from = 0; ; from += pageSize) {
+    const { data, error } = await supabase
+      .from("nfl_player_game_stats")
+      .select(
+        `
+          external_player_id,
+          season,
+          week,
+          position,
+          team,
+          opponent,
+          passing_attempts,
+          passing_yards,
+          nfl_games!inner (
+            game_type
+          )
+        `,
+      )
+      .eq("season", currentSeason)
+      .eq("nfl_games.game_type", "REG")
+      .gt("passing_attempts", 0)
+      .order("week", { ascending: true })
+      .range(from, from + pageSize - 1);
+
+    if (error) {
+      console.error(
+        "Failed to load NFL passing volume history:",
+        {
+          currentSeason,
+          targetWeek,
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code,
+        },
+      );
+
+      throw new Error(
+        `Unable to load NFL passing volume history: ${error.message}`,
+      );
+    }
+
+    const page =
+      (data ?? []) as NflPassingYardsGameStatRow[];
+
+    for (const row of page) {
+      if (
+        row.week >= targetWeek ||
+        row.passing_attempts === null
+      ) {
+        continue;
+      }
+
+      rows.push(row);
+    }
+
+    if (page.length < pageSize) {
+      break;
+    }
+  }
+
+  return rows;
+}
+
+function getPassingTeamVolumeWeight(
+  priorQbGames: number,
+): number {
+  if (priorQbGames <= 1) {
+    return 0.50;
+  }
+
+  if (priorQbGames <= 3) {
+    return 0.25;
+  }
+
+  return 0.50;
+}
+
+function calculatePregameTeamPassingAttemptsPerGame(
+  rows: NflPassingYardsGameStatRow[],
+  team: string,
+): number | null {
+  const gameTotals = new Map<string, number>();
+
+  for (const row of rows) {
+    if (
+      row.team !== team ||
+      !row.opponent
+    ) {
+      continue;
+    }
+
+    const key = [
+      row.season,
+      row.week,
+      row.team,
+      row.opponent,
+    ].join(":");
+
+    gameTotals.set(
+      key,
+      (gameTotals.get(key) ?? 0) +
+        (row.passing_attempts ?? 0),
+    );
+  }
+
+  if (gameTotals.size === 0) {
+    return null;
+  }
+
+  const totalAttempts = Array.from(
+    gameTotals.values(),
+  ).reduce((sum, attempts) => sum + attempts, 0);
+
+  return totalAttempts / gameTotals.size;
+}
+
+function calculatePregameOpponentPassingAttemptsAllowed(
+  rows: NflPassingYardsGameStatRow[],
+  opponent: string,
+): number | null {
+  const gameTotals = new Map<string, number>();
+
+  for (const row of rows) {
+    if (
+      row.opponent !== opponent ||
+      !row.team
+    ) {
+      continue;
+    }
+
+    const key = [
+      row.season,
+      row.week,
+      row.team,
+      row.opponent,
+    ].join(":");
+
+    gameTotals.set(
+      key,
+      (gameTotals.get(key) ?? 0) +
+        (row.passing_attempts ?? 0),
+    );
+  }
+
+  if (gameTotals.size === 0) {
+    return null;
+  }
+
+  const totalAttempts = Array.from(
+    gameTotals.values(),
+  ).reduce((sum, attempts) => sum + attempts, 0);
+
+  return totalAttempts / gameTotals.size;
 }
 
 async function loadPriorSeasonLeagueQbYpa(
@@ -1372,6 +1555,8 @@ function calculatePassingYardsProjection(
   currentRows: NflPassingYardsGameStatRow[],
   priorRows: NflPassingYardsGameStatRow[],
   priorLeagueYardsPerAttempt: number,
+  teamPassingAttemptsPerGame: number,
+  opponentPassingAttemptsAllowedPerGame: number,
 ): Omit<
   NflPassingYardsProjection,
   "externalPlayerId" | "modelVersion"
@@ -1417,18 +1602,37 @@ function calculatePassingYardsProjection(
       PASS_YDS_PRIOR_VOLUME_MIN_ATTEMPTS &&
     priorSeasonAttemptsPerGame !== null;
 
-  const projectedAttempts = priorVolumeAnchorApplied
-    ? (
-        currentSeasonAttemptsPerGame *
+  const baselineProjectedAttempts =
+    priorVolumeAnchorApplied
+      ? (
+          currentSeasonAttemptsPerGame *
+            currentRows.length +
+          priorSeasonAttemptsPerGame *
+            PASS_YDS_PRIOR_VOLUME_ANCHOR_GAMES
+        ) /
+        (
           currentRows.length +
-        priorSeasonAttemptsPerGame *
           PASS_YDS_PRIOR_VOLUME_ANCHOR_GAMES
-      ) /
-      (
-        currentRows.length +
-        PASS_YDS_PRIOR_VOLUME_ANCHOR_GAMES
-      )
-    : currentSeasonAttemptsPerGame;
+        )
+      : currentSeasonAttemptsPerGame;
+
+  const teamVolumeWeight =
+    getPassingTeamVolumeWeight(
+      currentRows.filter(
+        (row) => (row.passing_attempts ?? 0) > 0,
+      ).length,
+    );
+
+  const teamBlendedProjectedAttempts =
+    baselineProjectedAttempts *
+      (1 - teamVolumeWeight) +
+    teamPassingAttemptsPerGame * teamVolumeWeight;
+
+  const projectedAttempts =
+    teamBlendedProjectedAttempts *
+      (1 - PASS_YDS_OPPONENT_VOLUME_WEIGHT) +
+    opponentPassingAttemptsAllowedPerGame *
+      PASS_YDS_OPPONENT_VOLUME_WEIGHT;
 
   const priorEfficiencyAnchorApplied =
     priorSeasonAttempts >=
@@ -1464,6 +1668,14 @@ function calculatePassingYardsProjection(
     projectedAttempts,
     expectedYardsPerAttempt,
 
+    baselineProjectedAttempts,
+    teamPassingAttemptsPerGame,
+    teamVolumeWeight,
+    teamBlendedProjectedAttempts,
+    opponentPassingAttemptsAllowedPerGame,
+    opponentVolumeWeight:
+      PASS_YDS_OPPONENT_VOLUME_WEIGHT,
+
     currentSeasonGames: currentRows.length,
     currentSeasonAttempts,
     currentSeasonPassingYards,
@@ -1483,32 +1695,56 @@ function calculatePassingYardsProjection(
 }
 
 export async function getNflPassingYardsProjections(
-  externalPlayerIds: string[],
+  inputs: NflPassingYardsProjectionInput[],
   currentSeason: number,
   targetWeek: number,
   client?: SupabaseClient,
 ): Promise<Map<string, NflPassingYardsProjection>> {
-  const uniquePlayerIds = Array.from(
-    new Set(externalPlayerIds.filter(Boolean)),
+  const uniqueInputs = Array.from(
+    new Map(
+      inputs
+        .filter(
+          (input) =>
+            Boolean(input.externalPlayerId) &&
+            Boolean(input.team) &&
+            Boolean(input.opponent),
+        )
+        .map((input) => [
+          input.externalPlayerId,
+          input,
+        ]),
+    ).values(),
   );
 
-  if (uniquePlayerIds.length === 0) {
+  if (uniqueInputs.length === 0) {
     return new Map();
   }
 
-  const [historyRows, priorLeagueYardsPerAttempt] =
-    await Promise.all([
-      loadPassingYardsProjectionHistory(
-        uniquePlayerIds,
-        currentSeason,
-        targetWeek,
-        client,
-      ),
-      loadPriorSeasonLeagueQbYpa(
-        currentSeason - 1,
-        client,
-      ),
-    ]);
+  const uniquePlayerIds = uniqueInputs.map(
+    (input) => input.externalPlayerId,
+  );
+
+  const [
+    historyRows,
+    volumeRows,
+    priorLeagueYardsPerAttempt,
+  ] = await Promise.all([
+    loadPassingYardsProjectionHistory(
+      uniquePlayerIds,
+      currentSeason,
+      targetWeek,
+      client,
+    ),
+    loadPassingVolumeHistory(
+      currentSeason,
+      targetWeek,
+      client,
+    ),
+    loadPriorSeasonLeagueQbYpa(
+      currentSeason - 1,
+      client,
+    ),
+  ]);
 
   if (priorLeagueYardsPerAttempt === null) {
     return new Map();
@@ -1517,7 +1753,9 @@ export async function getNflPassingYardsProjections(
   const projections =
     new Map<string, NflPassingYardsProjection>();
 
-  for (const externalPlayerId of uniquePlayerIds) {
+  for (const input of uniqueInputs) {
+    const externalPlayerId = input.externalPlayerId;
+
     const currentRows = historyRows.filter(
       (row) =>
         row.external_player_id === externalPlayerId &&
@@ -1544,11 +1782,32 @@ export async function getNflPassingYardsProjections(
       continue;
     }
 
+    const teamPassingAttemptsPerGame =
+      calculatePregameTeamPassingAttemptsPerGame(
+        volumeRows,
+        input.team,
+      );
+
+    const opponentPassingAttemptsAllowedPerGame =
+      calculatePregameOpponentPassingAttemptsAllowed(
+        volumeRows,
+        input.opponent,
+      );
+
+    if (
+      teamPassingAttemptsPerGame === null ||
+      opponentPassingAttemptsAllowedPerGame === null
+    ) {
+      continue;
+    }
+
     const projection =
       calculatePassingYardsProjection(
         currentRows,
         priorRows,
         priorLeagueYardsPerAttempt,
+        teamPassingAttemptsPerGame,
+        opponentPassingAttemptsAllowedPerGame,
       );
 
     if (projection === null) {

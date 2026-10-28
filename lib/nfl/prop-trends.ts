@@ -725,9 +725,24 @@ export async function enrichNflPlayerPropTrends(
           weekReceptionsProjections,
         ] = await Promise.all([
           getNflPassingYardsProjections(
-            playerIdsByMarket.passing.filter((id) =>
-              eligiblePassingIds.has(id),
-            ),
+            weekTrends
+              .filter(
+                (trend) =>
+                  trend.market === "player_pass_yds" &&
+                  trend.externalPlayerId &&
+                  trend.playerTeam &&
+                  trend.upcomingOpponent &&
+                  eligiblePassingIds.has(
+                    trend.externalPlayerId,
+                  ),
+              )
+              .map((trend) => ({
+                externalPlayerId:
+                  trend.externalPlayerId as string,
+                team: trend.playerTeam as string,
+                opponent:
+                  trend.upcomingOpponent as string,
+              })),
             season,
             week,
             client,
