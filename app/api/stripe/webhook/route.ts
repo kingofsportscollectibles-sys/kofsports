@@ -767,15 +767,26 @@ async function handleInvoicePaymentFailed(
   }
 
   const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-  if (isKofSportsProSubscription(subscription)) {
-    await syncKofSportsProSubscription(subscription);
+
+  /*
+   * KofSports policy: a failed recurring payment ends the subscription
+   * immediately. Canceling in Stripe prevents additional automatic retry
+   * attempts and requires the customer to intentionally resubscribe.
+   */
+  const canceledSubscription =
+    subscription.status === "canceled"
+      ? subscription
+      : await stripe.subscriptions.cancel(subscriptionId);
+
+  if (isKofSportsProSubscription(canceledSubscription)) {
+    await syncKofSportsProSubscription(canceledSubscription);
     return;
   }
 
-  const customerId = objectId(subscription.customer);
+  const customerId = objectId(canceledSubscription.customer);
 
   const profileId = await findProfileIdByStripeData({
-    profileId: subscription.metadata.profile_id ?? null,
+    profileId: canceledSubscription.metadata.profile_id ?? null,
     customerId,
     subscriptionId,
   });
@@ -787,10 +798,12 @@ async function handleInvoicePaymentFailed(
   await updateProfile(profileId, {
     membership: "free",
     stripe_customer_id: customerId,
-    stripe_subscription_id: subscription.id,
-    stripe_price_id: getSubscriptionPriceId(subscription),
-    subscription_status: subscription.status,
-    membership_expires_at: getSubscriptionPeriodEnd(subscription),
+    stripe_subscription_id: canceledSubscription.id,
+    stripe_price_id: getSubscriptionPriceId(canceledSubscription),
+    subscription_status: canceledSubscription.status,
+    membership_expires_at:
+      getSubscriptionPeriodEnd(canceledSubscription) ??
+      new Date().toISOString(),
   });
 }
 
