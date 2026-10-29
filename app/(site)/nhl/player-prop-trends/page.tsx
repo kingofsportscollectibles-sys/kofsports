@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 
 import NhlPropTrendsExplorer from "@/components/nhl/NhlPropTrendsExplorer";
 import { getNhlPlayerPropTrends } from "@/lib/nhl/prop-trends";
-import { hasKofSportsProAccess } from "@/lib/auth/entitlements";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -14,10 +13,7 @@ export const metadata: Metadata = {
 };
 
 export default async function NhlPlayerPropTrendsPage() {
-  const [props, hasProAccess] = await Promise.all([
-    getNhlPlayerPropTrends(),
-    hasKofSportsProAccess(),
-  ]);
+  const props = await getNhlPlayerPropTrends();
 
   return (
     <main className="min-h-screen bg-slate-950">
@@ -32,10 +28,10 @@ export default async function NhlPlayerPropTrendsPage() {
           </h1>
 
           <p className="mt-5 max-w-3xl text-base leading-7 text-slate-400">
-            Research NHL player props using current DraftKings lines and
-            historical game results. Quickly compare recent performance against
-            today&apos;s line, then unlock deeper trend analysis with KofSports
-            Pro.
+            Research NHL player props using current DraftKings lines, L5 and
+            L10 hit rates, season trends, matchup history, and recent game
+            results. Compare historical performance against today&apos;s line
+            with free KofSports NHL research.
           </p>
 
           <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-slate-500">
@@ -58,21 +54,11 @@ export default async function NhlPlayerPropTrendsPage() {
             </p>
           </div>
 
-         {!hasProAccess && (
-  <a
-    href="/pro"
-    className="inline-flex w-fit items-center justify-center rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-2.5 text-sm font-bold text-emerald-400 transition hover:border-emerald-400/50 hover:bg-emerald-500/15"
-  >
-    Unlock KofSports Pro
-  </a>
-)}
+
         </div>
 
         {props.length > 0 ? (
-          <NhlPropTrendsExplorer
-  props={props}
-  hasProAccess={hasProAccess}
-/>
+          <NhlPropTrendsExplorer props={props} />
         ) : (
           <div className="rounded-2xl border border-slate-800 bg-slate-900 p-10 text-center">
             <h2 className="text-xl font-bold text-white">
@@ -85,66 +71,7 @@ export default async function NhlPlayerPropTrendsPage() {
           </div>
         )}
 
-        <div className="mt-12 overflow-hidden rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/10 via-slate-900 to-slate-900">
-          <div className="p-7 md:p-9">
-            <div className="flex flex-col gap-7 lg:flex-row lg:items-center lg:justify-between">
-              <div className="max-w-2xl">
-                <div className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-400">
-                  KofSports Pro
-                </div>
 
-                <h2 className="mt-3 text-2xl font-black tracking-tight text-white md:text-3xl">
-                  Go deeper than the basic hit rate.
-                </h2>
-
-                <p className="mt-3 max-w-xl leading-7 text-slate-400">
-                  Unlock advanced player prop research including longer-term
-                  trends, averages, matchup history, edge versus the current
-                  sportsbook line, and the full KofSports NHL research suite.
-                </p>
-
-                <div className="mt-5 grid gap-2 text-sm text-slate-300 sm:grid-cols-2">
-                  <span>✓ Last 10 trends</span>
-                  <span>✓ Season trends</span>
-                  <span>✓ Head-to-head history</span>
-                  <span>✓ Average vs current line</span>
-                  <span>✓ Advanced prop research</span>
-                </div>
-
-                <p className="mt-5 text-xs leading-5 text-slate-500">
-                  KofSports Pro is also included with an active KofSports
-                  Premium Picks membership.
-                </p>
-              </div>
-
-             <div className="flex shrink-0 flex-col gap-3 sm:flex-row lg:flex-col">
-  {hasProAccess ? (
-    <a
-      href="/nhl/player-prop-trends"
-      className="rounded-xl bg-emerald-500 px-6 py-3 text-center text-sm font-bold text-slate-950 transition hover:bg-emerald-400"
-    >
-      Open Prop Research
-    </a>
-  ) : (
-    <>
-      <a
-        href="/pro"
-        className="rounded-xl bg-emerald-500 px-6 py-3 text-center text-sm font-bold text-slate-950 transition hover:bg-emerald-400"
-      >
-        Unlock KofSports Pro
-      </a>
-      <a
-        href="/nhl/player-prop-trends"
-        className="rounded-xl border border-slate-700 bg-slate-950 px-6 py-3 text-center text-sm font-bold text-white transition hover:border-slate-600 hover:bg-slate-800"
-      >
-        Preview Prop Research
-      </a>
-    </>
-  )}
-</div>
-            </div>
-          </div>
-        </div>
       </section>
 
       <section className="border-t border-slate-800 bg-slate-900/40">

@@ -752,7 +752,6 @@ const matchup = upcomingGame
                       </div>
                     </div>
 
-                    {hasProAccess ? (
                       <div
                         className={`rounded-xl border p-4 ${trendClass(
                           prop.l10OverPct,
@@ -777,28 +776,6 @@ const matchup = upcomingGame
                           </div>
                         </div>
                       </div>
-                    ) : (
-                      <a
-                        href="/pro"
-                        className="group rounded-xl border border-slate-800 bg-slate-950 p-4 transition hover:border-emerald-500/30"
-                      >
-                        <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                          Last 10
-                        </div>
-
-                        <div className="mt-2 flex items-center justify-between gap-3">
-                          <span className="text-sm font-bold text-slate-400">
-                            🔒 Pro
-                          </span>
-
-                          <span className="text-xs font-semibold text-emerald-500">
-                            Unlock →
-                          </span>
-                        </div>
-                      </a>
-                    )}
-
-                    {hasProAccess ? (
                       <div
                         className={`rounded-xl border p-4 ${trendClass(
                           prop.seasonOverPct,
@@ -823,28 +800,6 @@ const matchup = upcomingGame
                           </div>
                         </div>
                       </div>
-                    ) : (
-                      <a
-                        href="/pro"
-                        className="group rounded-xl border border-slate-800 bg-slate-950 p-4 transition hover:border-emerald-500/30"
-                      >
-                        <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                          Season
-                        </div>
-
-                        <div className="mt-2 flex items-center justify-between gap-3">
-                          <span className="text-sm font-bold text-slate-400">
-                            🔒 Pro
-                          </span>
-
-                          <span className="text-xs font-semibold text-emerald-500">
-                            Unlock →
-                          </span>
-                        </div>
-                      </a>
-                    )}
-
-                    {hasProAccess ? (
                       <div
                         className={`rounded-xl border p-4 ${trendClass(
                           prop.h2hOverPct,
@@ -871,28 +826,6 @@ const matchup = upcomingGame
                           </div>
                         </div>
                       </div>
-                    ) : (
-                      <a
-                        href="/pro"
-                        className="group rounded-xl border border-slate-800 bg-slate-950 p-4 transition hover:border-emerald-500/30"
-                      >
-                        <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                          {prop.upcomingOpponent
-                            ? `vs ${prop.upcomingOpponent}`
-                            : "Head to Head"}
-                        </div>
-
-                        <div className="mt-2 flex items-center justify-between gap-3">
-                          <span className="text-sm font-bold text-slate-400">
-                            🔒 Pro
-                          </span>
-
-                          <span className="text-xs font-semibold text-emerald-500">
-                            Unlock →
-                          </span>
-                        </div>
-                      </a>
-                    )}
                   </div>
 
                   <div className="border-t border-slate-800 px-5 py-4 md:px-6">

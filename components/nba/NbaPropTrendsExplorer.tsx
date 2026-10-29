@@ -66,7 +66,6 @@ export type NbaPlayerPropTrendWithSlug = Omit<
 
 type Props = {
   props: NbaPlayerPropTrendWithSlug[];
-  hasProAccess: boolean;
 };
 
 function marketLabel(market: NbaPropMarket) {
@@ -198,45 +197,13 @@ function TrendStat({
   );
 }
 
-function LockedTrendStat({
-  label,
-}: {
-  label: string;
-}) {
-  return (
-    <a
-      href="/pro"
-      className="group rounded-xl border border-slate-800 bg-slate-950 p-4 transition hover:border-emerald-500/30"
-    >
-      <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-        {label}
-      </div>
-
-      <div className="mt-2 flex items-center justify-between gap-3">
-        <div className="text-sm font-bold text-slate-400">
-          🔒 Pro
-        </div>
-
-        <div className="text-xs font-semibold text-emerald-500 opacity-80 transition group-hover:opacity-100">
-          Unlock →
-        </div>
-      </div>
-    </a>
-  );
-}
 
 function PlayerPropCard({
   prop,
-  hasProAccess,
 }: {
   prop: NbaPlayerPropTrendWithSlug;
-  hasProAccess: boolean;
 }) {
-  const visibleGames = hasProAccess
-    ? prop.lastTen
-    : prop.lastTen.slice(0, 5);
-
-  const lockedGameCount = hasProAccess ? 0 : 5;
+  const visibleGames = prop.lastTen;
 
   return (
     <article className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900">
@@ -307,48 +274,28 @@ function PlayerPropCard({
           percentage={prop.l5OverPct}
         />
 
-        {hasProAccess ? (
-          <TrendStat
-            label="Last 10"
-            overs={prop.l10Overs ?? 0}
-            games={prop.l10Games ?? 0}
-            percentage={prop.l10OverPct}
-          />
-        ) : (
-          <LockedTrendStat label="Last 10" />
-        )}
-
-        {hasProAccess ? (
-          <TrendStat
-            label="Season"
-            overs={prop.seasonOvers ?? 0}
-            games={prop.seasonGames ?? 0}
-            percentage={prop.seasonOverPct}
-          />
-        ) : (
-          <LockedTrendStat label="Season" />
-        )}
-
-        {hasProAccess ? (
-          <TrendStat
-            label={
-              prop.upcomingOpponent
-                ? `vs ${prop.upcomingOpponent}`
-                : "Head to Head"
-            }
-            overs={prop.h2hOvers ?? 0}
-            games={prop.h2hGames ?? 0}
-            percentage={prop.h2hOverPct}
-          />
-        ) : (
-          <LockedTrendStat
-            label={
-              prop.upcomingOpponent
-                ? `vs ${prop.upcomingOpponent}`
-                : "Head to Head"
-            }
-          />
-        )}
+        <TrendStat
+          label="Last 10"
+          overs={prop.l10Overs ?? 0}
+          games={prop.l10Games ?? 0}
+          percentage={prop.l10OverPct}
+        />
+        <TrendStat
+          label="Season"
+          overs={prop.seasonOvers ?? 0}
+          games={prop.seasonGames ?? 0}
+          percentage={prop.seasonOverPct}
+        />
+        <TrendStat
+          label={
+            prop.upcomingOpponent
+              ? `vs ${prop.upcomingOpponent}`
+              : "Head to Head"
+          }
+          overs={prop.h2hOvers ?? 0}
+          games={prop.h2hGames ?? 0}
+          percentage={prop.h2hOverPct}
+        />
       </div>
 
       {prop.lastTen.length > 0 ? (
@@ -358,14 +305,7 @@ function PlayerPropCard({
               Recent Results
             </div>
 
-            {!hasProAccess ? (
-              <a
-                href="/pro"
-                className="text-xs font-bold text-emerald-400 transition hover:text-emerald-300"
-              >
-                Unlock Last 10 →
-              </a>
-            ) : null}
+
           </div>
 
           <div className="overflow-x-auto pb-1 lg:overflow-x-visible">
@@ -407,25 +347,7 @@ function PlayerPropCard({
                 );
               })}
 
-              {!hasProAccess
-                ? Array.from({
-                    length: lockedGameCount,
-                  }).map((_, index) => (
-                    <a
-                      key={`locked-${index}`}
-                      href="/pro"
-                      className="flex min-w-14 flex-col items-center justify-center rounded-lg border border-slate-800 bg-slate-950 px-2 py-2 text-center transition hover:border-emerald-500/30 lg:min-w-0 lg:px-1.5"
-                    >
-                      <div className="text-sm">
-                        🔒
-                      </div>
 
-                      <div className="mt-1 text-[9px] font-bold uppercase text-slate-500">
-                        Pro
-                      </div>
-                    </a>
-                  ))
-                : null}
             </div>
           </div>
         </div>
@@ -435,29 +357,13 @@ function PlayerPropCard({
         </div>
       )}
 
-      {!hasProAccess ? (
-        <div className="border-t border-slate-800 bg-slate-950/50 px-5 py-3">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="text-xs leading-5 text-slate-500">
-              Unlock L10, season, H2H and deeper prop research.
-            </div>
 
-            <a
-              href="/pro"
-              className="shrink-0 text-xs font-bold text-emerald-400 transition hover:text-emerald-300"
-            >
-              KofSports Pro →
-            </a>
-          </div>
-        </div>
-      ) : null}
     </article>
   );
 }
 
 export default function NbaPropTrendsExplorer({
   props,
-  hasProAccess,
 }: Props) {
   const [search, setSearch] = useState("");
   const [game, setGame] = useState("all");
@@ -823,13 +729,8 @@ export default function NbaPropTrendsExplorer({
                 Lowest L5 Hit Rate
               </option>
 
-              <option
-                value="edge-desc"
-                disabled={!hasProAccess}
-              >
-                {hasProAccess
-                  ? "Highest L5 Avg vs Line"
-                  : "🔒 Highest Avg vs Line"}
+              <option value="edge-desc">
+                Highest L5 Avg vs Line
               </option>
 
               <option value="player-asc">
@@ -865,7 +766,6 @@ export default function NbaPropTrendsExplorer({
             <PlayerPropCard
               key={prop.propId}
               prop={prop}
-              hasProAccess={hasProAccess}
             />
           ))}
         </div>

@@ -13,8 +13,6 @@ import {
   type NbaPropMarket,
 } from "@/lib/nba/prop-trends";
 
-import { hasKofSportsProAccess } from "@/lib/auth/entitlements";
-
 type PlayerPageProps = {
   params: Promise<{
     slug: string;
@@ -155,7 +153,6 @@ export default async function NbaPlayerPage({
     stats,
     gameLog,
     propTrends,
-    hasProAccess,
   ] = await Promise.all([
     getNbaPlayerSeasonStats(
       player.playerId,
@@ -168,7 +165,6 @@ export default async function NbaPlayerPage({
     getNbaPlayerPropTrendsByPlayer(
       player.playerId,
     ),
-    hasKofSportsProAccess(),
   ]);
 
   const seasonLabel = formatNbaSeason(season);
@@ -312,21 +308,18 @@ export default async function NbaPlayerPage({
                   games: prop.l5Games,
                   overs: prop.l5Overs,
                   pct: prop.l5OverPct,
-                  locked: false,
                 },
                 {
                   label: "Last 10",
                   games: prop.l10Games,
                   overs: prop.l10Overs,
                   pct: prop.l10OverPct,
-                  locked: !hasProAccess,
                 },
                 {
                   label: "Season",
                   games: prop.seasonGames,
                   overs: prop.seasonOvers,
                   pct: prop.seasonOverPct,
-                  locked: !hasProAccess,
                 },
                 {
                   label: prop.upcomingOpponent
@@ -335,7 +328,6 @@ export default async function NbaPlayerPage({
                   games: prop.h2hGames,
                   overs: prop.h2hOvers,
                   pct: prop.h2hOverPct,
-                  locked: !hasProAccess,
                 },
               ];
 
@@ -385,52 +377,29 @@ export default async function NbaPlayerPage({
                   </div>
 
                   <div className="grid grid-cols-2 gap-3 p-5 md:p-6 lg:grid-cols-4">
-                    {trendCards.map((trend) =>
-                      trend.locked ? (
-                        <a
-                          key={trend.label}
-                          href="/pro"
-                          className="group rounded-xl border border-slate-800 bg-slate-950 p-4 transition hover:border-emerald-500/30"
-                        >
-                          <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                            {trend.label}
+                    {trendCards.map((trend) => (
+                      <div
+                        key={trend.label}
+                        className={`rounded-xl border p-4 ${trendClass(
+                          trend.pct,
+                        )}`}
+                      >
+                        <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                          {trend.label}
+                        </div>
+                        <div className="mt-2 flex items-end justify-between gap-3">
+                          <div className="text-xl font-bold text-white">
+                            {formatRecord(
+                              trend.overs,
+                              trend.games,
+                            )}
                           </div>
-
-                          <div className="mt-2 flex items-center justify-between gap-3">
-                            <span className="text-sm font-bold text-slate-400">
-                              🔒 Pro
-                            </span>
-                            <span className="text-xs font-semibold text-emerald-500">
-                              Unlock →
-                            </span>
-                          </div>
-                        </a>
-                      ) : (
-                        <div
-                          key={trend.label}
-                          className={`rounded-xl border p-4 ${trendClass(
-                            trend.pct,
-                          )}`}
-                        >
-                          <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                            {trend.label}
-                          </div>
-
-                          <div className="mt-2 flex items-end justify-between gap-3">
-                            <div className="text-xl font-bold text-white">
-                              {formatRecord(
-                                trend.overs,
-                                trend.games,
-                              )}
-                            </div>
-
-                            <div className="text-sm font-semibold text-slate-300">
-                              {formatPercent(trend.pct)}
-                            </div>
+                          <div className="text-sm font-semibold text-slate-300">
+                            {formatPercent(trend.pct)}
                           </div>
                         </div>
-                      ),
-                    )}
+                      </div>
+                    ))}
                   </div>
 
                   <div className="border-t border-slate-800 px-5 py-4 md:px-6">

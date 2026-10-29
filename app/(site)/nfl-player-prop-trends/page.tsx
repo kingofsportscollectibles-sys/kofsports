@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 
 import NflPropTrendsExplorer from "@/components/nfl/NflPropTrendsExplorer";
 import {
-  getFreeNflProjectionIds,
   getNflPlayerPropTrends,
 } from "@/lib/nfl/prop-trends";
 import { hasKofSportsProAccess } from "@/lib/auth/entitlements";
@@ -19,23 +18,17 @@ export default async function NflPlayerPropTrendsPage() {
     hasKofSportsProAccess(),
   ]);
 
-  const freeProjectionIds = getFreeNflProjectionIds(props);
-
+  // Keep proprietary KofSports model data out of the client payload
+  // for users without Pro access. Historical research remains available.
   const visibleProps = hasProAccess
     ? props
-    : props.map((prop) => {
-        if (freeProjectionIds.has(prop.propId)) {
-          return prop;
-        }
-
-        return {
-          ...prop,
-          passingProjection: null,
-          rushingProjection: null,
-          receivingProjection: null,
-          receptionsProjection: null,
-        };
-      });
+    : props.map((prop) => ({
+        ...prop,
+        passingProjection: null,
+        rushingProjection: null,
+        receivingProjection: null,
+        receptionsProjection: null,
+      }));
 
   return (
     <main className="min-h-screen bg-slate-950">
@@ -50,10 +43,9 @@ export default async function NflPlayerPropTrendsPage() {
           </h1>
 
           <p className="mt-5 max-w-3xl text-base leading-7 text-slate-400">
-            Research NFL player props using current DraftKings lines and
-            historical game results. Quickly compare recent performance against
-            today&apos;s line, then unlock deeper trend analysis with KofSports
-            Pro.
+            Research NFL player props using current DraftKings lines, L5 and
+            L10 hit rates, season trends, matchup history, and recent game
+            results. Upgrade to KofSports Pro for model projections and edges.
           </p>
 
           <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-slate-500">
@@ -88,10 +80,9 @@ export default async function NflPlayerPropTrendsPage() {
 
         {props.length > 0 ? (
           <NflPropTrendsExplorer
-  props={visibleProps}
-  hasProAccess={hasProAccess}
-  freeProjectionIds={Array.from(freeProjectionIds)}
-/>
+            props={visibleProps}
+            hasProAccess={hasProAccess}
+          />
         ) : (
           <div className="rounded-2xl border border-slate-800 bg-slate-900 p-10 text-center">
             <h2 className="text-xl font-bold text-white">
@@ -113,22 +104,23 @@ export default async function NflPlayerPropTrendsPage() {
                 </div>
 
                 <h2 className="mt-3 text-2xl font-black tracking-tight text-white md:text-3xl">
-                  Go deeper than the basic hit rate.
+                  Turn the research into an edge.
                 </h2>
 
                 <p className="mt-3 max-w-xl leading-7 text-slate-400">
-                  Unlock advanced player prop research including longer-term
-                  trends, averages, matchup history, edge versus the current
-                  sportsbook line, and the full KofSports NFL research suite.
+                  The historical research is free. KofSports Pro adds our
+                  proprietary forward-looking intelligence to help identify
+                  where the model sees an edge versus the current sportsbook
+                  line.
                 </p>
 
                 <div className="mt-5 grid gap-2 text-sm text-slate-300 sm:grid-cols-2">
-                  <span>✓ Last 10 trends</span>
-                  <span>✓ Season trends</span>
-                  <span>✓ Head-to-head history</span>
-                  <span>✓ Average vs current line</span>
-                  <span>✓ Advanced prop research</span>
-                  <span>✓ KOF Over Score Beta</span>
+                  <span>✓ KOF projections</span>
+                  <span>✓ Projected edge vs line</span>
+                  <span>✓ Model edge percentage</span>
+                  <span>✓ KOF Score</span>
+                  <span>✓ Anytime TD KOF rankings</span>
+                  <span>✓ Future model-driven insights</span>
                 </div>
 
                 <p className="mt-5 text-xs leading-5 text-slate-500">
@@ -157,7 +149,7 @@ export default async function NflPlayerPropTrendsPage() {
         href="/nfl-player-prop-trends"
         className="rounded-xl border border-slate-700 bg-slate-950 px-6 py-3 text-center text-sm font-bold text-white transition hover:border-slate-600 hover:bg-slate-800"
       >
-        Preview Prop Research
+        Open Free Research
       </a>
     </>
   )}
