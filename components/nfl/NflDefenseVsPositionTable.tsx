@@ -409,17 +409,7 @@ export default function NflDefenseVsPositionTable({
                 <Link
                   key={item}
                   href={POSITION_URLS[item]}
-                  onClick={() => {
-                    setPosition(item);
-                    setSelectedDefense(null);
-                    setRankMetric(
-                      "ppr_fantasy_points_per_game"
-                    );
-                    setSortConfig({
-                      key: "ppr_rank",
-                      direction: "asc",
-                    });
-                  }}
+                  scroll={false}
                   className={[
                     "min-w-[64px] rounded-lg px-4 py-2 text-center text-sm font-bold transition",
                     active
@@ -502,7 +492,7 @@ export default function NflDefenseVsPositionTable({
                   </button>
                 </th>
 
-                <th className="bg-zinc-950 px-2 py-3 text-xs font-semibold uppercase tracking-wider text-zinc-500 md:sticky md:left-[78px] md:z-20 md:px-4">
+                <th className="w-[112px] bg-zinc-950 px-2 py-3 text-xs font-semibold uppercase tracking-wider text-zinc-500 md:sticky md:left-[78px] md:z-20 md:w-auto md:px-4">
                   <button
                     type="button"
                     onClick={() =>
@@ -521,7 +511,7 @@ export default function NflDefenseVsPositionTable({
                     className={[
                       "whitespace-nowrap px-3 py-3 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500 md:px-4",
                       column.key === rankMetric
-                        ? "w-[92px]"
+                        ? "w-[120px] md:w-auto"
                         : "hidden md:table-cell",
                     ].join(" ")}
                   >
@@ -607,7 +597,7 @@ export default function NflDefenseVsPositionTable({
                         })()}
                       </td>
 
-                      <td className="bg-zinc-950 px-2 py-3 md:sticky md:left-[78px] md:z-10 md:px-4">
+                      <td className="w-[112px] bg-zinc-950 px-2 py-3 md:sticky md:left-[78px] md:z-10 md:w-auto md:px-4">
                         <div className="flex flex-col items-start gap-1 md:flex-row md:items-center md:gap-3">
                           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-xs font-black text-white">
                             {row.defense}
@@ -668,7 +658,7 @@ export default function NflDefenseVsPositionTable({
                             className={[
                               "whitespace-nowrap px-3 py-3 text-right text-sm tabular-nums md:px-4",
                               isSelectedMetric
-                                ? "w-[92px] font-bold text-white"
+                                ? "w-[120px] font-bold text-white md:w-auto"
                                 : "hidden text-zinc-300 md:table-cell",
                             ].join(" ")}
                           >
