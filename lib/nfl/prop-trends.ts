@@ -387,14 +387,22 @@ export async function resolvePropSchedule(
     trends[0].commenceTime,
   );
 
+  const scheduleToleranceMs = 30 * 60 * 1000;
+  const scheduleWindowStart = new Date(
+    new Date(earliestCommenceTime).getTime() - scheduleToleranceMs,
+  ).toISOString();
+  const scheduleWindowEnd = new Date(
+    new Date(latestCommenceTime).getTime() + scheduleToleranceMs,
+  ).toISOString();
+
   const { data, error } = await supabase
     .from("nfl_games")
     .select(
       "season, week, home_team, away_team, commence_time",
     )
     .eq("game_type", "REG")
-    .gte("commence_time", earliestCommenceTime)
-    .lte("commence_time", latestCommenceTime);
+    .gte("commence_time", scheduleWindowStart)
+    .lte("commence_time", scheduleWindowEnd);
 
   if (error) {
     console.error("Failed to resolve NFL prop schedule:", {
@@ -412,12 +420,25 @@ export async function resolvePropSchedule(
   const scheduleRows = (data ?? []) as NflPropScheduleRow[];
 
   for (const trend of trends) {
-    const match = scheduleRows.find(
-      (game) =>
-        game.home_team === trend.homeTeam &&
-        game.away_team === trend.awayTeam &&
-        game.commence_time === trend.commenceTime,
-    );
+    const trendCommenceTime = new Date(trend.commenceTime).getTime();
+
+    const match = scheduleRows.find((game) => {
+      if (
+        game.home_team !== trend.homeTeam ||
+        game.away_team !== trend.awayTeam
+      ) {
+        return false;
+      }
+
+      const gameCommenceTime = new Date(game.commence_time).getTime();
+
+      return (
+        Number.isFinite(trendCommenceTime) &&
+        Number.isFinite(gameCommenceTime) &&
+        Math.abs(gameCommenceTime - trendCommenceTime) <=
+          30 * 60 * 1000
+      );
+    });
 
     if (match) {
       const gameKey =
