@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect } from "react";
+
 import {
   getAnonymousId,
   getGrowthSession,
@@ -18,6 +20,22 @@ export default function NovigResearchCta({
   sport,
   placement = "prop_trends",
 }: Props) {
+  useEffect(() => {
+    void trackGrowthEvent({
+      eventType: "cta_impression",
+      page: window.location.pathname,
+      url: window.location.href,
+      referrer: document.referrer || undefined,
+      sessionId: getGrowthSession() ?? undefined,
+      anonymousId: getAnonymousId() ?? undefined,
+      metadata: {
+        partner: "novig",
+        placement,
+        sport,
+      },
+    });
+  }, [placement, sport]);
+
   function handleClick() {
     void trackGrowthEvent({
       eventType: "cta_click",

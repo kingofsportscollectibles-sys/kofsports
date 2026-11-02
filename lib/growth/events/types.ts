@@ -10,6 +10,7 @@ export type GrowthEventType =
   | "trial_started"
   | "premium_purchase"
   | "cta_click"
+  | "cta_impression"
   | "email_click"
   | "search"
   | "video_play"
