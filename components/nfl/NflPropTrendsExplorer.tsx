@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
+import NovigResearchCta from "@/components/NovigResearchCta";
+
 import type {
   NflPlayerPropTrend,
   NflPropMarket,
@@ -823,6 +825,9 @@ export default function NflPropTrendsExplorer({
               hasProAccess={hasProAccess}
             />
           ))}
+          <div className="xl:col-span-2">
+            <NovigResearchCta sport="nfl" />
+          </div>
         </div>
       ) : (
         <div className="rounded-2xl border border-slate-800 bg-slate-900 p-10 text-center">

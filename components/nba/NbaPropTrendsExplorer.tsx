@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
+import NovigResearchCta from "@/components/NovigResearchCta";
+
 import type {
   NbaPlayerPropTrend,
   NbaPropMarket,
@@ -768,6 +770,9 @@ export default function NbaPropTrendsExplorer({
               prop={prop}
             />
           ))}
+          <div className="xl:col-span-2">
+            <NovigResearchCta sport="nba" />
+          </div>
         </div>
       ) : (
         <div className="rounded-2xl border border-slate-800 bg-slate-900 p-10 text-center">

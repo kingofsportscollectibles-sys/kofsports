@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from "react";
 
+import NovigResearchCta from "@/components/NovigResearchCta";
+
 import type {
   NhlPlayerPropTrend,
   NhlPropMarket,
@@ -662,6 +664,9 @@ export default function NhlPropTrendsExplorer({
               prop={prop}
             />
           ))}
+          <div className="xl:col-span-2">
+            <NovigResearchCta sport="nhl" />
+          </div>
         </div>
       ) : (
         <div className="rounded-2xl border border-slate-800 bg-slate-900 p-10 text-center">
