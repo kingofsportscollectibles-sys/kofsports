@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import NovigPromoCard from "@/components/NovigPromoCard";
 import NflDefenseVsPositionTable, {
   type DefenseVsPositionRow,
 } from "@/components/nfl/NflDefenseVsPositionTable";
@@ -81,8 +80,6 @@ export default async function Page() {
           Compare how all 32 NFL defenses perform against wide receivers using fantasy points, targets, receptions, receiving yards and receiving touchdowns allowed per game.
         </p>
       </section>
-
-      <NovigPromoCard />
 
       <NflDefenseVsPositionTable
         rows={rows}
