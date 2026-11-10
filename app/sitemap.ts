@@ -1,4 +1,6 @@
 import type { MetadataRoute } from "next";
+import { getTeamBettingDataset as getNbaTeamRecords } from "@/lib/nba/team-betting-data";
+import { getTeamBettingDataset as getNhlTeamRecords } from "@/lib/nhl/team-betting-data";
 
 import { getArticleSlugs } from "@/sanity/lib/articles";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -7,8 +9,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = "https://www.kofsports.com";
 
   const now = new Date();
+  const [nba,nhl] = await Promise.all([getNbaTeamRecords(),getNhlTeamRecords()]);
 
   const staticRoutes: MetadataRoute.Sitemap = [
+    {url: `${baseUrl}/nba/team-betting-records`, lastModified: new Date(nba.dataset.retrievedAt), changeFrequency: "daily", priority: 0.8},
+    {url: `${baseUrl}/nhl/team-betting-records`, lastModified: new Date(nhl.dataset.retrievedAt), changeFrequency: "daily", priority: 0.8},
     {
       url: baseUrl,
       lastModified: now,

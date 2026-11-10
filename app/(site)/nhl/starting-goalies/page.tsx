@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { Metadata } from "next";
 
 import NhlStartingGoaliesBoard from "@/components/nhl/NhlStartingGoaliesBoard";
@@ -116,6 +117,7 @@ export default async function NhlStartingGoaliesPage({
           <h1 className="mt-4 max-w-4xl text-4xl font-black tracking-tight text-white md:text-5xl">
             NHL Starting Goalies Today
           </h1>
+          <Link href="/nhl/team-betting-records" className="mt-4 inline-block text-sm font-semibold text-emerald-400 underline underline-offset-4">NHL team records, puck line & moneyline units →</Link>
 
           <p className="mt-5 max-w-3xl text-base leading-7 text-slate-400">
             Track NHL starting goalie status across

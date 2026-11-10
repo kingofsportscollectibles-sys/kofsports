@@ -53,6 +53,7 @@ export const toolNavigationGroups: ToolNavigationGroup[] = [
   {
     sport: "NHL",
     tools: [
+      {name: "Team Betting Records", description: "W–L–OTL, moneyline units, puck line and over/under", href: "/nhl/team-betting-records"},
       {
         name: "Player Prop Trends",
         description: "Shots, points, assists and goalie save trends",
@@ -68,6 +69,7 @@ export const toolNavigationGroups: ToolNavigationGroup[] = [
   {
     sport: "NBA",
     tools: [
+      {name: "Team Betting Records", description: "Win-loss, moneyline units, ATS and over/under records", href: "/nba/team-betting-records"},
       {
         name: "Player Prop Trends",
         description: "Points, rebounds, assists and 3-pointer trends",

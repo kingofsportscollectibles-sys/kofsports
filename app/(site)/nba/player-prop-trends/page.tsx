@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { Metadata } from "next";
 
 import NbaPropTrendsExplorer from "@/components/nba/NbaPropTrendsExplorer";
@@ -40,6 +41,7 @@ export default async function NbaPlayerPropTrendsPage() {
           <h1 className="mt-4 max-w-4xl text-4xl font-black tracking-tight text-white md:text-5xl">
             NBA Player Props Today: Trends & Hit Rates
           </h1>
+          <Link href="/nba/team-betting-records" className="mt-4 inline-block text-sm font-semibold text-emerald-400 underline underline-offset-4">NBA team records, ATS & moneyline units →</Link>
 
           <p className="mt-5 max-w-3xl text-base leading-7 text-slate-400">
             Research NBA player props using current DraftKings lines and
