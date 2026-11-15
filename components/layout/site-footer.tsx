@@ -1,3 +1,4 @@
+import { FounderIdentity, IndependentReview } from "@/components/marketing/Proof";
 import Link from "next/link";
 
 const footerLinks = [
@@ -27,6 +28,7 @@ export function SiteFooter() {
               not accept wagers.
             </p>
 
+            <FounderIdentity /><IndependentReview />
             <p className="mt-4 text-sm font-semibold text-zinc-300">
               Contact:{" "}
              <a

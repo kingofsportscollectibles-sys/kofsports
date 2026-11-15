@@ -17,6 +17,26 @@ const oswald = Oswald({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://www.kofsports.com"),
+  openGraph: {
+    siteName: "KofSports",
+    type: "website",
+    title: "KofSports | Sports Betting Picks & Analysis",
+    description:
+      "Official picks, public results and NFL prop research in one place.",
+    images: [
+      {
+        url: "/brand/social-preview.png",
+        width: 1200,
+        height: 630,
+        alt: "KofSports NFL betting picks and research tools",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    images: ["/brand/social-preview.png"],
+  },
   title: {
     default: "KofSports | Sports Betting Picks & Analysis",
     template: "%s | KofSports",
@@ -30,17 +50,13 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const clarityProjectId =
-    process.env.NEXT_PUBLIC_MICROSOFT_CLARITY_ID;
+  const clarityProjectId = process.env.NEXT_PUBLIC_MICROSOFT_CLARITY_ID;
 
   return (
     <html lang="en" data-scroll-behavior="smooth">
       <head>
         {clarityProjectId ? (
-          <Script
-            id="microsoft-clarity"
-            strategy="afterInteractive"
-          >
+          <Script id="microsoft-clarity" strategy="afterInteractive">
             {`
               (function(c,l,a,r,i,t,y){
                 c[a]=c[a]||function(){

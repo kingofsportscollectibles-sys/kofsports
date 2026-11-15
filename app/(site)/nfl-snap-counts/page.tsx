@@ -316,6 +316,7 @@ export default async function NflSnapCountsPage() {
           </p>
         </div>
       </section>
-    </main>
+    <p className="mx-auto max-w-7xl px-5 py-8 text-sm text-zinc-400">Choosing a prop research subscription? <Link href="/vs" className="text-brand underline">Compare KofSports with other betting tools</Link>.</p>
+</main>
   );
 }

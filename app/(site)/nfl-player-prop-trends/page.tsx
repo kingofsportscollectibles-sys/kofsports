@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { Metadata } from "next";
 
 import NflPropTrendsExplorer from "@/components/nfl/NflPropTrendsExplorer";
@@ -300,6 +301,7 @@ export default async function NflPlayerPropTrendsPage() {
           </div>
         </div>
       </section>
-    </main>
+    <p className="mx-auto max-w-7xl px-5 py-8 text-sm text-zinc-400">Choosing a prop research subscription? <Link href="/vs" className="text-brand underline">Compare KofSports with other betting tools</Link>.</p>
+</main>
   );
 }

@@ -1,0 +1,24 @@
+# KofSports
+
+> Sports betting information and research, established in 2015. KofSports is not a sportsbook and does not accept wagers.
+
+Premium provides Kof's official selections, written analysis and recorded unit sizing, and includes Pro. Pro is a research subscription; it does not include official picks by itself. Current prices and billing terms are on the plans page.
+
+KOFScore is an experimental research rating, not a calibrated win probability or a guarantee of positive expected value. Recorded sportsbook quotes are not live odds or guaranteed closing lines. Historical results do not guarantee future outcomes.
+
+## Product and pricing
+- [Plans](https://www.kofsports.com/plans): Current access periods, prices, renewal terms and plan comparison.
+- [KofSports Pro](https://www.kofsports.com/pro): NFL research tools.
+- [Premium Picks and public vault](https://www.kofsports.com/premium-picks): Official picks and published settled selections, including losses.
+- [Results and methodology](https://www.kofsports.com/results#record-methodology): Decision counts, unit grading and recorded line-source limitations.
+
+## Research
+- [NFL player prop trends](https://www.kofsports.com/nfl-player-prop-trends)
+- [NFL Defense vs Position](https://www.kofsports.com/nfl-defense-vs-position)
+- [Tool comparisons](https://www.kofsports.com/vs): Dated vendor sources and explicit limitations.
+
+## About and policies
+- [About Kof](https://www.kofsports.com/about)
+- [Privacy](https://www.kofsports.com/privacy)
+- [Terms](https://www.kofsports.com/terms)
+- [Responsible betting](https://www.kofsports.com/responsible-betting)

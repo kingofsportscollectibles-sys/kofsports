@@ -256,8 +256,8 @@ export default async function PremiumVault({
           </h2>
 
           <p className="mt-3 leading-7 text-gray-600">
-  Search the complete KofSports Premium results archive by
-  selection, sport, bet type, result, or year.
+  Search the published KofSports Premium results archive by
+  selection, sport, bet type, result, or year. This count includes wins, losses, pushes and voids. Headline decision counts and win rates use wins and losses only.
 </p>
         </div>
     
@@ -385,9 +385,10 @@ export default async function PremiumVault({
                   Search Vault
                 </button>
 
-                <Link href="/premium-picks#premium-vault">
+                <Link
+                  href="/premium-picks#premium-vault"
                   className="inline-flex min-h-12 items-center justify-center rounded-xl border border-gray-300 bg-white px-7 py-3 font-black text-black transition hover:border-black"
-                
+                >
                   Clear Filters
                 </Link>
               </div>
@@ -396,7 +397,7 @@ export default async function PremiumVault({
             <div className="mt-8 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <p className="font-bold text-gray-600">
                 {totalResults.toLocaleString()}{" "}
-                {totalResults === 1 ? "pick" : "picks"} found
+                {totalResults === 1 ? "settled record" : "settled records"} found
               </p>
 
               <p className="text-sm font-semibold text-gray-500">

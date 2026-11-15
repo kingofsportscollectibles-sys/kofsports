@@ -12,6 +12,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [nba,nhl] = await Promise.all([getNbaTeamRecords(),getNhlTeamRecords()]);
 
   const staticRoutes: MetadataRoute.Sitemap = [
+    { url: `${baseUrl}/vs`, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${baseUrl}/vs/kofsports-vs-props-cash`, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${baseUrl}/vs/kofsports-vs-outlier`, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${baseUrl}/vs/kofsports-vs-sportsline`, changeFrequency: "monthly", priority: 0.7 },
     {url: `${baseUrl}/nba/team-betting-records`, lastModified: new Date(nba.dataset.retrievedAt), changeFrequency: "daily", priority: 0.8},
     {url: `${baseUrl}/nhl/team-betting-records`, lastModified: new Date(nhl.dataset.retrievedAt), changeFrequency: "daily", priority: 0.8},
     {

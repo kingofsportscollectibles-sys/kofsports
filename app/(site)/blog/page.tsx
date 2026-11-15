@@ -6,7 +6,7 @@ import { ArticleCard } from "@/components/content/article-card";
 import { getArticles, getFeaturedArticle } from "@/sanity/lib/articles";
 
 export const metadata: Metadata = {
-  title: "Sports Betting Blog | KofSports",
+  title: "Sports Betting Blog",
   description:
     "Free picks, betting education, predictions, sports betting strategy, and sports analysis from KofSports.",
 };

@@ -1,3 +1,4 @@
+import { FounderIdentity } from "@/components/marketing/Proof";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -73,6 +74,7 @@ export default async function AboutPage() {
               with members.
             </p>
 
+            <FounderIdentity />
             <div className="mt-9 flex flex-wrap gap-3">
               <Link
                 href="/blog"
@@ -151,9 +153,7 @@ export default async function AboutPage() {
               </div>
 
               <p className="mt-4 text-sm leading-6 text-zinc-500">
-                Historical performance is combined with every official pick
-                published since the KofSports relaunch. Records update
-                automatically as picks are settled.
+                This record uses the published Premium vault’s wins and losses. Pushes, voids and pending picks do not enter the win rate. It uses the same source as the homepage, without adding a separate historical baseline.
               </p>
             </div>
           </div>

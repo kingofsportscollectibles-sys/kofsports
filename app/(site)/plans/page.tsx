@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { Metadata } from "next";
 
 import { CheckoutButton } from "@/components/stripe/checkout-button";
@@ -8,148 +9,12 @@ export const metadata: Metadata = {
     "Choose KofSports Premium for official picks plus KofSports Pro research tools, or subscribe to KofSports Pro as a standalone betting research platform.",
 };
 
-type PlanKey =
-  | "one_day"
-  | "weekly"
-  | "monthly"
-  | "ninety_day"
-  | "pro_monthly"
-  | "pro_annual";
-
-type Plan = {
-  name: string;
-  duration: string;
-  price: string;
-  billingLabel: string;
-  description: string;
-  popular: boolean;
-  planKey: PlanKey;
-  buttonLabel: string;
-  features: string[];
-};
-
-const premiumPlans: Plan[] = [
-  {
-    name: "1-Day Premium Pass",
-    duration: "24 hours",
-    price: "$10",
-    billingLabel: "One-time payment",
-    description:
-      "Get complete access to every active Premium Pick plus KofSports Pro for the next 24 hours.",
-    popular: false,
-    planKey: "one_day",
-    buttonLabel: "Get 1-Day Access",
-    features: [
-      "All active Premium Picks",
-      "Complete pick analysis",
-      "Confidence ratings",
-      "Recommended unit sizing",
-      "KofSports Pro included",
-      "No recurring charges",
-    ],
-  },
-  {
-    name: "Weekly Premium Pass",
-    duration: "7 days",
-    price: "$25",
-    billingLabel: "Renews weekly",
-    description:
-      "Stay connected to every KofSports pick and unlock the full KofSports Pro research platform.",
-    popular: true,
-    planKey: "weekly",
-    buttonLabel: "Start Weekly Access",
-    features: [
-      "Every official KofSports pick",
-      "Detailed betting analysis",
-      "Confidence ratings and units",
-      "All sports included",
-      "KofSports Pro included",
-      "Cancel anytime",
-    ],
-  },
-  {
-    name: "Monthly Premium Pass",
-    duration: "30 days",
-    price: "$75",
-    billingLabel: "Renews monthly",
-    description:
-      "Complete Premium access plus KofSports Pro throughout the month.",
-    popular: false,
-    planKey: "monthly",
-    buttonLabel: "Start Monthly Access",
-    features: [
-      "Every official KofSports pick",
-      "Complete betting analysis",
-      "Confidence ratings and units",
-      "All sports included",
-      "KofSports Pro included",
-      "Cancel anytime",
-    ],
-  },
-  {
-    name: "90-Day Premium Pass",
-    duration: "90 days",
-    price: "$199",
-    billingLabel: "Renews every 90 days",
-    description:
-      "Our best long-term Premium value with uninterrupted access to picks and KofSports Pro.",
-    popular: false,
-    planKey: "ninety_day",
-    buttonLabel: "Start 90-Day Access",
-    features: [
-      "Every official KofSports pick",
-      "Complete analysis and results",
-      "Confidence ratings and units",
-      "All sports included",
-      "KofSports Pro included",
-      "Best Premium price per day",
-    ],
-  },
-];
-
-const proPlans: Plan[] = [
-  {
-    name: "Pro Monthly",
-    duration: "Monthly",
-    price: "$9.99",
-    billingLabel: "Renews monthly",
-    description:
-      "Get the KofSports research platform without a Premium Picks subscription.",
-    popular: false,
-    planKey: "pro_monthly",
-    buttonLabel: "Start Pro Monthly",
-    features: [
-      "Full NFL Prop Research board",
-      "KOF Over Score rankings",
-      "Advanced L5, L10, season & H2H data",
-      "Edge vs current sportsbook line",
-      "Defense vs Position analysis",
-      "Snap share and player usage",
-      "Expanded prop research",
-      "Cancel anytime",
-    ],
-  },
-  {
-    name: "Pro Annual",
-    duration: "Annual",
-    price: "$79",
-    billingLabel: "Renews annually",
-    description:
-      "Year-round access to the KofSports research platform at our best Pro value.",
-    popular: true,
-    planKey: "pro_annual",
-    buttonLabel: "Get Pro Annual",
-    features: [
-      "Everything in KofSports Pro",
-      "Save over 35% vs monthly",
-      "Full NFL research platform",
-      "Advanced prop research",
-      "Future Pro features included",
-      "Future sports tools as added",
-      "Cancel anytime",
-    ],
-  },
-];
+import { premiumPlans, proPlans } from "@/lib/marketing/plans";
+import { PlanComparison } from "@/components/marketing/PlanComparison";
+import { PaymentTrust } from "@/components/marketing/PaymentTrust";
+import { MarketingFaq } from "@/components/marketing/Faq";
+import { MemberStories, IndependentReview } from "@/components/marketing/Proof";
+import { JsonLd } from "@/components/marketing/JsonLd";
 
 export default function PlansPage() {
   return (
@@ -165,16 +30,16 @@ export default function PlansPage() {
           </h1>
 
           <p className="mx-auto mt-6 max-w-3xl text-lg leading-8 text-zinc-400">
-            Get KofSports Premium for our official picks and complete
-            research platform, or choose KofSports Pro to research your
-            own bets.
+            Get KofSports Premium for our official picks and complete research
+            platform, or choose KofSports Pro to research your own bets.
           </p>
         </div>
       </section>
 
       <section>
         <div className="mx-auto max-w-7xl px-5 py-16 lg:px-8">
-          <div className="text-center">
+          <PlanComparison />
+          <div id="premium-plans" className="scroll-mt-24 text-center">
             <p className="text-sm font-extrabold uppercase tracking-[0.25em] text-brand">
               KofSports Premium
             </p>
@@ -184,9 +49,9 @@ export default function PlansPage() {
             </h2>
 
             <p className="mx-auto mt-4 max-w-3xl leading-7 text-zinc-400">
-              Every Premium Pass includes all active KofSports picks,
-              complete analysis, confidence ratings, recommended units
-              and KofSports Pro at no additional cost.
+              Every Premium Pass includes all active KofSports picks, complete
+              analysis, confidence ratings, recommended units and KofSports Pro
+              at no additional cost.
             </p>
 
             <div className="mx-auto mt-6 inline-flex rounded-full border border-brand/30 bg-brand/[0.08] px-5 py-2 text-sm font-bold text-brand">
@@ -242,6 +107,12 @@ export default function PlansPage() {
                   ))}
                 </ul>
 
+                {plan.planKey === "monthly" && (
+                  <p className="mt-5 text-sm text-brand">
+                    $2.50 a day over 30 days, with Pro included. No separate
+                    research subscription needed.
+                  </p>
+                )}
                 <div className="mt-8">
                   <CheckoutButton
                     plan={plan.planKey}
@@ -252,6 +123,7 @@ export default function PlansPage() {
                         : "rounded-md border border-white/20 bg-white/5 px-5 py-3.5 text-sm font-extrabold uppercase text-white transition hover:bg-white/10"
                     }
                   />
+                  <PaymentTrust />
                 </div>
               </article>
             ))}
@@ -259,7 +131,7 @@ export default function PlansPage() {
 
           <div className="my-20 border-t border-white/10" />
 
-          <div className="text-center">
+          <div id="pro-plans" className="scroll-mt-24 text-center">
             <p className="text-sm font-extrabold uppercase tracking-[0.25em] text-brand">
               KofSports Pro
             </p>
@@ -269,15 +141,16 @@ export default function PlansPage() {
             </h2>
 
             <p className="mx-auto mt-4 max-w-3xl leading-7 text-zinc-400">
-              KofSports Pro gives you our advanced betting research
-              platform without a Premium Picks subscription. Research
-              the board, analyze matchups and find opportunities using
-              KOF Scores and advanced player data.
+              KofSports Pro gives you our advanced betting research platform
+              without a Premium Picks subscription. Research the board, analyze
+              matchups and find opportunities using KOF Scores and advanced
+              player data.
             </p>
 
+            <p className="mx-auto mt-4 max-w-3xl text-sm leading-7 text-zinc-400">Pro is $9.99/month for focused NFL research. Props.Cash advertises $19.99/month for All Sports in its US iOS listing—$10 more, with a different feature set. <Link href="/vs/kofsports-vs-props-cash" className="text-brand underline">Compare coverage and the dated pricing source</Link>.</p>
             <p className="mx-auto mt-3 max-w-3xl text-sm font-semibold text-zinc-500">
-              Already a Premium member? Pro is already included with
-              your access.
+              Already a Premium member? Pro is already included with your
+              access.
             </p>
           </div>
 
@@ -341,6 +214,7 @@ export default function PlansPage() {
                         : "rounded-md border border-white/20 bg-white/5 px-5 py-3.5 text-sm font-extrabold uppercase text-white transition hover:bg-white/10"
                     }
                   />
+                  <PaymentTrust />
                 </div>
               </article>
             ))}
@@ -353,9 +227,9 @@ export default function PlansPage() {
               </h2>
 
               <p className="mt-4 leading-7 text-zinc-400">
-                After payment, your KofSports account will receive
-                access based on the plan you select. Premium members
-                receive both Premium Picks and KofSports Pro.
+                After payment, your KofSports account will receive access based
+                on the plan you select. Premium members receive both Premium
+                Picks and KofSports Pro.
               </p>
             </div>
 
@@ -365,21 +239,41 @@ export default function PlansPage() {
               </h2>
 
               <p className="mt-4 leading-7 text-zinc-400">
-                Want KofSports&apos; official selections? Choose
-                Premium. Prefer researching and making your own
-                betting decisions? KofSports Pro gives you the tools.
+                Want KofSports&apos; official selections? Choose Premium. Prefer
+                researching and making your own betting decisions? KofSports Pro
+                gives you the tools.
               </p>
             </div>
           </div>
 
           <p className="mx-auto mt-10 max-w-4xl text-center text-sm leading-6 text-zinc-500">
-            KofSports provides sports betting information and
-            entertainment. KOF Scores and research tools do not
-            guarantee betting outcomes. Please wager responsibly and
-            never risk more than you can afford to lose.
+            KofSports provides sports betting information and entertainment. KOF
+            Scores and research tools do not guarantee betting outcomes. Please
+            wager responsibly and never risk more than you can afford to lose.
           </p>
         </div>
       </section>
+      <MemberStories />
+      <IndependentReview />
+      <MarketingFaq />
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@graph": proPlans.map((plan) => ({
+            "@type": "Product",
+            name: plan.name,
+            description: plan.description,
+            brand: { "@type": "Brand", name: "KofSports" },
+            offers: {
+              "@type": "Offer",
+              url: "https://www.kofsports.com/plans#pro-plans",
+              price: plan.price.replace("$", ""),
+              priceCurrency: "USD",
+              description: plan.billingLabel,
+            },
+          })),
+        }}
+      />
     </>
   );
 }

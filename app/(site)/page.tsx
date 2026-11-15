@@ -1,3 +1,30 @@
+import type { Metadata } from "next";
+import { PublicPickExample } from "@/components/marketing/PublicPickExample";
+import { MarketingFaq } from "@/components/marketing/Faq";
+import { RecordMethodology } from "@/components/marketing/RecordMethodology";
+import { PaymentTrust } from "@/components/marketing/PaymentTrust";
+import { MemberStories, IndependentReview } from "@/components/marketing/Proof";
+export const metadata: Metadata = {
+  title: { absolute: "NFL Betting Picks & Research Tools | KofSports" },
+  description:
+    "Follow Kof’s official picks or research NFL props with KOFScore, L5/L10 trends, matchup data and recorded sportsbook lines. See the public record and compare plans.",
+  alternates: { canonical: "https://www.kofsports.com" },
+  openGraph: {
+    title: "NFL Betting Picks & Research Tools | KofSports",
+    description:
+      "Official picks or your own research. Check the public record, compare lines and choose Premium or Pro.",
+    url: "https://www.kofsports.com",
+    type: "website",
+    images: ["/brand/social-preview.png"],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "NFL Betting Picks & Research Tools | KofSports",
+    description:
+      "Official picks, public results and NFL prop research in one place.",
+    images: ["/brand/social-preview.png"],
+  },
+};
 import Link from "next/link";
 import { getOverallRecord, getSportResults } from "@/lib/results";
 
@@ -34,49 +61,49 @@ const products = [
 
 const tools = [
   {
-    title: "NFL Prop Research",
+    title: "Check a prop against the line",
     description:
-      "Research player props in one place with current lines, recent trends, matchup rankings and KOF Over Score Beta.",
+      "Compare stored lines with recent trends, matchup context and available KOFScore research. A raw edge is not a calibrated +EV signal.",
     href: "/nfl-player-prop-trends",
     tag: "KOF Score",
   },
   {
-    title: "Player Prop Trends",
+    title: "Check the last 5 and 10 games",
     description:
       "Compare today's lines against recent player performance, including L5, L10, season and matchup history.",
     href: "/nfl-player-prop-trends",
     tag: "Trends",
   },
   {
-  title: "Player Prop Records",
-  description:
-    "See how NFL players have performed against their actual DraftKings pregame lines with cover rates and average results versus the line.",
-  href: "/nfl-player-prop-records",
-  tag: "Records",
-},
+    title: "Compare results with pregame lines",
+    description:
+      "See how NFL players have performed against their actual DraftKings pregame lines with cover rates and average results versus the line.",
+    href: "/nfl-player-prop-records",
+    tag: "Records",
+  },
   {
-    title: "Defense vs Position",
+    title: "Find the position matchup",
     description:
       "See which NFL defenses allow the most production to quarterbacks, running backs, receivers and tight ends.",
     href: "/nfl-defense-vs-position",
     tag: "Matchups",
   },
   {
-    title: "Anytime TD Rankings",
+    title: "Compare touchdown opportunities",
     description:
       "Research anytime touchdown candidates using odds, scoring opportunity and the KOF TD ranking model.",
     href: "/nfl-anytime-touchdown-rankings",
     tag: "Touchdowns",
   },
   {
-    title: "Snap Counts",
+    title: "Check whether a player’s role changed",
     description:
-      "Track player involvement and identify changing roles before the betting market fully adjusts.",
+      "Check recorded snap participation and recent usage before deciding how much to trust a player’s past results.",
     href: "/nfl-snap-counts",
     tag: "Usage",
   },
   {
-    title: "Red Zone Targets",
+    title: "Find goal-line carries and targets",
     description:
       "Find the players getting valuable opportunities near the goal line through carries and targets.",
     href: "/nfl-red-zone-targets",
@@ -115,7 +142,7 @@ export default async function Home() {
       <section className="relative overflow-hidden border-b border-white/10">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.035)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.035)_1px,transparent_1px)] bg-[size:52px_52px]" />
 
-        <div className="relative mx-auto grid min-h-[720px] max-w-7xl items-center gap-14 px-5 py-24 lg:grid-cols-[1.1fr_0.9fr] lg:px-8">
+        <div className="relative mx-auto grid max-w-7xl items-center gap-10 px-5 py-12 lg:min-h-[720px] lg:py-20 lg:grid-cols-[1.1fr_0.9fr] lg:px-8">
           <div>
             <div className="mb-6 inline-flex items-center gap-3 rounded-full border border-brand/30 bg-brand/10 px-4 py-2">
               <span className="h-2 w-2 animate-pulse rounded-full bg-brand" />
@@ -128,14 +155,22 @@ export default async function Home() {
               Sports betting intelligence since 2015
             </p>
 
-            <h1 className="mt-5 max-w-4xl font-display text-6xl font-bold uppercase leading-[0.95] tracking-tight text-white sm:text-7xl lg:text-[88px]">
-              Better Bets Start With Better Information.
+            <h1 className="mt-5 max-w-4xl font-display text-4xl font-bold uppercase leading-[1.05] tracking-tight text-white sm:text-6xl lg:text-7xl">
+              NFL Betting Picks &amp; Research Tools.
             </h1>
 
-            <p className="mt-7 max-w-2xl text-lg leading-8 text-zinc-300">
-              Get the official KofSports picks or research the board yourself
-              with proprietary KOF Scores, player prop trends, matchup data,
-              usage metrics and more.
+            <p className="mt-5 text-lg font-semibold text-zinc-200">
+              Better bets start with better information.
+            </p>
+            <p className="mt-4 max-w-2xl text-base leading-7 text-zinc-300">
+              Follow Kof’s official picks, or research player props with
+              KOFScore, L5/L10 trends and the edge versus a recorded sportsbook
+              line. Have the numbers ready when you explain your pick.
+            </p>
+            <p className="mt-4 max-w-2xl text-sm leading-6 text-zinc-400">
+              Keep your recent-form and matchup research in one place for
+              $9.99/month. Premium picks already include Pro—no second
+              subscription needed.
             </p>
 
             <div className="mt-9 flex flex-col gap-3 sm:flex-row">
@@ -154,100 +189,30 @@ export default async function Home() {
               </Link>
             </div>
 
-            <div className="mt-10 flex flex-wrap gap-x-8 gap-y-3 text-sm text-zinc-400">
+            <p className="mt-4 text-sm text-zinc-400">
+              <Link
+                href="/plans"
+                className="inline-flex min-h-11 items-center font-semibold text-brand underline underline-offset-4"
+              >
+                See plans: Pro $9.99/month · Premium from $10
+              </Link>
+              <span className="mx-2">·</span>
+              <a
+                href="#questions"
+                className="inline-flex min-h-11 items-center underline"
+              >
+                Questions first?
+              </a>
+            </p>
+            <div className="mt-5 flex flex-wrap gap-x-8 gap-y-3 text-sm text-zinc-400">
               <span>✓ Official Premium Picks</span>
               <span>✓ Free Research Tools</span>
               <span>✓ Advanced KofSports Pro</span>
             </div>
           </div>
 
-          {/* HERO PRODUCT CARD */}
-          <div className="relative">
-            <div className="absolute -inset-8 rounded-full bg-brand/10 blur-3xl" />
-
-            <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-zinc-950/90 shadow-2xl">
-              <div className="border-b border-white/10 px-6 py-5">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.22em] text-zinc-500">
-                      KofSports Research
-                    </p>
-
-                    <p className="mt-1 font-display text-2xl font-bold uppercase text-brand">
-  Find Your Next Bet
-</p>
-                  </div>
-
-                  <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.18em] text-zinc-400">
-  <span className="h-2 w-2 rounded-full bg-brand" />
-  Live Data
-</div>
-                </div>
-              </div>
-
-              <div className="divide-y divide-white/10">
-                <div className="grid grid-cols-[1fr_auto] items-center gap-4 px-6 py-5">
-                  <div>
-                    <p className="font-bold text-white">NFL Prop Research</p>
-                    <p className="mt-1 text-sm text-zinc-500">
-                      Trends + matchup + usage
-                    </p>
-                  </div>
-                 <span className="text-sm font-bold text-zinc-300">
-  KOF Score
-</span>
-                </div>
-
-                <div className="grid grid-cols-[1fr_auto] items-center gap-4 px-6 py-5">
-                  <div>
-                    <p className="font-bold text-white">
-                      Defense vs Position
-                    </p>
-                    <p className="mt-1 text-sm text-zinc-500">
-                      Rank all 32 NFL defenses
-                    </p>
-                  </div>
-                 <span className="text-sm font-bold text-zinc-300">
-  Matchups
-</span>
-                </div>
-
-                <div className="grid grid-cols-[1fr_auto] items-center gap-4 px-6 py-5">
-                  <div>
-                    <p className="font-bold text-white">
-                      Anytime TD Rankings
-                    </p>
-                    <p className="mt-1 text-sm text-zinc-500">
-                      Odds + scoring opportunity
-                    </p>
-                  </div>
-                  <span className="text-sm font-bold text-zinc-300">
-  KOF TD
-</span>
-                </div>
-
-                <div className="grid grid-cols-[1fr_auto] items-center gap-4 px-6 py-5">
-                  <div>
-                    <p className="font-bold text-white">
-                      Usage Intelligence
-                    </p>
-                    <p className="mt-1 text-sm text-zinc-500">
-                      Snaps + red-zone opportunities
-                    </p>
-                  </div>
-                  <span className="text-sm font-bold text-zinc-300">
-  Player Data
-</span>
-                </div>
-              </div>
-
-              <Link
-                href="/nfl-player-prop-trends"
-                className="block bg-brand px-6 py-4 text-center font-display text-lg font-bold uppercase tracking-wide text-black transition hover:bg-brand-light"
-              >
-                Open NFL Research →
-              </Link>
-            </div>
+          <div className="relative min-w-0">
+            <PublicPickExample />
           </div>
         </div>
       </section>
@@ -266,10 +231,16 @@ export default async function Home() {
 
             <p className="mt-5 text-lg leading-8 text-zinc-400">
               Whether you want Kof to find the bets for you or prefer to
-              research the board yourself, KofSports gives you an edge.
+              research the board yourself, start with the path that fits your
+              routine.
             </p>
           </div>
 
+          <p className="mx-auto mt-5 max-w-3xl text-center text-sm leading-7 text-zinc-400">
+            For bettors who want the reasoning behind a pick or the numbers for
+            their own research. KofSports is not a sportsbook, an auto-betting
+            service or a promise of guaranteed winners.
+          </p>
           <div className="mt-12 grid gap-6 lg:grid-cols-2">
             {products.map((product) => (
               <article
@@ -364,6 +335,14 @@ export default async function Home() {
             ))}
           </div>
 
+          <p className="mt-6 text-sm leading-7 text-zinc-400">
+            Use these recorded lines as a starting point for line shopping. They
+            are not a live feed or a guaranteed closing line.{" "}
+            <Link href="/vs" className="text-brand underline">
+              Compare KofSports with Props.Cash, Outlier and SportsLine
+            </Link>
+            .
+          </p>
           <div className="mt-10 rounded-2xl border border-brand/20 bg-brand/[0.05] p-7 sm:flex sm:items-center sm:justify-between sm:gap-8">
             <div>
               <p className="font-display text-2xl font-bold uppercase text-white">
@@ -395,20 +374,21 @@ export default async function Home() {
               </p>
 
               <h2 className="mt-4 font-display text-4xl font-bold uppercase text-white sm:text-5xl">
-                More than 11,000 historical picks
+                Published picks. Wins and losses included.
               </h2>
 
               <p className="mt-5 text-lg leading-8 text-zinc-400">
-                KofSports has published picks across every major American sport
-                since 2015. Our research platform continues to evolve, but the
-                history behind the brand is already documented.
+                Check the published Premium vault before you pay. The totals
+                below come from the same settled win/loss records; imported
+                history and newly settled picks are counted together, without
+                adding a separate baseline.
               </p>
             </div>
 
             <div className="flex gap-8">
               <div>
                 <p className="text-xs font-bold uppercase tracking-wider text-zinc-500">
-                  Total Picks
+                  Settled Decisions
                 </p>
                 <p className="mt-2 font-display text-4xl font-bold text-white">
                   {overallRecord.formattedTotal}
@@ -495,6 +475,8 @@ export default async function Home() {
             </div>
           </div>
 
+          <RecordMethodology />
+          <IndependentReview />
           <div className="mt-6 text-right">
             <Link
               href="/results"
@@ -506,6 +488,7 @@ export default async function Home() {
         </div>
       </section>
 
+      <MemberStories />
       {/* WHY KOFSPORTS */}
       <section className="border-b border-white/10">
         <div className="mx-auto max-w-7xl px-5 py-20 lg:px-8">
@@ -542,6 +525,7 @@ export default async function Home() {
         </div>
       </section>
 
+      <MarketingFaq />
       {/* FINAL CTA */}
       <section className="bg-brand">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-8 px-5 py-16 text-center lg:flex-row lg:px-8 lg:text-left">
@@ -577,6 +561,9 @@ export default async function Home() {
           </div>
         </div>
       </section>
+      <div className="mx-auto max-w-4xl px-5 pb-8">
+        <PaymentTrust />
+      </div>
     </>
   );
 }

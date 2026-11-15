@@ -1,3 +1,11 @@
+import type { Metadata } from "next";
+import { PublicPickExample } from "@/components/marketing/PublicPickExample";
+import { MemberStories } from "@/components/marketing/Proof";
+export const metadata: Metadata = {
+  title:"Today’s Premium Betting Picks | Official Selections & Analysis",
+  description:"See KofSports’ official selections, written analysis and recommended units. Inspect the public settled-pick vault, including losses, before choosing Premium access.",
+  alternates:{canonical:"https://www.kofsports.com/premium-picks"},
+};
 import Link from "next/link";
 
 import { createClient } from "@/lib/supabase/server";
@@ -733,6 +741,8 @@ export default async function PremiumPicksPage({
         </div>
       </section>
 
+  <section className="bg-zinc-950 px-5 py-12"><div className="mx-auto max-w-2xl"><PublicPickExample /></div></section>
+  <MemberStories />
   <PremiumVault searchParams={resolvedSearchParams} />
     </main>
   );

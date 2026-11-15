@@ -1,3 +1,4 @@
+import { RecordMethodology } from "@/components/marketing/RecordMethodology";
 import Link from "next/link";
 
 import { createClient } from "@/lib/supabase/server";
@@ -461,6 +462,7 @@ export default async function PublicResultsPage({
       `,
     )
     .eq("is_published", true)
+    .eq("is_premium", true)
     .in("status", ["won", "lost", "push"])
     .order("game_date", { ascending: false });
 
@@ -1107,5 +1109,6 @@ export default async function PublicResultsPage({
           )}
         </div>
       </section>
-    </main>);
+    <div className="mx-auto max-w-7xl px-5 pb-12"><RecordMethodology /></div>
+</main>);
 }

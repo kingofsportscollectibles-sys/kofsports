@@ -43,7 +43,7 @@ const proPlans = [
     buttonLabel: "Get Annual Pro",
     features: [
       "Everything in KofSports Pro",
-      "Save over 35% vs monthly",
+      "Save $40.88 a year vs monthly",
       "Full NFL research platform",
       "Future NBA and MLB tools as added",
       "Advanced betting research features",
