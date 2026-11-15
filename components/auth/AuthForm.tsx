@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { rememberHeyCatchSignup } from "@/lib/analytics/heycatch-auth";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -73,7 +74,7 @@ export default function AuthForm({
         redirectTo,
       )}`;
 
-      const { error: signupError } = await supabase.auth.signUp({
+      const { data: signupData, error: signupError } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -84,6 +85,8 @@ export default function AuthForm({
       if (signupError) {
         throw signupError;
       }
+
+      if (signupData.user) rememberHeyCatchSignup(signupData.user, Boolean(signupData.session));
 
       setMessage(
         "Account created. Check your email to confirm your account before logging in.",

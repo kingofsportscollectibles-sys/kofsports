@@ -19,10 +19,15 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       {
-  source: "/free-picks",
-  destination: "/blog",
-  permanent: true,
-},
+        source: "/:l([a-z0-9])",
+        destination: "/?utm_source=heycatch&utm_campaign=:l",
+        permanent: false,
+      },
+      {
+        source: "/free-picks",
+        destination: "/blog",
+        permanent: true,
+      },
     ];
   },
 };

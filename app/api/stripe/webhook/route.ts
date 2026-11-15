@@ -1,3 +1,4 @@
+import { reportHeyCatchStripeOutcome } from "@/lib/analytics/heycatch-server";
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
@@ -968,6 +969,8 @@ export async function POST(request: Request) {
       default:
         console.log(`Unhandled Stripe event: ${event.type}`);
     }
+
+    await reportHeyCatchStripeOutcome(event);
 
     return NextResponse.json({
       received: true,
