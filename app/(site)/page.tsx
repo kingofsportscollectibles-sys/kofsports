@@ -5,24 +5,24 @@ import { RecordMethodology } from "@/components/marketing/RecordMethodology";
 import { PaymentTrust } from "@/components/marketing/PaymentTrust";
 import { MemberStories, IndependentReview } from "@/components/marketing/Proof";
 export const metadata: Metadata = {
-  title: { absolute: "NFL Betting Picks & Research Tools | KofSports" },
+  title: { absolute: "Sports Betting Picks & Research Tools | KofSports" },
   description:
-    "Follow Kof’s official picks or research NFL props with KOFScore, L5/L10 trends, matchup data and recorded sportsbook lines. See the public record and compare plans.",
+    "Follow Kof’s official picks or research NFL, NBA and NHL matchups, player trends and sportsbook lines. See the public record and compare plans.",
   alternates: { canonical: "https://www.kofsports.com" },
   openGraph: {
-    title: "NFL Betting Picks & Research Tools | KofSports",
+    title: "Sports Betting Picks & Research Tools | KofSports",
     description:
       "Official picks or your own research. Check the public record, compare lines and choose Premium or Pro.",
     url: "https://www.kofsports.com",
     type: "website",
-    images: ["/brand/social-preview.png"],
+    images: ["/brand/social-preview-multisport.png"],
   },
   twitter: {
     card: "summary_large_image",
-    title: "NFL Betting Picks & Research Tools | KofSports",
+    title: "Sports Betting Picks & Research Tools | KofSports",
     description:
-      "Official picks, public results and NFL prop research in one place.",
-    images: ["/brand/social-preview.png"],
+      "Official picks, public results and NFL, NBA and NHL research in one place.",
+    images: ["/brand/social-preview-multisport.png"],
   },
 };
 import Link from "next/link";
@@ -156,16 +156,15 @@ export default async function Home() {
             </p>
 
             <h1 className="mt-5 max-w-4xl font-display text-4xl font-bold uppercase leading-[1.05] tracking-tight text-white sm:text-6xl lg:text-7xl">
-              NFL Betting Picks &amp; Research Tools.
+              Sports Betting Picks &amp; Research Tools.
             </h1>
 
             <p className="mt-5 text-lg font-semibold text-zinc-200">
               Better bets start with better information.
             </p>
             <p className="mt-4 max-w-2xl text-base leading-7 text-zinc-300">
-              Follow Kof’s official picks, or research player props with
-              KOFScore, L5/L10 trends and the edge versus a recorded sportsbook
-              line. Have the numbers ready when you explain your pick.
+              Follow Kof’s official picks or research NFL, NBA and NHL
+              matchups, player trends and sportsbook lines.
             </p>
             <p className="mt-4 max-w-2xl text-sm leading-6 text-zinc-400">
               Keep your recent-form and matchup research in one place for
@@ -178,7 +177,7 @@ export default async function Home() {
                 href="/premium-picks"
                 className="rounded-md bg-brand px-7 py-4 text-center text-sm font-extrabold uppercase tracking-wide text-black transition hover:bg-brand-light"
               >
-                View Today's Picks
+                View Today&apos;s Picks
               </Link>
 
               <Link
@@ -370,7 +369,7 @@ export default async function Home() {
           <div className="grid gap-10 lg:grid-cols-[1fr_auto] lg:items-end">
             <div className="max-w-3xl">
               <p className="text-sm font-extrabold uppercase tracking-[0.3em] text-brand">
-                The Tools Are New. The Track Record Isn't.
+                The Tools Are New. The Track Record Isn&apos;t.
               </p>
 
               <h2 className="mt-4 font-display text-4xl font-bold uppercase text-white sm:text-5xl">
@@ -549,7 +548,7 @@ export default async function Home() {
               href="/premium-picks"
               className="rounded-md bg-black px-7 py-4 text-center text-sm font-extrabold uppercase tracking-wide text-white transition hover:bg-zinc-800"
             >
-              Today's Picks
+              Today&apos;s Picks
             </Link>
 
             <Link

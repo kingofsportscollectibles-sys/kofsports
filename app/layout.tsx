@@ -23,19 +23,19 @@ export const metadata: Metadata = {
     type: "website",
     title: "KofSports | Sports Betting Picks & Analysis",
     description:
-      "Official picks, public results and NFL prop research in one place.",
+      "Official picks, public results and NFL, NBA and NHL research in one place.",
     images: [
       {
-        url: "/brand/social-preview.png",
+        url: "/brand/social-preview-multisport.png",
         width: 1200,
         height: 630,
-        alt: "KofSports NFL betting picks and research tools",
+        alt: "KofSports sports betting picks and research tools",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    images: ["/brand/social-preview.png"],
+    images: ["/brand/social-preview-multisport.png"],
   },
   title: {
     default: "KofSports | Sports Betting Picks & Analysis",
