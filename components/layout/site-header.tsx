@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { BettingBoardEntryLink } from "@/components/nfl/BettingBoardEntryLink";
+import { ToolNavigationLink } from "@/components/layout/tool-navigation-link";
 
 import { MobileNavigation } from "@/components/layout/mobile-navigation";
 import { UserMenu } from "@/components/layout/user-menu";
@@ -62,8 +64,7 @@ export async function SiteHeader() {
     headerUser = {
       email: user.email ?? null,
       displayName: metadataDisplayName ?? emailDisplayName,
-      membership:
-        hasPremiumAccess ? "premium" : "free",
+      membership: hasPremiumAccess ? "premium" : "free",
       role: profile?.role ?? "user",
       membershipExpiresAt: profile?.membership_expires_at ?? null,
       hasProAccess,
@@ -83,28 +84,31 @@ export async function SiteHeader() {
           </p>
         </Link>
 
-        <nav className="hidden items-center gap-7 lg:flex">
-          <Link
-            href="/blog"
-            className="text-sm font-semibold text-zinc-300 transition hover:text-white"
-          >
-            Blog
-          </Link>
-
+        <nav
+          className="hidden items-center gap-5 lg:flex"
+          aria-label="Main navigation"
+        >
           <Link
             href="/premium-picks"
             className="text-sm font-semibold text-zinc-300 transition hover:text-white"
           >
             Premium Picks
           </Link>
-
+          <BettingBoardEntryLink
+            placement="desktop_header"
+            className="inline-flex min-h-11 items-center gap-2 whitespace-nowrap text-sm font-bold text-white transition hover:text-brand"
+          >
+            Betting Board{" "}
+            <span className="rounded border border-brand/30 bg-brand/10 px-1.5 py-0.5 text-[9px] font-black tracking-wider text-brand">
+              NFL
+            </span>
+          </BettingBoardEntryLink>
           <div className="group relative">
             <button
               type="button"
               className="flex items-center gap-1.5 text-sm font-semibold text-zinc-300 transition hover:text-white"
             >
               Tools
-
               <svg
                 viewBox="0 0 20 20"
                 fill="currentColor"
@@ -119,7 +123,7 @@ export async function SiteHeader() {
               </svg>
             </button>
 
-            <div className="invisible absolute left-1/2 top-full z-50 w-[900px] -translate-x-1/2 pt-4 opacity-0 transition duration-150 group-hover:visible group-hover:opacity-100">
+            <div className="invisible absolute left-1/2 top-full z-50 w-[900px] -translate-x-1/2 pt-4 opacity-0 transition duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
               <div className="grid grid-cols-3 gap-2 overflow-hidden rounded-xl border border-white/10 bg-zinc-950 p-3 shadow-2xl shadow-black/50">
                 {toolNavigationGroups.map((group) => (
                   <div key={group.sport} className="rounded-lg p-1">
@@ -129,19 +133,7 @@ export async function SiteHeader() {
 
                     <div className="space-y-1">
                       {group.tools.map((tool) => (
-                        <Link
-                          key={tool.href}
-                          href={tool.href}
-                          className="block rounded-lg px-3 py-2.5 transition hover:bg-white/[0.06]"
-                        >
-                          <div className="text-sm font-bold text-white">
-                            {tool.name}
-                          </div>
-
-                          <div className="mt-1 text-xs leading-5 text-zinc-500">
-                            {tool.description}
-                          </div>
-                        </Link>
+                        <ToolNavigationLink key={tool.href} tool={tool} />
                       ))}
                     </div>
                   </div>
@@ -150,7 +142,7 @@ export async function SiteHeader() {
             </div>
           </div>
 
-          {navigation.slice(2).map((item) => (
+          {[navigation[0], ...navigation.slice(2)].map((item) => (
             <Link
               key={item.name}
               href={item.href}

@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { BettingBoardEntryLink } from "@/components/nfl/BettingBoardEntryLink";
+import { ToolNavigationLink } from "@/components/layout/tool-navigation-link";
 import { useState } from "react";
 
 import type { HeaderUser } from "@/components/layout/site-header";
@@ -42,12 +44,10 @@ export function MobileNavigation({ user }: MobileNavigationProps) {
 
   const isPremium = user?.membership === "premium";
   const isAdmin = user?.role === "admin";
-  const isPro = Boolean(
-    user && !isAdmin && !isPremium && user.hasProAccess
-  );
+  const isPro = Boolean(user && !isAdmin && !isPremium && user.hasProAccess);
 
   const expirationDate = formatExpirationDate(
-    user?.membershipExpiresAt ?? null
+    user?.membershipExpiresAt ?? null,
   );
 
   function closeMenu() {
@@ -65,9 +65,7 @@ export function MobileNavigation({ user }: MobileNavigationProps) {
         aria-label={isOpen ? "Close navigation menu" : "Open navigation menu"}
         className="flex h-10 w-10 items-center justify-center rounded-md border border-white/10 bg-white/5 text-white transition hover:bg-white/10"
       >
-        <span className="sr-only">
-          {isOpen ? "Close menu" : "Open menu"}
-        </span>
+        <span className="sr-only">{isOpen ? "Close menu" : "Open menu"}</span>
 
         <div className="flex w-5 flex-col gap-1.5">
           <span
@@ -146,6 +144,21 @@ export function MobileNavigation({ user }: MobileNavigationProps) {
               )}
 
               <div className="flex flex-col">
+                <BettingBoardEntryLink
+                  placement="mobile_menu"
+                  onNavigate={closeMenu}
+                  className="border-b border-white/10 py-4 text-zinc-200 transition hover:text-brand"
+                >
+                  <span className="flex items-center gap-2 font-display text-xl font-bold uppercase">
+                    Betting Board{" "}
+                    <span className="rounded border border-brand/30 px-1.5 py-0.5 font-sans text-[10px] tracking-wider text-brand">
+                      NFL
+                    </span>
+                  </span>
+                  <span className="mt-1 block text-xs text-zinc-400">
+                    Explore 3 players with a free account. Full board with Pro.
+                  </span>
+                </BettingBoardEntryLink>
                 {navigation.slice(0, 2).map((item) => (
                   <Link
                     key={item.name}
@@ -178,24 +191,19 @@ export function MobileNavigation({ user }: MobileNavigationProps) {
                   {toolsOpen && (
                     <div className="mb-4 border-l-2 border-brand/30 pl-4">
                       {toolNavigationGroups.map((group) => (
-                        <div
-                          key={group.sport}
-                          className="mb-4 last:mb-0"
-                        >
+                        <div key={group.sport} className="mb-4 last:mb-0">
                           <div className="mb-1 text-[11px] font-black uppercase tracking-[0.2em] text-brand">
                             {group.sport}
                           </div>
 
                           <div className="flex flex-col gap-1">
                             {group.tools.map((tool) => (
-                              <Link
+                              <ToolNavigationLink
                                 key={tool.href}
-                                href={tool.href}
-                                onClick={closeMenu}
-                                className="py-2 text-sm font-bold text-zinc-400 transition hover:text-brand"
-                              >
-                                {tool.name}
-                              </Link>
+                                tool={tool}
+                                compact
+                                onNavigate={closeMenu}
+                              />
                             ))}
                           </div>
                         </div>
@@ -224,7 +232,7 @@ export function MobileNavigation({ user }: MobileNavigationProps) {
                       onClick={closeMenu}
                       className="rounded-md border border-white/10 bg-white/5 px-4 py-3 text-center text-sm font-extrabold uppercase text-white"
                     >
-                      My Account
+                      Dashboard
                     </Link>
 
                     {isAdmin && (

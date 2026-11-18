@@ -54,42 +54,50 @@ async function loadRushProjectionHistory(
 
   const supabase = client ?? (await createClient());
 
-  const { data, error } = await supabase
-    .from("nfl_player_game_stats")
-    .select(
-      `
-        external_player_id,
-        season,
-        week,
-        rushing_attempts,
-        rushing_yards,
-        nfl_games!inner (
-          game_type
-        )
-      `,
-    )
-    .in("external_player_id", externalPlayerIds)
-    .in("season", [currentSeason - 1, currentSeason])
-    .eq("nfl_games.game_type", "REG")
-    .order("season", { ascending: true })
-    .order("week", { ascending: true });
+  const rows: NflRushGameStatRow[] = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await supabase
+      .from("nfl_player_game_stats")
+      .select(
+        `
+          external_player_id,
+          season,
+          week,
+          rushing_attempts,
+          rushing_yards,
+          nfl_games!inner (
+            game_type
+          )
+        `,
+      )
+      .in("external_player_id", externalPlayerIds)
+      .in("season", [currentSeason - 1, currentSeason])
+      .eq("nfl_games.game_type", "REG")
+      .order("season", { ascending: true })
+      .order("week", { ascending: true })
+      .order("id", { ascending: true })
+      .range(from, from + 999);
 
-  if (error) {
-    console.error("Failed to load NFL rush projection history:", {
-      currentSeason,
-      playerCount: externalPlayerIds.length,
-      message: error.message,
-      details: error.details,
-      hint: error.hint,
-      code: error.code,
-    });
+    if (error) {
+      console.error("Failed to load NFL rush projection history:", {
+        currentSeason,
+        playerCount: externalPlayerIds.length,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+      });
 
-    throw new Error(
-      `Unable to load NFL rush projection history: ${error.message}`,
-    );
+      throw new Error(
+        `Unable to load NFL rush projection history: ${error.message}`,
+      );
+    }
+
+    rows.push(...((data ?? []) as NflRushGameStatRow[]));
+    if (!data || data.length < 1000) break;
   }
 
-  return ((data ?? []) as NflRushGameStatRow[]).filter(
+  return rows.filter(
     (row) =>
       row.season === currentSeason - 1 ||
       (row.season === currentSeason && row.week < targetWeek),
