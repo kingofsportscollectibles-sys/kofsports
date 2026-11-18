@@ -8,7 +8,7 @@ import { getNflPlayerPropTrends } from "@/lib/nfl/prop-trends";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
-  title: "NFL Defense vs Tight Ends 2026: TE Rankings & Stats",
+  title: "NFL Defense vs TE 2026: Best & Worst Matchups",
   description:
     "2026 NFL defense vs tight ends rankings. Compare fantasy points, targets, receptions, receiving yards and touchdowns allowed to TEs by all 32 defenses.",
   alternates: {
@@ -85,7 +85,7 @@ export default async function Page() {
         </p>
 
         <p className="mt-4 text-sm font-semibold text-emerald-400">
-          2026 Season • Updated as games are processed
+          2026 Season • Source refresh timestamp unavailable
         </p>
       </section>
 

@@ -294,11 +294,16 @@ export default function NflDefenseVsPositionTable({
       "ppr_fantasy_points_per_game"
     );
 
+  const [teamSearch, setTeamSearch] = useState("");
+  const summaryMetric = POSITION_COLUMNS[position].find(column => column.key === rankMetric) ?? POSITION_COLUMNS[position][0];
+  const summaryLabel = ({ ppr_fantasy_points_per_game: "full-PPR points", targets_per_game: "targets", receptions_per_game: "receptions", receiving_yards_per_game: "receiving yards", receiving_touchdowns_per_game: "receiving TDs", passing_yards_per_game: "passing yards", passing_touchdowns_per_game: "passing TDs", interceptions_per_game: "interceptions", rushing_attempts_per_game: "rushing attempts", rushing_yards_per_game: "rushing yards", rushing_touchdowns_per_game: "rushing TDs" } as Partial<Record<keyof DefenseVsPositionRow, string>>)[summaryMetric.key] ?? summaryMetric.label;
+  const positionSummary = rows.filter(row => row.position === position && Number(row.games) > 0 && row[summaryMetric.key] !== null && row[summaryMetric.key] !== undefined && row[summaryMetric.key] !== "" && Number.isFinite(Number(row[summaryMetric.key])))
+    .sort((a, b) => Number(b[summaryMetric.key]) - Number(a[summaryMetric.key]) || a.defense.localeCompare(b.defense));
   const columns = POSITION_COLUMNS[position];
 
   const filteredRows = useMemo(() => {
     const positionRows = rows.filter(
-      (row) => row.position === position
+      (row) => row.position === position && (!teamSearch.trim() || `${TEAM_NAMES[row.defense] ?? row.defense} ${row.defense}`.toLowerCase().includes(teamSearch.trim().toLowerCase()))
     );
 
     return [...positionRows].sort((a, b) => {
@@ -331,7 +336,7 @@ export default function NflDefenseVsPositionTable({
         ? comparison
         : -comparison;
     });
-  }, [rows, position, sortConfig]);
+  }, [rows, position, sortConfig, teamSearch]);
 
   const rankedRows = useMemo(() => {
     return [...rows]
@@ -354,6 +359,7 @@ export default function NflDefenseVsPositionTable({
   function handleRankMetricChange(
     key: keyof DefenseVsPositionRow
   ) {
+    if (key !== rankMetric) void trackGrowthEvent({ eventType: "dvp_view", page: POSITION_URLS[position], metadata: { action: "metric_change", metric: key, position } });
     setRankMetric(key);
     setSortConfig({
       key,
@@ -436,12 +442,30 @@ export default function NflDefenseVsPositionTable({
 
 </div>
 
+      {initialPosition === position && (
+        <section aria-label={`${position} matchup summary`} className="mb-5 space-y-3">
+          <p className="text-sm text-zinc-400">{season} season {summaryLabel} {summaryMetric.key === "interceptions_per_game" ? "thrown" : "allowed"} per game to all opposing {position}s. Summaries follow Rank By and remain league-wide when you search or change the display sort.</p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {[{ title: `Most ${summaryLabel} ${summaryMetric.key === "interceptions_per_game" ? "by opposing" : "allowed to"} ${position}s`, teams: positionSummary.slice(0, 3) }, { title: `Fewest ${summaryLabel} ${summaryMetric.key === "interceptions_per_game" ? "by opposing" : "allowed to"} ${position}s`, teams: [...positionSummary].sort((a,b) => Number(a[summaryMetric.key])-Number(b[summaryMetric.key]) || a.defense.localeCompare(b.defense)).slice(0, 3) }].map(group => (
+              <div key={group.title} className="rounded-xl border border-zinc-800 p-4">
+                <h2 className="font-semibold text-white">{group.title}</h2>
+                {group.teams.length ? <ul className="mt-2 space-y-2 text-sm text-zinc-300">{group.teams.map(row => <li key={row.defense}>{TEAM_NAMES[row.defense] ?? row.defense}: {Number(row[summaryMetric.key]).toFixed(summaryMetric.decimals ?? 2)} {summaryLabel}/game · {row.games} games</li>)}</ul> : <p className="mt-2 text-sm text-zinc-400">Season matchup data is unavailable.</p>}
+              </div>
+            ))}
+          </div>
+          <label className="block text-sm text-zinc-300">Search defenses
+            <input type="search" value={teamSearch} onChange={event => setTeamSearch(event.target.value)} className="mt-2 block w-full rounded-xl border border-zinc-800 bg-zinc-950 p-3 text-white" placeholder="Team name or abbreviation" />
+          </label>
+          <p className="text-sm text-zinc-400">Choose Rank By to compare the available {position} statistics per game. Interceptions measure turnovers forced, so more interceptions do not mean an easier matchup. Column sorting changes display order; matchup rank #1 still means most allowed.</p>
+        </section>
+      )}
       <div className="mb-4">
         <div className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
           Rank By
         </div>
 
         <select
+          aria-label="Rank defenses by metric"
           value={String(rankMetric)}
           onChange={(event) =>
             handleRankMetricChange(
@@ -508,6 +532,8 @@ export default function NflDefenseVsPositionTable({
                 {columns.map((column) => (
                   <th
                     key={column.key}
+                    scope="col"
+                    aria-sort={sortConfig.key === column.key ? (sortConfig.direction === "asc" ? "ascending" : "descending") : "none"}
                     className={[
                       "whitespace-nowrap px-3 py-3 text-right text-xs font-semibold uppercase tracking-wider text-zinc-500 md:px-4",
                       column.key === rankMetric
@@ -613,6 +639,10 @@ export default function NflDefenseVsPositionTable({
                               {row.games} games
                             </div>
 
+                            {initialPosition === position && <details className="mt-2 text-xs text-zinc-300">
+                              <summary className="cursor-pointer py-2 text-emerald-400">All {position} stats</summary>
+                              <dl className="space-y-2 py-2">{POSITION_COLUMNS[position].map(column => <div key={column.key}><dt>{column.label}/game</dt><dd>{row[column.key] === null || row[column.key] === "" || !Number.isFinite(Number(row[column.key])) ? "Unavailable" : Number(row[column.key]).toFixed(column.decimals ?? 2)}</dd></div>)}</dl>
+                            </details>}
                             {hasMatchupProps && (
                               <button
                                 type="button"
