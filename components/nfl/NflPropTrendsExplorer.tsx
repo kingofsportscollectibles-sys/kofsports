@@ -1,4 +1,6 @@
 "use client";
+import { showInjuryCallout } from "@/lib/nfl/injury-context";
+import InjuryStatus from "./InjuryStatus";
 import Link from "next/link";
 
 import { useMemo, useState } from "react";
@@ -258,6 +260,7 @@ function PlayerPropCard({
         </div>
       </div>
 
+      {prop.injury && showInjuryCallout(prop.injury) && <div className="px-5 pb-4"><InjuryStatus injury={prop.injury} /></div>}
       {hasProAccess ? (
         <div className="border-t border-slate-800 px-5 py-4">
           {(() => {

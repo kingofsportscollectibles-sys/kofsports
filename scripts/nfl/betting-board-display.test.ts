@@ -154,3 +154,16 @@ test("empty/no-lean boards preserve truthful unavailability", () => {
   b.rows = [];
   assert.deepEqual(toPublicBettingBoard(b).rows, []);
 });
+
+test("injury-conditional browser rows withhold scores and expose only allowed injury context", () => {
+  const board = fixture();
+  board.rows[0].injury = { state: "uncertain", label: "Questionable", note: "Normal-role projection; rating withheld.",
+    suppressProjection: false, ratingWithheld: true, season: 2026, week: 9,
+    sourceUrl: "https://github.com/nflverse/nflverse-data", fetchedAt: board.calculatedAt, sourceUpdatedAt: board.calculatedAt,
+    futureDiagnostic: "PRIVATE_INJURY" } as unknown as NonNullable<BettingBoardRow["injury"]>;
+  const result = toPublicBettingBoard(board);
+  assert.equal(result.rows[0].kofScore, null);
+  assert.equal(result.rows[0].projection, 80);
+  assert.equal(result.rows[0].research?.scoreNote, "Normal-role projection; rating withheld.");
+  assert.ok(!JSON.stringify(result).includes("PRIVATE_INJURY"));
+});

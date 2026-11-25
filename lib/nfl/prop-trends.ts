@@ -1,3 +1,5 @@
+import { assessNflInjury, loadNflInjuryFeed, type InjuryFeed } from "./injury-source";
+import { publicInjuryContext, type PublicNflInjuryContext } from "./injury-context";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { getNflPlayerSlugMap } from "@/lib/nfl/player-pages";
@@ -27,6 +29,7 @@ export type NflPropGameResult = {
 };
 
 export type NflPlayerPropTrend = {
+  injury?: PublicNflInjuryContext;
   propId: number;
   externalEventId: string | null;
   externalPlayerId: string | null;
@@ -517,6 +520,7 @@ export async function enrichNflPlayerPropTrends(
   trends: NflPlayerPropTrend[],
   slugMap: Map<string, string> = new Map(),
   client?: SupabaseClient,
+  options?: { injuryFeeds?: Map<number, InjuryFeed>; now?: number },
 ): Promise<NflPlayerPropTrend[]> {
   const externalPlayerIds = trends
     .map((trend) => trend.externalPlayerId)
@@ -852,8 +856,14 @@ export async function enrichNflPlayerPropTrends(
     ),
   );
 
+  const injuryFeeds = options?.injuryFeeds ?? new Map(await Promise.all(seasons.map(async season => [season, await loadNflInjuryFeed(season)] as const)));
+  const injuryCheckedAt = options?.now ?? Date.now();
   return trends.map((trend) => {
     const schedule = scheduleMap.get(getTrendGameKey(trend));
+    const injury = schedule ? assessNflInjury(injuryFeeds.get(schedule.season), {
+      playerId: trend.externalPlayerId, team: trend.playerTeam, season: schedule.season,
+      week: schedule.week, kickoff: trend.commenceTime,
+    }, injuryCheckedAt) : undefined;
 
     const projectionKey =
       schedule && trend.externalPlayerId
@@ -865,32 +875,33 @@ export async function enrichNflPlayerPropTrends(
         : null;
 
     const passingProjection =
-      trend.market === "player_pass_yds" && projectionKey
+      !injury?.suppressProjection && trend.market === "player_pass_yds" && projectionKey
         ? passingProjections.get(projectionKey) ?? null
         : null;
 
     const rbRushingProjection =
-      trend.market === "player_rush_yds" && projectionKey
+      !injury?.suppressProjection && trend.market === "player_rush_yds" && projectionKey
         ? rushProjections.get(projectionKey) ?? null
         : null;
 
     const qbRushingProjection =
-      trend.market === "player_rush_yds" && projectionKey
+      !injury?.suppressProjection && trend.market === "player_rush_yds" && projectionKey
         ? qbRushProjections.get(projectionKey) ?? null
         : null;
 
     const receivingProjection =
-      trend.market === "player_reception_yds" && projectionKey
+      !injury?.suppressProjection && trend.market === "player_reception_yds" && projectionKey
         ? receivingProjections.get(projectionKey) ?? null
         : null;
 
     const receptionsProjection =
-      trend.market === "player_receptions" && projectionKey
+      !injury?.suppressProjection && trend.market === "player_receptions" && projectionKey
         ? receptionsProjections.get(projectionKey) ?? null
         : null;
 
     return {
       ...trend,
+      injury: injury ? publicInjuryContext(injury) : undefined,
       playerSlug: trend.externalPlayerId
         ? slugMap.get(trend.externalPlayerId) ?? null
         : null,

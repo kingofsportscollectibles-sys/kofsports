@@ -1,3 +1,5 @@
+import type { PublicNflInjuryContext } from "./injury-context";
+import type { BoardAvailability } from "./availability";
 import type { NflPregameEvidence, PublicPregameEvidence } from "./pregame-evidence";
 import type { KofConfidence } from "@/lib/nfl/kof-confidence-types";
 import type { NflPlayerPropTrend, NflPropMarket } from "@/lib/nfl/prop-trends";
@@ -25,11 +27,14 @@ export type BettingBoardRow = {
   gameId: number; game: string; opponent: string; season: number; week: number; kickoff: string;
   market: NflPropMarket; line: number; projection: number; edge: number; direction: BoardDirection; modelVersion: string;
   bookmaker: string; overPrice: number | null; underPrice: number | null; lineUpdatedAt: string; calculatedAt: string;
+  injury?: PublicNflInjuryContext;
+  availability?: BoardAvailability;
   pregameEvidence?: NflPregameEvidence; confidence?: KofConfidence; legacyKofOverScore?: number | null; kofScore: number | null; kofBaselineSeasons: number[]; l5: BoardL5; matchup: BoardMatchup; rosterStatus: string | null;
 };
 export type BettingBoardData = { calculatedAt: string; sourceLatestQuoteAt?: string | null; sourceFreshQuotes?: number; rows: BettingBoardRow[]; coverage: { sourceRows: number; displayed: number; excluded: Record<string, number>; missingScores: number; missingMatchups: number; limitedHistory: number }; logsUpdatedAt: string | null; warnings: string[] };
 // Browser contract excludes model identifiers and all proprietary scoring diagnostics.
-export type BoardPublicRow = Omit<BettingBoardRow, "modelVersion" | "confidence" | "legacyKofOverScore" | "kofBaselineSeasons" | "pregameEvidence"> & {
+export type BoardPublicRow = Omit<BettingBoardRow, "modelVersion" | "confidence" | "legacyKofOverScore" | "kofBaselineSeasons" | "pregameEvidence" | "availability"> & {
+  availability?: Omit<BoardAvailability, "sourceUrl">;
   pregame?: PublicPregameEvidence;
   research?: { recentGames: number | null; seasonGames: number | null; h2hGames: number | null; scoreNote: string | null };
 };
@@ -127,6 +132,7 @@ export function buildBettingBoard(input: BoardInputs, now: number): BettingBoard
     if (player.status && player.status !== "ACT") { reject("Non-active roster status"); continue; }
     const validPositions = prop.market === "player_pass_yds" ? ["QB"] : prop.market === "player_rush_yds" ? ["QB", "RB"] : ["RB", "WR", "TE"];
     if (!validPositions.includes(player.position)) { reject("Unsupported position/market"); continue; }
+    if (prop.injury?.suppressProjection) { reject("Reported unavailable for target game"); continue; }
     const projection = getBoardProjection(prop);
     if (!projection || finiteNumber(projection.value) === null || !Number.isFinite(projection.value - prop.line)) { reject("No model projection"); continue; }
     const key = `${game.id}:${prop.externalPlayerId}:${prop.market}:${prop.bookmaker}`;
@@ -155,6 +161,7 @@ export function buildBettingBoard(input: BoardInputs, now: number): BettingBoard
       profileHref: `/nfl/players/${player.slug}`, gameId: game.id, game: `${game.away_team} at ${game.home_team}`, opponent, season: game.season, week: game.week, kickoff: game.commence_time,
       market: prop.market, line: prop.line, projection: projection.value, modelVersion: projection.version, edge, direction,
       bookmaker: prop.bookmaker, overPrice: prop.overPrice, underPrice: prop.underPrice, lineUpdatedAt: prop.fetchedAt!, calculatedAt: input.calculatedAt,
+      injury: prop.injury,
       kofScore, kofBaselineSeasons: kofScore === null || !score ? [] : [...new Set([score.usage_baseline_season, score.red_zone_baseline_season, score.dvp_baseline_season].filter((s): s is number => Number.isInteger(s)))].sort(),
       l5, matchup, rosterStatus: player.status });
   }

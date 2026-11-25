@@ -26,7 +26,7 @@ export const getBettingBoardData = cache(() =>
 // The legacy cache API fits this application's current non-Cache-Components setup.
 const getPreviewSource = unstable_cache(
   () => loadNflBettingBoardSource(createAdminClient()),
-  ["nfl-free-board-source-v2-evidence"],
+  ["nfl-free-board-source-v5-private-injury-context"],
   { revalidate: 60 },
 );
 const getDailyPreviewPlayers = unstable_cache(

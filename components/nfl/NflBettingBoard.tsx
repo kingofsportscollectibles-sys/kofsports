@@ -1,5 +1,6 @@
 "use client";
 
+import InjuryStatus from "./InjuryStatus";
 import {
   Fragment,
   useEffect,
@@ -83,7 +84,7 @@ function Edge({ row }: { row: BoardPublicRow }) {
         {text} <span className="text-xs">{BOARD_MARKETS[row.market].unit}</span>
       </div>
       <div className="mt-1 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-        {row.pregame?.ratingWithheld ? `Raw ${row.edge > 0 ? "over" : row.edge < 0 ? "under" : "neutral"} edge` : row.direction === "none" ? "No lean" : `Projection ${row.direction === "over" ? "above" : "below"} line`}
+        {(row.injury?.ratingWithheld || row.availability?.ratingWithheld || row.pregame?.ratingWithheld) ? `Raw ${row.edge > 0 ? "over" : row.edge < 0 ? "under" : "neutral"} edge` : row.direction === "none" ? "No lean" : `Projection ${row.direction === "over" ? "above" : "below"} line`}
       </div>
     </div>
   );
@@ -98,7 +99,7 @@ function Score({ row }: { row: BoardPublicRow }) {
       }
     >
       N/A
-      {row.pregame?.ratingWithheld && <span className="mt-1 block text-[10px] text-amber-300">Role unverified</span>}
+      {(row.injury?.ratingWithheld || row.availability?.ratingWithheld) ? <span className="mt-1 block text-[10px] text-amber-300">Availability review</span> : row.pregame?.ratingWithheld && <span className="mt-1 block text-[10px] text-amber-300">Role unverified</span>}
     </span>
   ) : (
     <span className="inline-flex rounded-lg border border-emerald-400/25 bg-emerald-400/10 px-2.5 py-1.5 font-mono text-lg font-bold tabular-nums text-emerald-300">
@@ -207,7 +208,7 @@ function ResearchDetails({ row }: { row: BoardPublicRow }) {
         </p>
         <div className="space-y-2 text-xs">
           <p className="font-semibold text-slate-200">
-            KOFScore · {row.pregame?.ratingWithheld ? "withheld" : `Projection ${row.direction === "over" ? "above" : "below"} line`}
+            KOFScore · {(row.injury?.ratingWithheld || row.availability?.ratingWithheld || row.pregame?.ratingWithheld) ? "withheld" : `Projection ${row.direction === "over" ? "above" : "below"} line`}
           </p>
           <p>Research confidence out of 100, not a predicted win percentage.</p>
           <p>
@@ -260,6 +261,11 @@ function ResearchDetails({ row }: { row: BoardPublicRow }) {
           <time dateTime={row.calculatedAt}>{date(row.calculatedAt)}</time> from
           stored preweek statistics. Confirm the line at your sportsbook.
         </p>
+        {row.injury && <InjuryStatus injury={row.injury} />}
+        {row.availability && ["out", "inactive", "questionable", "doubtful"].includes(row.availability.status) && <p className={row.availability.ratingWithheld ? "text-amber-300" : ""}>
+          {row.availability.note}
+          {row.availability.reviewedAt && <> Reviewed <time dateTime={row.availability.reviewedAt}>{date(row.availability.reviewedAt)}</time>.</>}
+        </p>}
         {row.pregame ? <PregameChecks evidence={row.pregame} /> : <p>
           Roster: {row.rosterStatus ?? "unknown"}. Game-day availability is
           unverified. Check player news before using the research.

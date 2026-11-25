@@ -127,3 +127,13 @@ test("48-hour board quote boundary accepts yesterday and expires older quotes", 
  for (const hours of [25, 47, 48]) { const input = fixture(); input.props[0].fetchedAt = new Date(now - hours * 3600_000).toISOString(); assert.equal(buildBettingBoard(input, now).rows.length, 1); }
  const input = fixture(); input.props[0].fetchedAt = new Date(now - 48 * 3600_000 - 1).toISOString(); assert.equal(buildBettingBoard(input, now).rows.length, 0);
 });
+
+test("current-game Out evidence removes an otherwise valid projection without fabricating an Under", () => {
+  const input = fixture();
+  input.props[0].injury = { state: "out", label: "Out", note: "Reported unavailable", suppressProjection: true,
+    ratingWithheld: true, season: 2026, week: 9, fetchedAt: input.calculatedAt };
+  const result = buildBettingBoard(input, now);
+  assert.equal(result.rows.length, 0);
+  assert.equal(result.coverage.excluded["Reported unavailable for target game"], 1);
+  assert.equal(input.props[0].receptionsProjection?.projectedReceptions, 4.2);
+});

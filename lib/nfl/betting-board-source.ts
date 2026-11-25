@@ -1,3 +1,5 @@
+import availabilityReports from "@/data/nfl/availability-reports.json";
+import { applyBoardAvailability, parseAvailabilityReports } from "./availability";
 import { assessPregameEvidence, type EvidenceGame, type EvidenceStat } from "./pregame-evidence";
 import { loadPassingEvidenceSources } from "./pregame-evidence-source";
 import { calculateKofConfidence } from "@/lib/nfl/kof-confidence";
@@ -82,7 +84,8 @@ export async function loadNflBettingBoardSource(client: SupabaseClient, now = Da
       return {...row,pregameEvidence};
     });
   }
+  board.rows = board.rows.map(row => row.injury?.ratingWithheld ? { ...row, kofScore: null } : row);
   board.rows = sortBoardRows(board.rows, "kofScore", "desc");
   board.coverage.missingScores = board.rows.filter((row) => row.kofScore === null).length;
-  return board;
+  return applyBoardAvailability(board, parseAvailabilityReports(availabilityReports), Date.now());
 }

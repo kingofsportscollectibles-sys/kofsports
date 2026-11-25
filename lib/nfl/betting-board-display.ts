@@ -1,3 +1,4 @@
+import { publicInjuryContext } from "./injury-context";
 import { toPublicPregameEvidence, unavailablePregameEvidence, isPassingRatingWithheld } from "./pregame-evidence";
 import { sortBoardRows } from "./betting-board";
 // Explicit allowlist at the server-to-browser boundary, shared by free and Pro reads.
@@ -30,8 +31,10 @@ export function toPublicBettingBoard(board: BettingBoardData): BoardPublicData {
     underPrice: row.underPrice,
     lineUpdatedAt: row.lineUpdatedAt,
     calculatedAt: row.calculatedAt,
-    kofScore: isPassingRatingWithheld(row) ? null : row.kofScore,
+    kofScore: row.injury?.ratingWithheld || row.availability?.ratingWithheld || isPassingRatingWithheld(row) ? null : row.kofScore,
     rosterStatus: row.rosterStatus,
+    ...(row.injury ? { injury: publicInjuryContext(row.injury) } : {}),
+    ...(row.availability ? { availability: { status: row.availability.status, ratingWithheld: row.availability.ratingWithheld, note: row.availability.note, reviewedAt: row.availability.reviewedAt } } : {}),
     ...(row.market === "player_pass_yds" ? { pregame: toPublicPregameEvidence(row.pregameEvidence ?? unavailablePregameEvidence(row.calculatedAt)) } : {}),
     l5: {
       games: row.l5.games,
@@ -64,7 +67,7 @@ export function toPublicBettingBoard(board: BettingBoardData): BoardPublicData {
       seasonGames: row.confidence?.currentSeasonGames ?? null,
       h2hGames: row.confidence?.components?.h2h.observedGames ?? null,
       scoreNote:
-        isPassingRatingWithheld(row)
+        row.injury?.ratingWithheld ? row.injury.note : row.availability?.ratingWithheld ? row.availability.note : isPassingRatingWithheld(row)
           ? "Passing KOFScore is withheld while game-day starter and injury status are unverified."
           : row.kofScore === null
             ? row.direction === "none"
